@@ -1,0 +1,6 @@
+@Consultorio.Server_HostAddress = http://localhost:5282
+
+GET {{Consultorio.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

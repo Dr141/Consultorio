@@ -1,0 +1,7 @@
+{
+  "name": "Consultorio.Cliente",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
