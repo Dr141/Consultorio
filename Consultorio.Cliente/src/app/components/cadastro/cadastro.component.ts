@@ -1,20 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { ConfirmarSenha } from '../../extensoes/confirmar-senha.validator';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
 
 @Component({
   selector: 'app-cadastro',
   templateUrl: './cadastro.component.html',
-  styleUrls: ['./cadastro.component.scss'],
-  standalone: false
+  styleUrls: ['./cadastro.component.scss']
 })
 export class CadastroComponent  implements OnInit {
   public cadastro: FormGroup | any
-  public erros: [] | null = null
+  @Input() api!: ConsultorioApiService
 
-  constructor(private modalCtrl: ModalController, private api: ConsultorioApiService) { }
+  constructor(private modalCtrl: ModalController, private alertController: AlertController) { }
 
   ngOnInit(): void {
     this.cadastro = new FormGroup({
@@ -27,22 +26,49 @@ export class CadastroComponent  implements OnInit {
   }
 
   cancel() {
-    return this.modalCtrl.dismiss(null, 'cancel');
+    return this.modalCtrl.dismiss(false, 'cancel');
   }
 
-  confirm() {
+  async confirm() {
     if (this.cadastro.valid) {
-      this.api.cadastro({
-        email: this.cadastro.email,
-        senha: this.cadastro.senha,
-        senhaConfirmacao: this.cadastro.senhaConfirmacao
-      }).then(sucesso => {
-        return this.modalCtrl.dismiss('confirm');
-      }).catch(erro => {
-        this.erros = erro ?? erro.erros
+      await this.api.cadastro({
+        Email: this.cadastro.get('email')?.value,
+        Senha: this.cadastro.get('senha')?.value,
+        SenhaConfirmacao: this.cadastro.get('confirmarSenha')?.value
+      }).then(async result => {
+        if (result.sucesso) {
+          return this.modalCtrl.dismiss('confirm');
+        }
+        await this.presentAlert(this.obterErro(result.errors))
+        return
+      }).catch(async erro => {
+        await this.presentAlert(this.obterErro(erro.errors))
       })      
     }
 
     return
+  }
+
+  async presentAlert(erro: string) {
+    const alert = await this.alertController.create({
+      header: 'Erro',
+      message: erro,
+      buttons: ['Ok'],
+    });
+
+    await alert.present();
+  }
+
+  private obterErro(errors: { [key: string]: string[] }) : string {
+    let errorString = '';
+    for (const field in errors) {
+      if (errors.hasOwnProperty(field)) {
+        errors[field].forEach((message: string) => {
+          errorString += `${message}\n`;
+        });
+      }
+    }
+
+    return errorString
   }
 }

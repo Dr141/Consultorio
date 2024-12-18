@@ -7,7 +7,7 @@
     <UserSecretsId>9c94e8c0-06a7-438b-8b7a-befe7b96a7a7</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <SpaRoot>..\consultorio.client</SpaRoot>
-    <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
+    <SpaProxyLaunchCommand>ionic s</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:56759</SpaProxyServerUrl>
   </PropertyGroup>
 
