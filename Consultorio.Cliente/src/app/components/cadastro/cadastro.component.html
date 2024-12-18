@@ -1,0 +1,36 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button color="danger" (click)="cancel()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title style="text-align:center">Cadastro</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="confirm()" [strong]="true" [disabled]="!cadastro.valid" color="secondary">Confirm</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content class="ion-padding">
+  <form [formGroup]="cadastro">
+    <ion-list>
+      <ion-item lines="none">
+        <ion-input type="email" label="Email" labelPlacement="floating" placeholder="Digite o seu e-mail" formControlName="email"
+                   helperText="Entre com e-mail válido"
+                   error-text="Email inválido"></ion-input>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-input type="password" label="Senha" labelPlacement="floating" formControlName="senha"
+                   helperText="Entre com uma senha válida"
+                   error-text="Senha inválida">
+          <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-input type="password" label="Senha" labelPlacement="floating" formControlName="confirmarSenha"
+                   helperText="Repita a senha"
+                   error-text="As senhas digitadas não coincidem">
+          <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+    </ion-list>
+  </form>
+</ion-content>

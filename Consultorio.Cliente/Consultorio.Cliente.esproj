@@ -2,7 +2,9 @@
   <PropertyGroup>
     <!--Command to run on project build-->
     <!--<BuildCommand>npm run build</BuildCommand>
-    --><!--Command to run on project clean--><!--
+    -->
+    <!--Command to run on project clean-->
+    <!--
     <CleanCommand> </CleanCommand>-->
     <StartupCommand>ionic s --port=1337</StartupCommand>
     <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
