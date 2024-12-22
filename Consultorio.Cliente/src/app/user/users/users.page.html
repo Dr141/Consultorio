@@ -1,0 +1,30 @@
+<ion-header [translucent]="true">
+  <ion-toolbar style="text-align:center">
+    <ion-buttons slot="start">
+      <ion-button size="large" (click)="buttonBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Gerenciamento de usuários</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list lines="full">
+    <ion-item>
+      <ion-label>Pokémon Yellow</ion-label>
+      <ion-label>Pokémon Yellow</ion-label>
+      <ion-button class="desk-button" color="medium">
+        <ion-icon name="business-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="desk-button" color="medium" (click)="atualizarSenha('sdfsdf')">
+        <ion-icon name="id-card-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
+  <ion-fab horizontal="end" vertical="bottom" slot="fixed">
+    <ion-fab-button color="medium">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

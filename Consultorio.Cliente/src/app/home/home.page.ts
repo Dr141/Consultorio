@@ -1,4 +1,8 @@
 import { Component } from '@angular/core';
+import { ModalController, NavController } from '@ionic/angular';
+import { CacheService } from '../services/cache/cache.service';
+import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { AtualizarSenhaComponent } from '../components/atualizar-senha/atualizar-senha.component';
 
 @Component({
     selector: 'app-home',
@@ -6,7 +10,26 @@ import { Component } from '@angular/core';
     styleUrls: ['home.page.scss']
 })
 export class HomePage {
+  
+  constructor(private modalController: ModalController, private api: ConsultorioApiService, private cache: CacheService, private navCtrl: NavController) {}
 
-  constructor() {}
+  logOut() {
+    this.cache.RemoveTodosCookies()
+    this.navCtrl.navigateForward('login')
+  }
 
+  users() {
+    this.navCtrl.navigateForward('users')
+  }
+
+  async atualizarSenha() {
+    const modal = await this.modalController.create({
+      component: AtualizarSenhaComponent,
+      componentProps: {
+        api: this.api
+      }
+    })
+
+    await modal.present()
+  }
 }

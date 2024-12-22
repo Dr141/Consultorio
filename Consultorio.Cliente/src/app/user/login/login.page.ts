@@ -3,6 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ModalController, NavController } from '@ionic/angular';
 import { CadastroComponent } from '../../components/cadastro/cadastro.component';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
+import { obterMensagemErro } from '../../extensoes/errors.api';
 
 @Component({
   selector: 'app-login',
@@ -23,15 +24,16 @@ export class LoginPage implements OnInit {
 
   async onSubmit() {
     if (this.autenticacao.valid) {
-      await this.api.login(this.autenticacao.email, this.autenticacao.senha)
+      await this.api.login(this.autenticacao.get('email')?.value, this.autenticacao.get('senha')?.value)
         .then(async result => {
           if (result.sucesso) {
+            this.api.salvarAutenticacao(result)
             this.navCtrl.navigateForward('home')
           }
-          await this.presentAlert(result.erro ?? result.erros)
+          await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
         })
         .catch(async erro => {
-          await this.presentAlert(erro ?? erro.erros)
+          await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
         })
     }
   }
@@ -43,19 +45,14 @@ export class LoginPage implements OnInit {
     })
 
     await modal.present()
-
-    const { data } = await modal.onWillDismiss()
-    if (data) {
-      await this.presentAlert('Cadastros realizado com sucesso.', 'Cadastro')
-    }
   }
 
-  async presentAlert(erro: string, head: string | null = null) {
+  async presentAlert(erro: string) {
     const alert = await this.alertController.create({
-      header: head ?? 'Ocorreu um erro',
+      header: 'Atenção ocorreu erro!',
       message: erro,
       buttons: ['Ok'],
-    });
+    })
 
     await alert.present();
   }

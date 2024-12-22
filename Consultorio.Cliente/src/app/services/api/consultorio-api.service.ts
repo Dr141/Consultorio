@@ -40,7 +40,19 @@ export class ConsultorioApiService {
   }
 
   async atualizarSenha(newSenha: any): Promise<any> {
-    var result = this.http.put('/api/Autenticacao/AtualizarSenha', newSenha)
+    const accessToken = this.cache.recuperarCookie('accessToken')
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
+    const options = { headers: headers }
+    var result = this.http.put('/api/Autenticacao/AtualizarSenha', newSenha, options)
+
+    return await this.observable(result)
+  }
+
+  async atualizarSenhaInterno(userNewSenha: any): Promise<any> {
+    const accessToken = this.cache.recuperarCookie('accessToken')
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
+    const options = { headers: headers }
+    var result = this.http.put('/api/Usuario/AtualizarSenha', userNewSenha, options)
 
     return await this.observable(result)
   }
