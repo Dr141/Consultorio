@@ -30,7 +30,9 @@ export class LoginPage implements OnInit {
             this.api.salvarAutenticacao(result)
             this.navCtrl.navigateForward('home')
           }
-          await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
+          else {
+            await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
+          }
         })
         .catch(async erro => {
           await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))

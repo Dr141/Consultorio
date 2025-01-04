@@ -2,7 +2,7 @@
 
 public record UsuariosResponse
 {
-    public UsuariosResponse(bool sucesso, string erro, Dictionary<string, bool> usuarios)
+    public UsuariosResponse(bool sucesso, string erro, IEnumerable<UsuarioDto>? usuarios)
     {
         Sucesso = sucesso;
         Erro = erro;
@@ -10,8 +10,7 @@ public record UsuariosResponse
     }
 
     public bool Sucesso { get; set; }
-
     public string Erro { get; set; }
 
-    public Dictionary<string, bool> Usuarios { get; set; }
+    public IEnumerable<UsuarioDto>?  Usuarios { get; set; }
 }

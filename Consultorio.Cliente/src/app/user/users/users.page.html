@@ -12,18 +12,25 @@
 <ion-content [fullscreen]="true">
   <ion-list lines="full">
     <ion-item>
-      <ion-label>Pokémon Yellow</ion-label>
-      <ion-label>Pokémon Yellow</ion-label>
-      <ion-button class="desk-button" color="medium">
+      <ion-label style="font-weight:bold">
+        E-mail
+      </ion-label>
+      <ion-label style="text-align:end;font-weight:bold">
+        Ações
+      </ion-label>
+    </ion-item>
+    <ion-item *ngFor="let user of users">
+      <ion-label>{{user.email}}</ion-label>
+      <ion-button class="desk-button" color="medium" (click)="permissoes(user)">
         <ion-icon name="business-outline"></ion-icon>
       </ion-button>
-      <ion-button class="desk-button" color="medium" (click)="atualizarSenha('sdfsdf')">
+      <ion-button class="desk-button" color="medium" (click)="atualizarSenha(user.email)">
         <ion-icon name="id-card-outline"></ion-icon>
       </ion-button>
     </ion-item>
   </ion-list>
   <ion-fab horizontal="end" vertical="bottom" slot="fixed">
-    <ion-fab-button color="medium">
+    <ion-fab-button color="medium" (click)="cadastro()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

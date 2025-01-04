@@ -11,10 +11,8 @@ export class ConsultorioApiService {
   constructor(private http: HttpClient, private cache: CacheService) { }
 
   async refreshLogin() {
-    const accessToken = this.cache.recuperarCookie('accessToken')
-    const headers = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
+    var request = this.http.post('/api/Autenticacao/AtualizarToken', this.obterHeaders())
 
-    var request = this.http.post('/api/Autenticacao/AtualizarToken', { headers: headers })
     await this.observable(request)
       .then(result => {
         this.salvarAutenticacao(result)
@@ -40,19 +38,43 @@ export class ConsultorioApiService {
   }
 
   async atualizarSenha(newSenha: any): Promise<any> {
-    const accessToken = this.cache.recuperarCookie('accessToken')
-    const headers = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
-    const options = { headers: headers }
-    var result = this.http.put('/api/Autenticacao/AtualizarSenha', newSenha, options)
+    var result = this.http.put('/api/Autenticacao/AtualizarSenha', newSenha, this.obterHeaders())
 
     return await this.observable(result)
   }
 
   async atualizarSenhaInterno(userNewSenha: any): Promise<any> {
-    const accessToken = this.cache.recuperarCookie('accessToken')
-    const headers = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
-    const options = { headers: headers }
-    var result = this.http.put('/api/Usuario/AtualizarSenha', userNewSenha, options)
+    var result = this.http.put('/api/Usuario/AtualizarSenha', userNewSenha, this.obterHeaders())
+
+    return await this.observable(result)
+  }
+
+  async obterTodos(): Promise<any> {
+    var result = this.http.get('/api/Usuario/ObterTodosUsuarios', this.obterHeaders())
+
+    return await this.observable(result)
+  }
+
+  async adicionarRole(userRole: any): Promise<any>{
+    var result = this.http.post('/api/Usuario/AdicionarRole', userRole, this.obterHeaders())
+
+    return await this.observable(result)
+  }
+
+  async removerRole(userRole: any): Promise<any> {
+    var result = this.http.put('/api/Usuario/RemoverRole', userRole, this.obterHeaders())
+
+    return await this.observable(result)
+  }
+
+  async adicionarClaim(userClaim: any): Promise<any> {
+    var result = this.http.post('/api/Usuario/AdicionarClaim', userClaim, this.obterHeaders())
+
+    return await this.observable(result)
+  }
+
+  async removerClaim(userClaim: any): Promise<any> {
+    var result = this.http.put('/api/Usuario/RemoverClaim', userClaim, this.obterHeaders())
 
     return await this.observable(result)
   }
@@ -69,12 +91,18 @@ export class ConsultorioApiService {
   salvarAutenticacao(usuarioAut: any) {
     if (usuarioAut ?? undefined) {
       this.cache.salvarCookie('accessToken', usuarioAut.accessToken, this.dataExpiracao(usuarioAut.accessToken.split('.')[1]))
-      this.cache.salvarCookie('accessToken', usuarioAut.refreshToken, this.dataExpiracao(usuarioAut.refreshToken.split('.')[1]))
+      this.cache.salvarCookie('refreshToken', usuarioAut.refreshToken, this.dataExpiracao(usuarioAut.refreshToken.split('.')[1]))
     }
   }
 
   private dataExpiracao(payload: string): Date {
     var payloadToJson = JSON.parse(atob(payload))
     return new Date(payloadToJson.exp * 1000)
+  }
+
+  private obterHeaders(refresh: boolean = false) {
+    const accessToken = this.cache.recuperarCookie(refresh ? 'refreshToken' : 'accessToken')
+    const header = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
+    return { headers: header }
   }
 }

@@ -13,15 +13,8 @@ public static class AutenticacaoSetup
         var jwtAppSettingOptions = configuration.GetSection(nameof(JwtOptions));
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("JwtOptions:SecurityKey").Value));
 
-        services.Configure<JwtOptions>(options =>
-        {
-            options.Issuer = jwtAppSettingOptions[nameof(JwtOptions.Issuer)];
-            options.Audience = jwtAppSettingOptions[nameof(JwtOptions.Audience)];
-            options.SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512);
-            options.AccessTokenExpiration = int.Parse(jwtAppSettingOptions[nameof(JwtOptions.AccessTokenExpiration)] ?? "0");
-            options.RefreshTokenExpiration = int.Parse(jwtAppSettingOptions[nameof(JwtOptions.RefreshTokenExpiration)] ?? "0");
-        });
-
+        services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));
+        
         services.Configure<IdentityOptions>(options =>
         {
             options.Password.RequireDigit = true;
@@ -44,19 +37,20 @@ public static class AutenticacaoSetup
 
         var jwtBearerEvents = new JwtBearerEvents
         {
+#if DEBUG
             OnMessageReceived = context =>
             {
-                // Verifica se o token está presente no cabeçalho
+                Console.WriteLine("Verifica se o token está presente no cabeçalho");
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
                 Console.WriteLine($"Headers['Authorization']: {token}");
-                // Log do token recebido
+                Console.WriteLine("Log do token recebido");
                 Console.WriteLine($"Token: {context.Token}");
                 Console.WriteLine();
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
             {
-                // Log do erro de autenticação
+                Console.WriteLine("Log do erro de autenticação");
                 Console.WriteLine($"Erro de Autenticação: {context.Exception.Message}");
                 if (context.Exception.InnerException != null)
                     Console.WriteLine($"Erro de Autenticação InnerException: {context.Exception.InnerException.Message}");
@@ -64,10 +58,11 @@ public static class AutenticacaoSetup
             },
             OnTokenValidated = context =>
             {
-                // Log do token validado
+                Console.WriteLine("Log do token validado");
                 Console.WriteLine("Token Validado!");
                 return Task.CompletedTask;
             }
+#endif
         };
 
         services.AddAuthentication(options =>

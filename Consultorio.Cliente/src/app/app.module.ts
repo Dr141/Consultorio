@@ -9,9 +9,10 @@ import { CadastroComponent } from 'src/app/components/cadastro/cadastro.componen
 import { provideHttpClient } from '@angular/common/http';
 import { AtualizarSenhaComponent } from './components/atualizar-senha/atualizar-senha.component';
 import { AtualizarSenhaInternoComponent } from './components/atualizar-senha-interno/atualizar-senha-interno.component';
+import { PemissaoComponent } from './components/pemissao/pemissao.component';
 
 @NgModule({
-  declarations: [AppComponent, CadastroComponent, AtualizarSenhaComponent, AtualizarSenhaInternoComponent],
+  declarations: [AppComponent, CadastroComponent, AtualizarSenhaComponent, AtualizarSenhaInternoComponent, PemissaoComponent],
   imports: [BrowserModule, RouterModule.forRoot([]), IonicModule.forRoot({}), AppRoutingModule, ReactiveFormsModule],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy }, provideHttpClient()],
   bootstrap: [AppComponent],

@@ -3,6 +3,6 @@
     <BuildCommand>ionic build</BuildCommand>
     <StartupCommand>ionic s --port=1337</StartupCommand>
     <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
-    <ShouldRunBuildScript>false</ShouldRunBuildScript>  
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
   </PropertyGroup>
 </Project>

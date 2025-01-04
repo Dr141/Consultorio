@@ -38,7 +38,7 @@ public class IdentityService : IIdentityService
     }
 
     /// <summary>
-    /// Remove Role ao usuário.
+    /// Remove Roles ao usuário.
     /// </summary>
     /// <param name="usuarioRole">Fornecer um objeto do tipo <see cref="UsuarioRoleRequest"/></param>
     /// <returns>
@@ -49,16 +49,11 @@ public class IdentityService : IIdentityService
     {
         try
         {
-            var role = Enum.GetName(usuarioRole.Role) ?? string.Empty;
             var user = await _userManager.FindByEmailAsync(usuarioRole.Email);
 
             if (user is IdentityUser)
             {
-                if (!await _roleManager.RoleExistsAsync(role))
-                    throw new Exception($"Role {role} não está cadastrada no sistema.");
-
-                var result = await _userManager.RemoveFromRoleAsync(user, role);
-
+                var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
                 return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
             }
 
@@ -85,9 +80,7 @@ public class IdentityService : IIdentityService
             var user = await _userManager.FindByEmailAsync(usuarioClaim.Email);
             if (user is IdentityUser)
             {
-                Claim claim = new Claim(Enum.GetName(usuarioClaim.ClaimType), Enum.GetName(usuarioClaim.ClaimValue));
-                var result = await _userManager.AddClaimAsync(user, claim);
-
+                var result = await _userManager.AddClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
                 return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
             }
 
@@ -114,9 +107,7 @@ public class IdentityService : IIdentityService
             var user = await _userManager.FindByEmailAsync(usuarioClaim.Email);
             if (user is IdentityUser)
             {
-                Claim claim = new Claim(Enum.GetName(usuarioClaim.ClaimType), Enum.GetName(usuarioClaim.ClaimValue));
-                var result = await _userManager.RemoveClaimAsync(user, claim);
-
+                var result = await _userManager.RemoveClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
                 return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
             }
 
@@ -129,7 +120,7 @@ public class IdentityService : IIdentityService
     }
 
     /// <summary>
-    /// Adiciona Role ao usuário.
+    /// Adiciona Roles ao usuário.
     /// </summary>
     /// <param name="usuarioRole">Fornecer um objeto do tipo <see cref="UsuarioRoleRequest"/></param>
     /// <returns>
@@ -140,16 +131,11 @@ public class IdentityService : IIdentityService
     {
         try
         {
-            var role = Enum.GetName(usuarioRole.Role) ?? string.Empty;
             var user = await _userManager.FindByEmailAsync(usuarioRole.Email);
 
             if (user is IdentityUser)
             {
-                if (!await _roleManager.RoleExistsAsync(role))
-                    await _roleManager.CreateAsync(new IdentityRole(role));
-
-                var result = await _userManager.AddToRoleAsync(user, role);
-
+                var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
                 return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
             }
 
@@ -293,10 +279,18 @@ public class IdentityService : IIdentityService
     public async Task<UsuariosResponse> ObterTodosUsuarios()
     {
         var result = await _userManager.Users.AsNoTracking().ToListAsync();
-        if (result is List<IdentityUser>)
-            return new UsuariosResponse(true, string.Empty, result.ToDictionary(user => user.Email, user => user.EmailConfirmed));
 
-        return new UsuariosResponse(false, "Não foi encontrado usuários cadastrado.", new Dictionary<string, bool>());
+        if (result is List<IdentityUser>)
+            return new UsuariosResponse(true, string.Empty, result.Select(x => new UsuarioDto(x.Email, x.EmailConfirmed, 
+                                                                                                    _userManager.GetClaimsAsync(x)
+                                                                                                                .Result,
+                                                                                                    _userManager.GetRolesAsync(x)
+                                                                                                                .Result
+                                                                                              )
+                                                                          )
+            );
+
+        return new UsuariosResponse(false, "Não foi encontrado usuários cadastrado.", null);
     }
 
     /// <summary>
