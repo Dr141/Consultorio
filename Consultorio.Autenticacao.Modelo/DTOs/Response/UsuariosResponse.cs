@@ -1,16 +1,13 @@
-﻿namespace Consultorio.Identity.Modelo.DTOs.Response;
+﻿using Consultorio.Identity.Modelo.DTOs.Response.Base;
 
-public record UsuariosResponse
+namespace Consultorio.Identity.Modelo.DTOs.Response;
+
+public record UsuariosResponse : ResponseBase
 {
-    public UsuariosResponse(bool sucesso, string erro, IEnumerable<UsuarioDto>? usuarios)
+    public UsuariosResponse(bool sucesso, IEnumerable<UsuarioDto>? usuarios) : base(sucesso)
     {
-        Sucesso = sucesso;
-        Erro = erro;
         Usuarios = usuarios;
     }
-
-    public bool Sucesso { get; set; }
-    public string Erro { get; set; }
 
     public IEnumerable<UsuarioDto>?  Usuarios { get; set; }
 }

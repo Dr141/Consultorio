@@ -54,14 +54,14 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
-                return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+                return new UsuarioCadastroResponse(result.Succeeded);
             }
 
             throw new Exception($"Usuário com e-mail {usuarioRole.Email}, não foi encontrado.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new UsuarioCadastroResponse(false, new List<string> { ex.Message });
+            throw;
         }
     }
 
@@ -81,14 +81,14 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
-                return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+                return new UsuarioCadastroResponse(result.Succeeded);
             }
 
             throw new Exception($"Usuário com e-mail {usuarioClaim.Email}, não foi encontrado.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new UsuarioCadastroResponse(false, new List<string> { ex.Message });
+            throw;
         }
     }
 
@@ -108,14 +108,14 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.RemoveClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
-                return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+                return new UsuarioCadastroResponse(result.Succeeded);
             }
 
             throw new Exception($"Usuário com e-mail {usuarioClaim.Email}, não foi encontrado.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new UsuarioCadastroResponse(false, new List<string> { ex.Message });
+            throw;
         }
     }
 
@@ -136,14 +136,14 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
-                return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+                return new UsuarioCadastroResponse(result.Succeeded);
             }
 
             throw new Exception($"Usuário com e-mail {usuarioRole.Email}, não foi encontrado.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return new UsuarioCadastroResponse(false, new List<string> { ex.Message });
+            throw;
         }
     }
 
@@ -162,12 +162,12 @@ public class IdentityService : IIdentityService
         if (user is IdentityUser)
         {
             var result = await _userManager.ChangePasswordAsync(user, usuarioLoginAtualizarSenha.SenhaAtual, usuarioLoginAtualizarSenha.NovaSenha);
-            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded);
 
             return usuarioResponse;
         }
 
-        return new UsuarioCadastroResponse(false, new List<string> { $"Usuário com e-mail {email}, não foi encontrado." });
+        throw new UnauthorizedAccessException($"Usuário com e-mail {email}, não foi encontrado.");
     }
 
     /// <summary>
@@ -186,12 +186,12 @@ public class IdentityService : IIdentityService
         {
             await _userManager.RemovePasswordAsync(user);
             var result = await _userManager.AddPasswordAsync(user, usuarioLoginAtualizarSenha.Senha);
-            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded);
 
             return usuarioResponse;
         }
 
-        return new UsuarioCadastroResponse(false, new List<string> { $"Usuário com e-mail {usuarioLoginAtualizarSenha.Email}, não foi encontrado." });
+        throw new ArgumentException($"Usuário com e-mail {usuarioLoginAtualizarSenha.Email}, não foi encontrado.");
     }
 
     /// <summary>
@@ -215,7 +215,7 @@ public class IdentityService : IIdentityService
         if (result.Succeeded)
             await _userManager.SetLockoutEnabledAsync(identityUser, false);
 
-        return new UsuarioCadastroResponse(result.Succeeded, result.Errors.Select(r => r.Description));
+        return new UsuarioCadastroResponse(result.Succeeded);
     }
 
     /// <summary>
@@ -231,21 +231,16 @@ public class IdentityService : IIdentityService
         var result = await _signInManager.PasswordSignInAsync(usuarioLogin.Email, usuarioLogin.Senha, false, true);
         if (result.Succeeded)
             return await GerarCredenciais(usuarioLogin.Email);
-
+               
         List<string> errors = new List<string>();
-        if (!result.Succeeded)
-        {
-            if (result.IsLockedOut)
-                errors.Add("Essa conta está bloqueada");
-            else if (result.IsNotAllowed)
-                errors.Add("Essa conta não tem permissão para fazer login");
-            else if (result.RequiresTwoFactor)
-                errors.Add("É necessário confirmar o login no seu segundo fator de autenticação");
-            else
-                errors.Add("Usuário ou senha estão incorretos");
-        }
-
-        return new UsuarioLoginResponse(result.Succeeded, string.Empty, string.Empty, errors);
+        if (result.IsLockedOut)
+            throw new UnauthorizedAccessException("Essa conta está bloqueada");
+        else if (result.IsNotAllowed)
+            throw new UnauthorizedAccessException("Essa conta não tem permissão para fazer login");
+        else if (result.RequiresTwoFactor)
+            throw new UnauthorizedAccessException("É necessário confirmar o login no seu segundo fator de autenticação");
+        else
+            throw new ArgumentException("Usuário ou senha estão incorretos");
     }
 
     /// <summary>
@@ -262,11 +257,11 @@ public class IdentityService : IIdentityService
 
         List<string> errors = new List<string>();
         if (await _userManager.IsLockedOutAsync(usuario))
-            errors.Add("Essa conta está bloqueada");
+            throw new UnauthorizedAccessException("Essa conta está bloqueada");
         else if (!await _userManager.IsEmailConfirmedAsync(usuario))
-            errors.Add("Essa conta precisa confirmar seu e-mail antes de realizar o login");
+            throw new UnauthorizedAccessException("Essa conta precisa confirmar seu e-mail antes de realizar o login");
 
-        return errors.Count == 0 ? await GerarCredenciais(usuario.Email) : new UsuarioLoginResponse(false, string.Empty, string.Empty, errors);
+        return await GerarCredenciais(usuario.Email);
     }
 
     /// <summary>
@@ -281,16 +276,16 @@ public class IdentityService : IIdentityService
         var result = await _userManager.Users.AsNoTracking().ToListAsync();
 
         if (result is List<IdentityUser>)
-            return new UsuariosResponse(true, string.Empty, result.Select(x => new UsuarioDto(x.Email, x.EmailConfirmed, 
-                                                                                                    _userManager.GetClaimsAsync(x)
-                                                                                                                .Result,
-                                                                                                    _userManager.GetRolesAsync(x)
-                                                                                                                .Result
-                                                                                              )
-                                                                          )
+            return new UsuariosResponse(true, result.Select(x => new UsuarioDto(x.Email, x.EmailConfirmed, 
+                                                                                         _userManager.GetClaimsAsync(x)
+                                                                                                     .Result,
+                                                                                         _userManager.GetRolesAsync(x)
+                                                                                                     .Result
+                                                                               )
+                                                            )
             );
 
-        return new UsuariosResponse(false, "Não foi encontrado usuários cadastrado.", null);
+        throw new Exception("Não foi encontrado usuários cadastrado.");
     }
 
     /// <summary>
@@ -368,6 +363,6 @@ public class IdentityService : IIdentityService
         var accessToken = GerarToken(accessTokenClaims, dataExpiracaoAccessToken);
         var refreshToken = GerarToken(refreshTokenClaims, dataExpiracaoRefreshToken);
 
-        return new UsuarioLoginResponse(true, accessToken, refreshToken, new List<string>());
+        return new UsuarioLoginResponse(true, accessToken, refreshToken);
     }
 }

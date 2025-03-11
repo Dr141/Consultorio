@@ -29,7 +29,7 @@ export class ConsultorioApiService {
   }
 
   async login(email: string, senha: string): Promise<any> {
-    var result = this.http.post('/api/Autenticacao/Login', {
+    var result = this.http.post('autenticacao', {
       Email: email,
       Senha: senha
     })

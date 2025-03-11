@@ -1,0 +1,50 @@
+﻿using Consultorio.Identity.Modelo.DTOs.Response;
+using Consultorio.Identity.Modelo.DTOs.Resquest;
+using Consultorio.Identity.Modelo.Enumerados;
+using Consultorio.Identity.Modelo.Interfaces.Servicos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+
+namespace Consultorio.Server.Controllers.Usuarios;
+
+[Route("[controller]")]
+[ApiController]
+[Authorize(Roles = nameof(Roles.Administrador))]
+public class ClaimController : ControllerBase
+{
+    private readonly IIdentityService _identity;
+
+    public ClaimController(IIdentityService identity) => _identity = identity;
+
+    [EndpointSummary("Adicionar")]
+    [EndpointDescription("Método para adicionar claim.")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpPost(Name = "AdicionarClaim")]
+    public async Task<ActionResult<UsuarioCadastroResponse>> Adicionar(UsuarioClaimRequest adicionarClaim)
+    {
+        try
+        {
+            await _identity.AdicionarClaim(adicionarClaim);
+            return StatusCode(StatusCodes.Status202Accepted);
+        }
+        catch (Exception ex) { return BadRequest(ex.Message); }
+    }
+
+    [EndpointSummary("Remover")]
+    [EndpointDescription("Método para remover claim.")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpDelete(Name = "RemoverClaim")]
+    public async Task<ActionResult<UsuarioCadastroResponse>> Remover(UsuarioClaimRequest removerClaim)
+    {
+        try
+        {
+            await _identity.RemoverClaim(removerClaim);
+            return StatusCode(StatusCodes.Status202Accepted);
+        }
+        catch (Exception ex) { return BadRequest(ex.Message); }
+    }
+}
