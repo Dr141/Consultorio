@@ -10,12 +10,14 @@ public interface IIdentityService
 {
     Task<bool> CadastrarUsuario(UsuarioCadastroRequest usuarioCadastro);
     Task<UsuarioLoginResponse> Login(UsuarioLoginRequest usuarioLogin);
-    Task<bool> Logout(string refreshToken);
+    Task<bool> Logout(string email);
     Task<UsuarioLoginResponse> LoginSemSenha(string usuarioId);
     Task<bool> AdicionarRole(UsuarioRoleRequest usuarioRole);
     Task<bool> RemoverRole(UsuarioRoleRequest usuarioRole);
+    Task<List<string>> ObterRoles();
     Task<bool> AdicionarClaim(UsuarioClaimRequest usuarioClaim);
     Task<bool> RemoverClaim(UsuarioClaimRequest usuarioClaim);
+    Task<List<string>> ObterClaim();
     Task<bool> AtualizarSenha(UsuarioAtualizarSenhaResquest usuarioLoginAtualizarSenha, string email);
     Task<bool> AtualizarSenhaInterno(UsuarioCadastroRequest usuarioLoginAtualizarSenha);
     Task<UsuariosResponse> ObterTodosUsuarios();

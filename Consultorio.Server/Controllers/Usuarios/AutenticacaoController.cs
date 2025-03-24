@@ -4,6 +4,7 @@ using Consultorio.Identity.Modelo.Interfaces.Servicos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
 
 namespace Consultorio.Server.Controllers.Usuarios;
 
@@ -33,7 +34,7 @@ public class AutenticacaoController : ControllerBase
             // Configuração do AccessToken (expira em 15 minutos)
             var accessTokenOptions = new CookieOptions
             {
-                HttpOnly = true,
+                HttpOnly = false,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Expira em 1 hora
@@ -43,7 +44,7 @@ public class AutenticacaoController : ControllerBase
             // Configuração do RefreshToken (expira em 7 dias)
             var refreshTokenOptions = new CookieOptions
             {
-                HttpOnly = true,
+                HttpOnly = false,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration), // Expira em 7 dias
@@ -69,10 +70,11 @@ public class AutenticacaoController : ControllerBase
     {
         try
         {
+            var usuarioId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var refreshToken = Request.Cookies["RefreshToken"];
             if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized("Refresh Token não encontrado");
+                return Unauthorized(new { message = "Refresh Token não encontrado" });
             }
 
             var newToken = await _identity.LoginSemSenha(refreshToken);
@@ -83,7 +85,7 @@ public class AutenticacaoController : ControllerBase
 
             var accessTokenOptions = new CookieOptions
             {
-                HttpOnly = true,
+                HttpOnly = false,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Novo access token com 1 hora
@@ -101,18 +103,14 @@ public class AutenticacaoController : ControllerBase
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]       
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
-    [HttpPut(Name = "Logout")]
+    [HttpDelete(Name = "Logout")]
     public async Task<ActionResult<bool>> Logout()
     {
         try
         {
-            var refreshToken = Request.Cookies["RefreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                return Unauthorized(new { message = "Refresh Token não encontrado" });
-            }
-
-            await _identity.Logout(refreshToken);
+            //por enquanto o token não sera salvo no db
+            //var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value;
+            //await _identity.Logout(emailClaim);
 
             Response.Cookies.Delete("AccessToken");
             Response.Cookies.Delete("RefreshToken");

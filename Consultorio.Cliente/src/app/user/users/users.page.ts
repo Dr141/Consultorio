@@ -2,9 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { AlertController, ModalController, NavController } from '@ionic/angular';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
 import { AtualizarSenhaInternoComponent } from '../../components/atualizar-senha-interno/atualizar-senha-interno.component';
-import { User } from '../../types/types';
+import { usuario } from '../../types/types';
 import { CadastroComponent } from '../../components/cadastro/cadastro.component';
-import { obterMensagemErro } from '../../extensoes/errors.api';
 import { PemissaoComponent } from '../../components/pemissao/pemissao.component';
 
 @Component({
@@ -13,20 +12,7 @@ import { PemissaoComponent } from '../../components/pemissao/pemissao.component'
   styleUrls: ['./users.page.scss'],
 })
 export class UsersPage implements OnInit {
-  public users: User[] = [
-    {
-      email: "teste@.com",
-      claims: [],
-      roles: ["admin"],
-      emailConfirmado: true
-    },
-    {
-      email: "teste1@.com",
-      claims: [],
-      roles: ["auxiliar"],
-      emailConfirmado: true
-    }
-  ]
+  public users : any;
 
   constructor(private modalController: ModalController, private api: ConsultorioApiService, private navCtrl: NavController, private alertController: AlertController) { }
 
@@ -50,20 +36,17 @@ export class UsersPage implements OnInit {
     await modal.present()
   }
 
-  async obterTodos() {
-    await this.api.obterTodos()
-      .then(async result => {
-        if (result.sucesso) {
-          console.log(result.usuarios)
-          this.users = result.usuarios
+  obterTodos() {
+    this.api.obterTodos<usuario>().subscribe({
+      next: (resul) => {
+        if (resul) {
+          this.users = resul.usuarios
         }
-        else {
-          await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-        }
-      })
-      .catch(async erro => {
-        await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
-      })
+      },
+      error: (erro) => {
+        this.presentAlert(erro.message)
+      }
+    })
   }
 
   async cadastro() {
@@ -87,7 +70,7 @@ export class UsersPage implements OnInit {
     await alert.present();
   }
 
-  async permissoes(pUser: User) {
+  async permissoes(pUser: usuario) {
     const modal = await this.modalController.create({
       component: PemissaoComponent,
       componentProps: { api: this.api, user: pUser }

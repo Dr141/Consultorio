@@ -1,6 +1,6 @@
-export type User = {
+export type usuario = {
   email: string,
   emailConfirmado: boolean,
   claims: [],
-  roles: [string | any]
+  roles: []
 }

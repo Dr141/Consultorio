@@ -39,7 +39,7 @@ public static class AutenticacaoSetup
         {
 #if DEBUG
             OnMessageReceived = context =>
-            {
+            {                
                 Console.WriteLine("Verifica se o token está presente no cabeçalho");
                 var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
                 Console.WriteLine($"Headers['Authorization']: {token}");

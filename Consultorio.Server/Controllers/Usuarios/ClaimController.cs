@@ -28,9 +28,9 @@ public class ClaimController : ControllerBase
         try
         {
             await _identity.AdicionarClaim(adicionarClaim);
-            return StatusCode(StatusCodes.Status202Accepted, true);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [EndpointSummary("Remover")]
@@ -43,8 +43,8 @@ public class ClaimController : ControllerBase
         try
         {
             await _identity.RemoverClaim(removerClaim);
-            return StatusCode(StatusCodes.Status202Accepted, true);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

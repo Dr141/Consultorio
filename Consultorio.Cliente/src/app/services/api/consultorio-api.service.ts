@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
-import { Observable, catchError, firstValueFrom, throwError } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -11,59 +11,54 @@ export class ConsultorioApiService {
   constructor(private http: HttpClient, private cache: CacheService) { }
 
   refreshToken() {
-    return this.http.get('Autenticacao', { withCredentials: true });    
+    const refreshToken = this.cache.recuperarCookie('RefreshToken');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${refreshToken}`);
+
+    return this.http.get('Autenticacao', { headers });    
   }
 
   cadastro(user: any) {
-    return this.observable(this.http.post('cadastroUsuario', user, { withCredentials: true }))
+    return this.observable(this.http.post('cadastroUsuario', user))
   }
 
   login(email: string, senha: string) {       
-    return this.observable(this.http.post('autenticacao', { Email: email, Senha: senha },{ withCredentials: true }))
+    return this.observable(this.http.post('autenticacao', { Email: email, Senha: senha }))
   }
 
   logout() {
-    return this.observable(this.http.put(`autenticacao`, {}, { withCredentials: true }));
+    return this.observable(this.http.delete(`autenticacao`, {}));
   }
 
   atualizarSenha(newSenha: any) {
-    return this.observable(this.http.put('cadastroUsuario', newSenha, { withCredentials: true }))
+    return this.observable(this.http.put('cadastroUsuario', newSenha))
   }
 
-  async atualizarSenhaInterno(userNewSenha: any): Promise<any> {
-    var result = this.http.put('/api/Usuario/AtualizarSenha', userNewSenha, this.obterHeaders())
-
-    return await this.observable(result)
+  atualizarSenhaInterno(userNewSenha: any) {
+    return this.observable(this.http.post('usuario', userNewSenha))
   }
 
-  async obterTodos(): Promise<any> {
-    var result = this.http.get('/api/Usuario/ObterTodosUsuarios', this.obterHeaders())
-
-    return await this.observable(result)
+  obterTodos<t>() {   
+    return this.observable(this.http.get<t>('usuario'))
   }
 
-  async adicionarRole(userRole: any): Promise<any>{
-    var result = this.http.post('/api/Usuario/AdicionarRole', userRole, this.obterHeaders())
-
-    return await this.observable(result)
+  obterRoles() {
+    return this.observable(this.http.get('role'))
   }
 
-  async removerRole(userRole: any): Promise<any> {
-    var result = this.http.put('/api/Usuario/RemoverRole', userRole, this.obterHeaders())
-
-    return await this.observable(result)
+  adicionarRole(userRole: any) {
+    return this.observable(this.http.post('role', userRole))
   }
 
-  async adicionarClaim(userClaim: any): Promise<any> {
-    var result = this.http.post('/api/Usuario/AdicionarClaim', userClaim, this.obterHeaders())
-
-    return await this.observable(result)
+  removerRole(userRole: any) {
+    return this.observable(this.http.put('role', userRole))
   }
 
-  async removerClaim(userClaim: any): Promise<any> {
-    var result = this.http.put('/api/Usuario/RemoverClaim', userClaim, this.obterHeaders())
+  adicionarClaim(userClaim: any){
+    return this.observable(this.http.post('claim', userClaim))
+  }
 
-    return await this.observable(result)
+  removerClaim(userClaim: any) {
+    return this.observable(this.http.delete('claim', userClaim))
   }
 
   private observable(resultado: Observable<any>) {
@@ -71,23 +66,5 @@ export class ConsultorioApiService {
       catchError((error: HttpErrorResponse) => {
         return throwError(() => new Error(error.error.message));
     }))
-  }
-
-  salvarAutenticacao(usuarioAut: any) {
-    if (usuarioAut ?? undefined) {
-      this.cache.salvarCookie('accessToken', usuarioAut.accessToken, this.dataExpiracao(usuarioAut.accessToken.split('.')[1]))
-      this.cache.salvarCookie('refreshToken', usuarioAut.refreshToken, this.dataExpiracao(usuarioAut.refreshToken.split('.')[1]))
-    }
-  }
-
-  private dataExpiracao(payload: string): Date {
-    var payloadToJson = JSON.parse(atob(payload))
-    return new Date(payloadToJson.exp * 1000)
-  }
-
-  private obterHeaders(refresh: boolean = false) {
-    const accessToken = this.cache.recuperarCookie(refresh ? 'refreshToken' : 'accessToken')
-    const header = new HttpHeaders({ 'Authorization': `Bearer ${accessToken}` })
-    return { headers: header }
   }
 }

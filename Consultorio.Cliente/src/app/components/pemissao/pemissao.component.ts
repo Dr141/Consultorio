@@ -2,13 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
-import { User } from '../../types/types';
-import { obterMensagemErro } from '../../extensoes/errors.api';
-interface Food {
-  id: number;
-  name: string;
-  type: string;
-}
+import { usuario } from '../../types/types';
 
 @Component({
   selector: 'app-pemissao',
@@ -19,24 +13,8 @@ interface Food {
 export class PemissaoComponent  implements OnInit {
   public permissao: FormGroup | any
   @Input() api!: ConsultorioApiService
-  @Input() user!: User
-  foods: Food[] = [
-    {
-      id: 1,
-      name: 'Apples',
-      type: 'fruit',
-    },
-    {
-      id: 2,
-      name: 'Carrots',
-      type: 'vegetable',
-    },
-    {
-      id: 3,
-      name: 'Cupcakes',
-      type: 'dessert',
-    },
-  ];
+  @Input() user!: usuario
+  public roles: any
 
   constructor(private modalCtrl: ModalController, private alertController: AlertController) { }
 
@@ -45,31 +23,38 @@ export class PemissaoComponent  implements OnInit {
       email: new FormControl({ value: this.user.email, disabled: true }),
       role: new FormControl('', [Validators.required])
     })
+    this.obterRoles()
   }
 
   cancel() {
     return this.modalCtrl.dismiss(false, 'cancel');
   }
 
-  async confirm() {
+  confirm() {
     if (this.permissao.valid) {
-      await this.api.cadastro({
+      this.api.adicionarRole({
         Email: this.permissao.get('email')?.value,
-        Senha: this.permissao.get('role')?.value
+        Roles: [ this.permissao.get('role')?.value ]
+      }).subscribe({
+        next: () => {
+          this.presentAlertSucesso()
+        },
+        error: (erro) => {
+          this.presentAlert(erro.message)
+        }
       })
-      //  .then(async result => {
-      //  if (result.sucesso) {
-      //    this.presentAlertSucesso();
-      //    return
-      //  }
-
-      //  await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-      //}).catch(async erro => {
-      //  await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
-      //})
     }
+  }
 
-    return
+  private obterRoles() {
+    this.api.obterRoles().subscribe({
+      next: (result) => {
+        this.roles = result
+      },
+      error: (erro) => {
+        this.presentAlert(erro.message)
+      }
+    })
   }
 
   async presentAlert(erro: string) {
@@ -95,5 +80,19 @@ export class PemissaoComponent  implements OnInit {
     });
 
     await alert.present();
+  }
+
+  remover(role: string) {
+    this.api.removerRole({
+      Email: this.permissao.get('email')?.value,
+      Roles: [ role ]
+    }).subscribe({
+      next: () => {
+        this.presentAlertSucesso()
+      },
+      error: (erro) => {
+        this.presentAlert(erro.message)
+      }
+    })
   }
 }

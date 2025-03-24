@@ -3,7 +3,6 @@ import { ConsultorioApiService } from '../../services/api/consultorio-api.servic
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ModalController } from '@ionic/angular';
 import { ConfirmarSenha } from '../../extensoes/confirmar-senha.validator';
-import { obterMensagemErro } from '../../extensoes/errors.api';
 
 @Component({
   selector: 'app-atualizar-senha-interno',
@@ -31,25 +30,21 @@ export class AtualizarSenhaInternoComponent implements OnInit {
     return this.modalCtrl.dismiss(false, 'cancel');
   }
 
-  async confirm() {
+  confirm() {
     if (this.cadastro.valid) {
-      await this.api.atualizarSenhaInterno({
+      (this.api.atualizarSenhaInterno({
         Email: this.cadastro.get('email')?.value,
         Senha: this.cadastro.get('senha')?.value,
         SenhaConfirmacao: this.cadastro.get('confirmarSenha')?.value
-      }).then(async result => {
-        if (result.sucesso) {
-          this.presentAlertSucesso();
-          return
+      })).subscribe({
+        next: () => {
+          this.presentAlertSucesso()
+        },
+        error: (erro) => {
+          this.presentAlert(erro.message)
         }
-
-        await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-      }).catch(async erro => {
-        await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
       })
     }
-
-    return
   }
 
   async presentAlertSucesso() {

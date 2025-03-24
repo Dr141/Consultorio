@@ -1,5 +1,4 @@
-﻿using Consultorio.Identity.Modelo.DTOs.Response;
-using Consultorio.Identity.Modelo.DTOs.Resquest;
+﻿using Consultorio.Identity.Modelo.DTOs.Resquest;
 using Consultorio.Identity.Modelo.Enumerados;
 using Consultorio.Identity.Modelo.Interfaces.Servicos;
 using Microsoft.AspNetCore.Authorization;
@@ -20,7 +19,7 @@ public class RoleController : ControllerBase
 
     [EndpointSummary("Adicionar")]
     [EndpointDescription("Método para adicionar role.")]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost(Name = "AdicionarRole")]
     public async Task<ActionResult<bool>> Adicionar(UsuarioRoleRequest adicionarRole)
@@ -28,23 +27,37 @@ public class RoleController : ControllerBase
         try
         {
             await _identity.AdicionarRole(adicionarRole);
-            return StatusCode(StatusCodes.Status202Accepted, true);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [EndpointSummary("Remover")]
     [EndpointDescription("Método para remover role.")]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [HttpDelete(Name = "RemoverRole")]
+    [HttpPut(Name = "RemoverRole")]
     public async Task<ActionResult<bool>> Remover(UsuarioRoleRequest removerRole)
     {
         try
         {
             await _identity.RemoverRole(removerRole);
-            return StatusCode(StatusCodes.Status202Accepted, true);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [EndpointSummary("ObterRoles")]
+    [EndpointDescription("Método para adicionar role.")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpGet(Name = "ObterRoles")]
+    public async Task<ActionResult<bool>> ObterRoles()
+    {
+        try
+        {
+            return Ok(await _identity.ObterRoles());
+        }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

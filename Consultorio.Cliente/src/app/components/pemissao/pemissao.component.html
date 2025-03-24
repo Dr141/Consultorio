@@ -5,7 +5,7 @@
     </ion-buttons>
     <ion-title style="text-align:center">Configurar permissão(Role)</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="confirm()" [strong]="true" [disabled]="!permissao.valid" color="secondary">Confirm</ion-button>
+      <ion-button (click)="confirm()" [strong]="true" [disabled]="!permissao.valid" color="secondary">Confirmar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -19,8 +19,8 @@
       </ion-item>
       <ion-item lines="none">
         <ion-select label="Selecione a Role" label-placement="floating" formControlName="role">
-          @for (food of foods; track food) {
-          <ion-select-option [value]="food">{{ food.name }}</ion-select-option>
+          @for (role of roles; track role) {
+          <ion-select-option [value]="role">{{ role }}</ion-select-option>
           }
         </ion-select>
       </ion-item>
@@ -42,7 +42,7 @@
     </ion-item>
     <ion-item *ngFor="let role of user.roles">
       <ion-label>{{role}}</ion-label>
-      <ion-button class="desk-button" color="medium">
+      <ion-button class="desk-button" color="medium" (click)="remover(role)">
         <ion-icon name="trash-outline"></ion-icon>
       </ion-button>
     </ion-item>

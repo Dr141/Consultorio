@@ -18,7 +18,7 @@ public class UsuarioController : ControllerBase
 
     public UsuarioController(IIdentityService identity) => _identity = identity;
 
-    [EndpointSummary("ObterTodos")]
+    [EndpointSummary("ObterUsuarios")]
     [EndpointDescription("Método para obter todos usuários cadastrados.")]
     [ProducesResponseType(typeof(UsuariosResponse), StatusCodes.Status200OK)]
     [HttpGet(Name = "ObterUsuarios")]
@@ -28,11 +28,11 @@ public class UsuarioController : ControllerBase
         return Ok(result);
     }
 
-    [EndpointSummary("AtualizarSenha")]
+    [EndpointSummary("AtualizarSenhaInterna")]
     [EndpointDescription("Método para atualizar a senha de terceiros.")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [HttpPost(Name = "AtualizarSenhaInterno")]
+    [HttpPost(Name = "AtualizarSenhaInterna")]
     public async Task<ActionResult<bool>> AtualizarSenha(UsuarioCadastroRequest atualizarSenha)
     {
         try
@@ -40,6 +40,6 @@ public class UsuarioController : ControllerBase
             var result = await _identity.AtualizarSenhaInterno(atualizarSenha);
             return StatusCode(StatusCodes.Status202Accepted,true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

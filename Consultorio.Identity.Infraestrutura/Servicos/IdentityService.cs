@@ -41,6 +41,15 @@ public class IdentityService : IIdentityService
 
     #region Métodos Claims e Roles
     /// <summary>
+    /// Retorna todas a roles cadastradas.
+    /// </summary>
+    /// <returns>Retorna uma <see cref="List{string}"/> com todas as roles.</returns>
+    public async Task<List<string>> ObterRoles()
+    {
+        return await _roleManager.Roles.AsNoTracking().Select(role => role.Name).ToListAsync() ?? [];
+    }
+        
+    /// <summary>
     /// Remove Roles ao usuário.
     /// </summary>
     /// <param name="usuarioRole">Fornecer um objeto do tipo <see cref="UsuarioRoleRequest"/></param>
@@ -56,8 +65,8 @@ public class IdentityService : IIdentityService
 
             if (user is IdentityUser)
             {
-                var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
-                return result.Succeeded;
+                var result = await _userManager.RemoveFromRoleAsync(user, usuarioRole.Roles.FirstOrDefault());
+                return result.Succeeded ? true : throw new Exception(result.Errors?.FirstOrDefault()?.Description);
             }
 
             throw new Exception($"Usuário com e-mail {usuarioRole.Email}, não foi encontrado.");
@@ -66,6 +75,15 @@ public class IdentityService : IIdentityService
         {
             throw;
         }
+    }
+
+    /// <summary>
+    /// Retorna todas a claims cadastradas.
+    /// </summary>
+    /// <returns>Retorna uma <see cref="List{string}"/> com todas as claims.</returns>
+    public Task<List<string>> ObterClaim()
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -277,11 +295,9 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// /// <param name="refreshToken">Fornecer uma <see cref="string"/> com o refresh token</param>
     /// <returns>O método retorna um <see cref="bool"/></returns>
-    public async Task<bool> Logout(string refreshToken)
+    public async Task<bool> Logout(string email)
     {
-        var users = await _userManager.Users.ToListAsync();
-        var user = users.FirstOrDefault(u =>
-            _userManager.GetAuthenticationTokenAsync(u, "JWT", "RefreshToken").Result == refreshToken);
+        var user = await _userManager.Users.Where(use => use.Email.Equals(email)).FirstAsync();
 
         if (user is IdentityUser)
         {
@@ -392,9 +408,8 @@ public class IdentityService : IIdentityService
         var dataExpiracaoRefreshToken = DateTime.Now.AddHours(_jwtOptions.RefreshTokenExpiration);
         // Para evitar a geração de token de refresh, caso o usuário estar usando um token de refresh.
         var refreshToken = gerarRefreshToken ? GerarToken(refreshTokenClaims, dataExpiracaoRefreshToken) : string.Empty;
-
-        await _userManager.SetAuthenticationTokenAsync(user, "JWT", "RefreshToken", refreshToken);  
-
+        //por enquanto o token não sera salvo no db
+        //await _userManager.SetAuthenticationTokenAsync(user, "JWT", "RefreshToken", refreshToken);
         return new UsuarioLoginResponse(accessToken, refreshToken);
     }
     #endregion
