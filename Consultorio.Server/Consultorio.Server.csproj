@@ -6,9 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>9c94e8c0-06a7-438b-8b7a-befe7b96a7a7</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <SpaRoot>..\consultorio.client</SpaRoot>
+    <SpaRoot>..\consultorio.cliente</SpaRoot>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:56759</SpaProxyServerUrl>
+    <SpaProxyServerUrl>http://localhost:54167</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>

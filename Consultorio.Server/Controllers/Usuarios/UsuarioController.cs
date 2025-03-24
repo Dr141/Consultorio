@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Usuarios;
 
-[Route("api/[controller]")]
+[Route("[controller]")]
 [Authorize(Roles = nameof(Roles.Administrador))]
 [ApiController]
 public class UsuarioController : ControllerBase
@@ -18,146 +18,28 @@ public class UsuarioController : ControllerBase
 
     public UsuarioController(IIdentityService identity) => _identity = identity;
 
-    [EndpointSummary("ObterTodos")]
+    [EndpointSummary("ObterUsuarios")]
     [EndpointDescription("Método para obter todos usuários cadastrados.")]
-    [ProducesResponseType(typeof(UsuariosResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpGet("ObterTodosUsuarios")]
+    [ProducesResponseType(typeof(UsuariosResponse), StatusCodes.Status200OK)]
+    [HttpGet(Name = "ObterUsuarios")]
     public async Task<ActionResult<UsuariosResponse>> ObterTodos()
     {
         var result = await _identity.ObterTodosUsuarios();
         return Ok(result);
     }
 
-    [EndpointSummary("AtualizarSenha")]
+    [EndpointSummary("AtualizarSenhaInterna")]
     [EndpointDescription("Método para atualizar a senha de terceiros.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpPut("AtualizarSenha")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AtualizarSenha(UsuarioCadastroRequest atualizarSenha)
+    [HttpPost(Name = "AtualizarSenhaInterna")]
+    public async Task<ActionResult<bool>> AtualizarSenha(UsuarioCadastroRequest atualizarSenha)
     {
         try
         {
-            if (ModelState.IsValid)
-            {
-                var result = await _identity.AtualizarSenhaInterno(atualizarSenha);
-
-                if (result.Sucesso)
-                    return Ok(result);
-
-                return BadRequest(result.Erros);
-            }
-
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            var result = await _identity.AtualizarSenhaInterno(atualizarSenha);
+            return StatusCode(StatusCodes.Status202Accepted,true);
         }
-        catch (Exception ex) { return StatusCode(StatusCodes.Status500InternalServerError, ex.Message); }
-    }
-
-    [EndpointSummary("AdicionarRole")]
-    [EndpointDescription("Método para adicionar role.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpPost("AdicionarRole")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AdicionarRole(UsuarioRoleRequest adicionarRole)
-    {
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await _identity.AdicionarRole(adicionarRole);
-
-                if (result.Sucesso)
-                    return Ok(result);
-
-                return BadRequest(result.Erros);
-            }
-
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-        catch (Exception ex) { return StatusCode(StatusCodes.Status500InternalServerError, ex.Message); }
-    }
-
-    [EndpointSummary("AdicionarRole")]
-    [EndpointDescription("Método para remover role.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpDelete("RemoverRole")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> RemoverRole(UsuarioRoleRequest removerRole)
-    {
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await _identity.RemoverRole(removerRole);
-
-                if (result.Sucesso)
-                    return Ok(result);
-
-                return BadRequest(result.Erros);
-            }
-
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-        catch (Exception ex) { return StatusCode(StatusCodes.Status500InternalServerError, ex.Message); }
-    }
-
-    [EndpointSummary("AdicionarClaim")]
-    [EndpointDescription("Método para adicionar claim.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpPost("AdicionarClaim")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AdicionarClaim(UsuarioClaimRequest adicionarClaim)
-    {
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await _identity.AdicionarClaim(adicionarClaim);
-
-                if (result.Sucesso)
-                    return Ok(result);
-
-                return BadRequest(result.Erros);
-            }
-
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-        catch (Exception ex) { return StatusCode(StatusCodes.Status500InternalServerError, ex.Message); }
-    }
-
-    [EndpointSummary("RemoverClaim")]
-    [EndpointDescription("Método para remover claim.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [HttpDelete("RemoverClaim")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> RemoverClaim(UsuarioClaimRequest removerClaim)
-    {
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var result = await _identity.RemoverClaim(removerClaim);
-
-                if (result.Sucesso)
-                    return Ok(result);
-
-                return BadRequest(result.Erros);
-            }
-
-            return StatusCode(StatusCodes.Status500InternalServerError);
-        }
-        catch (Exception ex) { return StatusCode(StatusCodes.Status500InternalServerError, ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

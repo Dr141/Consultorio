@@ -1,0 +1,38 @@
+<ion-content [fullscreen]="true">
+  <div>
+    <ion-card id="cardLogin">
+      @if(erro.length > 0){
+      <ion-card-content id="contentErro">
+        <ion-label>{{erro}}</ion-label>
+      </ion-card-content>
+      }
+      <ion-card-header>
+        <ion-card-title>Login</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <form [formGroup]="autenticacao" (ngSubmit)="onSubmit()">
+          <ion-list>
+            <ion-item lines="none">
+              <ion-input type="email" label="Email" labelPlacement="floating" placeholder="Digite o seu e-mail" formControlName="email"
+                         helperText="Entre com e-mail válido"
+                         error-text="Email inválido"></ion-input>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-input type="password" label="Senha" labelPlacement="floating" formControlName="senha"
+                         helperText="Entre com uma senha válida"
+                         error-text="Senha inválida">
+                <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
+              </ion-input>
+            </ion-item>
+            <ion-item lines="none" id="itemEntrar">
+              <ion-button type="submit" fill="outline" color="secondary" [disabled]="!autenticacao.valid" slot="end">Entrar</ion-button>
+            </ion-item>
+            <!--<ion-item lines="none">
+          <ion-button fill="clear" color="secondary" slot="end" (click)="openModal()">Registre-se</ion-button>
+        </ion-item>-->
+          </ion-list>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
