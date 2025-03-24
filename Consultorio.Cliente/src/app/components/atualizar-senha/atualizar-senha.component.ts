@@ -3,7 +3,6 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
 import { AlertController, ModalController } from '@ionic/angular';
 import { ConfirmarSenha } from '../../extensoes/confirmar-senha.validator';
-import { obterMensagemErro } from '../../extensoes/errors.api';
 
 @Component({
   selector: 'app-atualizar-senha',

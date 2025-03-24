@@ -21,12 +21,14 @@
           Atualizar senha
         </ion-button>
       </ion-item>
+      @if(admin){
       <ion-item>
         <ion-button fill="clear" color="medium" size="default" (click)="users()">
           <ion-icon slot="icon-only" name="people" class="ion-padding"></ion-icon>
           Usuários
         </ion-button>
       </ion-item>
+      }
       <ion-item>
         <ion-button fill="clear" color="medium" (click)="logOut()" size="default">
           <ion-icon slot="icon-only" name="log-out" class="ion-padding"></ion-icon>
