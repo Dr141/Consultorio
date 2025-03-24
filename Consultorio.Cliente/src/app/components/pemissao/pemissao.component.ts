@@ -56,16 +56,17 @@ export class PemissaoComponent  implements OnInit {
       await this.api.cadastro({
         Email: this.permissao.get('email')?.value,
         Senha: this.permissao.get('role')?.value
-      }).then(async result => {
-        if (result.sucesso) {
-          this.presentAlertSucesso();
-          return
-        }
-
-        await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-      }).catch(async erro => {
-        await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
       })
+      //  .then(async result => {
+      //  if (result.sucesso) {
+      //    this.presentAlertSucesso();
+      //    return
+      //  }
+
+      //  await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
+      //}).catch(async erro => {
+      //  await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
+      //})
     }
 
     return

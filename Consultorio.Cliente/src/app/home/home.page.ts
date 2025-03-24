@@ -14,8 +14,12 @@ export class HomePage {
   constructor(private modalController: ModalController, private api: ConsultorioApiService, private cache: CacheService, private navCtrl: NavController) {}
 
   logOut() {
-    this.cache.RemoveTodosCookies()
-    this.navCtrl.navigateForward('login')
+    this.api.logout().subscribe({
+      next: () => {
+        this.navCtrl.navigateForward('login')
+      },
+      error: () => { }
+    })
   }
 
   users() {

@@ -1,7 +1,7 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, catchError, firstValueFrom, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -10,37 +10,24 @@ export class ConsultorioApiService {
 
   constructor(private http: HttpClient, private cache: CacheService) { }
 
-  async refreshLogin() {
-    var request = this.http.post('/api/Autenticacao/AtualizarToken', this.obterHeaders())
-
-    await this.observable(request)
-      .then(result => {
-        this.salvarAutenticacao(result)
-      })
-      .catch(error => {
-        console.error(error)
-      })
+  refreshToken() {
+    return this.http.get('Autenticacao', { withCredentials: true });    
   }
 
-  async cadastro(user: any): Promise<any> {
-    var result = this.http.post('/api/Autenticacao/Cadastro', user)
-
-    return await this.observable(result)
+  cadastro(user: any) {
+    return this.observable(this.http.post('cadastroUsuario', user, { withCredentials: true }))
   }
 
-  async login(email: string, senha: string): Promise<any> {
-    var result = this.http.post('autenticacao', {
-      Email: email,
-      Senha: senha
-    })
-
-    return await this.observable(result)
+  login(email: string, senha: string) {       
+    return this.observable(this.http.post('autenticacao', { Email: email, Senha: senha },{ withCredentials: true }))
   }
 
-  async atualizarSenha(newSenha: any): Promise<any> {
-    var result = this.http.put('/api/Autenticacao/AtualizarSenha', newSenha, this.obterHeaders())
+  logout() {
+    return this.observable(this.http.put(`autenticacao`, {}, { withCredentials: true }));
+  }
 
-    return await this.observable(result)
+  atualizarSenha(newSenha: any) {
+    return this.observable(this.http.put('cadastroUsuario', newSenha, { withCredentials: true }))
   }
 
   async atualizarSenhaInterno(userNewSenha: any): Promise<any> {
@@ -79,13 +66,11 @@ export class ConsultorioApiService {
     return await this.observable(result)
   }
 
-  private async observable(resultado: Observable<any>): Promise<any> {
-    try {
-      return await firstValueFrom(resultado)
-    }
-    catch (error) {
-      return error
-    }
+  private observable(resultado: Observable<any>) {
+    return resultado.pipe(
+      catchError((error: HttpErrorResponse) => {
+        return throwError(() => new Error(error.error.message));
+    }))
   }
 
   salvarAutenticacao(usuarioAut: any) {

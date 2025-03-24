@@ -10,6 +10,11 @@
   </ion-toolbar>
 </ion-header>
 <ion-content class="ion-padding">
+  @if(erro.length > 0){
+  <ion-card id="erro">
+    <p>{{erro}}</p>
+  </ion-card>
+  }
   <form [formGroup]="cadastro">
     <ion-list>
       <ion-item lines="none">

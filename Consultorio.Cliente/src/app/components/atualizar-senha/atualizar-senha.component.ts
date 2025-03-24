@@ -36,16 +36,17 @@ export class AtualizarSenhaComponent  implements OnInit {
         SenhaAtual: this.cadastro.get('senhaAtual')?.value,
         NovaSenha: this.cadastro.get('senha')?.value,
         SenhaConfirmacao: this.cadastro.get('confirmarSenha')?.value
-      }).then(async result => {
-        if (result.sucesso) {
-          this.presentAlertSucesso();
-          return
-        }
-
-        await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-      }).catch(async erro => {
-        await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
       })
+      //  .then(async result => {
+      //  if (result.sucesso) {
+      //    this.presentAlertSucesso();
+      //    return
+      //  }
+
+      //  await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
+      //}).catch(async erro => {
+      //  await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
+      //})
     }
 
     return

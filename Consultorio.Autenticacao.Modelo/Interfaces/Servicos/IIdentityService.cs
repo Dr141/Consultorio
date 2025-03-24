@@ -8,14 +8,15 @@ namespace Consultorio.Identity.Modelo.Interfaces.Servicos;
 /// </summary>
 public interface IIdentityService
 {
-    Task<UsuarioCadastroResponse> CadastrarUsuario(UsuarioCadastroRequest usuarioCadastro);
+    Task<bool> CadastrarUsuario(UsuarioCadastroRequest usuarioCadastro);
     Task<UsuarioLoginResponse> Login(UsuarioLoginRequest usuarioLogin);
+    Task<bool> Logout(string refreshToken);
     Task<UsuarioLoginResponse> LoginSemSenha(string usuarioId);
-    Task<UsuarioCadastroResponse> AdicionarRole(UsuarioRoleRequest usuarioRole);
-    Task<UsuarioCadastroResponse> RemoverRole(UsuarioRoleRequest usuarioRole);
-    Task<UsuarioCadastroResponse> AdicionarClaim(UsuarioClaimRequest usuarioClaim);
-    Task<UsuarioCadastroResponse> RemoverClaim(UsuarioClaimRequest usuarioClaim);
-    Task<UsuarioCadastroResponse> AtualizarSenha(UsuarioAtualizarSenhaResquest usuarioLoginAtualizarSenha, string email);
-    Task<UsuarioCadastroResponse> AtualizarSenhaInterno(UsuarioCadastroRequest usuarioLoginAtualizarSenha);
+    Task<bool> AdicionarRole(UsuarioRoleRequest usuarioRole);
+    Task<bool> RemoverRole(UsuarioRoleRequest usuarioRole);
+    Task<bool> AdicionarClaim(UsuarioClaimRequest usuarioClaim);
+    Task<bool> RemoverClaim(UsuarioClaimRequest usuarioClaim);
+    Task<bool> AtualizarSenha(UsuarioAtualizarSenhaResquest usuarioLoginAtualizarSenha, string email);
+    Task<bool> AtualizarSenhaInterno(UsuarioCadastroRequest usuarioLoginAtualizarSenha);
     Task<UsuariosResponse> ObterTodosUsuarios();
 }

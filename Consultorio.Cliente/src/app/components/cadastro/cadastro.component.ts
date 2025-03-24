@@ -1,9 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { AlertController, ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { ConfirmarSenha } from '../../extensoes/confirmar-senha.validator';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
-import { obterMensagemErro } from '../../extensoes/errors.api';
 
 @Component({
   selector: 'app-cadastro',
@@ -13,8 +12,8 @@ import { obterMensagemErro } from '../../extensoes/errors.api';
 export class CadastroComponent  implements OnInit {
   public cadastro: FormGroup | any
   @Input() api!: ConsultorioApiService
-
-  constructor(private modalCtrl: ModalController, private alertController: AlertController) { }
+  public erro: string = ''
+  constructor(private modalCtrl: ModalController) { }
 
   ngOnInit(): void {
     this.cadastro = new FormGroup({
@@ -36,43 +35,16 @@ export class CadastroComponent  implements OnInit {
         Email: this.cadastro.get('email')?.value,
         Senha: this.cadastro.get('senha')?.value,
         SenhaConfirmacao: this.cadastro.get('confirmarSenha')?.value
-      }).then(async result => {
-        if (result.sucesso) {
-          this.presentAlertSucesso();
-          return
+      }).subscribe({
+        next: () => {
+          this.modalCtrl.dismiss('confirm')
+        },
+        error: error => {
+          this.erro = error.message
         }
-
-        await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-      }).catch(async erro => {
-        await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
-      })      
+      })    
     }
 
     return
-  }
-
-  async presentAlert(erro: string) {
-    const alert = await this.alertController.create({
-      header: 'Atenção ocorreu erro!',
-      message: erro,
-      buttons: ['Ok'],
-    });
-
-    await alert.present();
-  }
-
-  async presentAlertSucesso() {
-    const alert = await this.alertController.create({
-      header: 'Atenção!',
-      message: 'Cadastro realizado com sucesso.',
-      buttons: [{
-        text: 'Ok',
-        handler: () => {
-          this.modalCtrl.dismiss('confirm')
-        }
-      }],
-    });
-
-    await alert.present();
-  }
+  }  
 }

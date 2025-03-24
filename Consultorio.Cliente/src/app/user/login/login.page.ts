@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { AlertController, ModalController, NavController } from '@ionic/angular';
+import { ModalController, NavController } from '@ionic/angular';
 import { CadastroComponent } from '../../components/cadastro/cadastro.component';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
-import { obterMensagemErro } from '../../extensoes/errors.api';
 
 @Component({
   selector: 'app-login',
@@ -12,8 +11,8 @@ import { obterMensagemErro } from '../../extensoes/errors.api';
 })
 export class LoginPage implements OnInit {
   public autenticacao: FormGroup | any
-
-  constructor(private modalController: ModalController, private api: ConsultorioApiService, private alertController: AlertController, private navCtrl: NavController) { }
+  public erro: string = ''
+  constructor(private modalController: ModalController, private api: ConsultorioApiService, private navCtrl: NavController) { }
 
   ngOnInit() {
     this.autenticacao = new FormGroup({
@@ -22,21 +21,16 @@ export class LoginPage implements OnInit {
     })
   }
 
-  async onSubmit() {
+  onSubmit() {
     if (this.autenticacao.valid) {
-      await this.api.login(this.autenticacao.get('email')?.value, this.autenticacao.get('senha')?.value)
-        .then(async result => {
-          if (result.sucesso) {
-            this.api.salvarAutenticacao(result)
-            this.navCtrl.navigateForward('home')
-          }
-          else {
-            await this.presentAlert(obterMensagemErro(result.error.errors ?? result.error))
-          }
-        })
-        .catch(async erro => {
-          await this.presentAlert(obterMensagemErro(erro.error.errors ?? erro.error))
-        })
+      this.api.login(this.autenticacao.get('email')?.value, this.autenticacao.get('senha')?.value).subscribe({
+        next: (response) => {
+          this.navCtrl.navigateForward('home')
+        },
+        error: (error) => {
+          this.erro = error.message // Exibir mensagem na tela
+        }        
+      })
     }
   }
 
@@ -47,15 +41,5 @@ export class LoginPage implements OnInit {
     })
 
     await modal.present()
-  }
-
-  async presentAlert(erro: string) {
-    const alert = await this.alertController.create({
-      header: 'Atenção ocorreu erro!',
-      message: erro,
-      buttons: ['Ok'],
-    })
-
-    await alert.present();
   }
 }

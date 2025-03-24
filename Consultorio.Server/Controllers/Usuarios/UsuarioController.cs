@@ -33,12 +33,12 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost(Name = "AtualizarSenhaInterno")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AtualizarSenha(UsuarioCadastroRequest atualizarSenha)
+    public async Task<ActionResult<bool>> AtualizarSenha(UsuarioCadastroRequest atualizarSenha)
     {
         try
         {
             var result = await _identity.AtualizarSenhaInterno(atualizarSenha);
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted,true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }

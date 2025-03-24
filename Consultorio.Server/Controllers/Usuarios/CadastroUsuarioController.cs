@@ -22,14 +22,13 @@ public class CadastroUsuarioController : ControllerBase
     [EndpointDescription("Método para realizar Cadastro na API.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [AllowAnonymous]
-    [HttpPost(Name = "CadastroUsuario")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> Cadastrar(UsuarioCadastroRequest cadastro)
+    [HttpPost(Name = "Cadastrar")]
+    public async Task<ActionResult<bool>> Cadastrar(UsuarioCadastroRequest cadastro)
     {
         try
         {
             var result = await _identity.CadastrarUsuario(cadastro);
-            return StatusCode(StatusCodes.Status201Created);
+            return StatusCode(StatusCodes.Status201Created, true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
@@ -39,7 +38,7 @@ public class CadastroUsuarioController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPut(Name = "AtualizarSenha")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AtualizarSenha(UsuarioAtualizarSenhaResquest atualizarSenha)
+    public async Task<ActionResult<bool>> AtualizarSenha(UsuarioAtualizarSenhaResquest atualizarSenha)
     {
         try
         {
@@ -49,7 +48,7 @@ public class CadastroUsuarioController : ControllerBase
                 return BadRequest("A nova senha deve ser diferente da senha atual.");
             var result = await _identity.AtualizarSenha(atualizarSenha, emailClaim);
 
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted, true);
 
         }
         catch (Exception ex) { return BadRequest(ex.Message); }

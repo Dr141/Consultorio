@@ -23,12 +23,12 @@ public class RoleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost(Name = "AdicionarRole")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> Adicionar(UsuarioRoleRequest adicionarRole)
+    public async Task<ActionResult<bool>> Adicionar(UsuarioRoleRequest adicionarRole)
     {
         try
         {
             await _identity.AdicionarRole(adicionarRole);
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted, true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
@@ -38,12 +38,12 @@ public class RoleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpDelete(Name = "RemoverRole")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> Remover(UsuarioRoleRequest removerRole)
+    public async Task<ActionResult<bool>> Remover(UsuarioRoleRequest removerRole)
     {
         try
         {
             await _identity.RemoverRole(removerRole);
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted, true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }

@@ -22,6 +22,7 @@ public class IdentityService : IIdentityService
     private readonly RoleManager<IdentityRole> _roleManager;
     #endregion
 
+    #region Construtor
     /// <summary>
     /// Construtor para iniciar a classe <see cref="IdentityService"/>
     /// com todos os objetos necessário.
@@ -36,16 +37,18 @@ public class IdentityService : IIdentityService
         _jwtOptions = jwtOptions.Value;
         _roleManager = roleManager;
     }
+    #endregion
 
+    #region Métodos Claims e Roles
     /// <summary>
     /// Remove Roles ao usuário.
     /// </summary>
     /// <param name="usuarioRole">Fornecer um objeto do tipo <see cref="UsuarioRoleRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> RemoverRole(UsuarioRoleRequest usuarioRole)
+    public async Task<bool> RemoverRole(UsuarioRoleRequest usuarioRole)
     {
         try
         {
@@ -54,7 +57,7 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
-                return new UsuarioCadastroResponse(result.Succeeded);
+                return result.Succeeded;
             }
 
             throw new Exception($"Usuário com e-mail {usuarioRole.Email}, não foi encontrado.");
@@ -70,10 +73,10 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// <param name="usuarioClaim">Fornecer um objeto do tipo <see cref="UsuarioClaimRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> AdicionarClaim(UsuarioClaimRequest usuarioClaim)
+    public async Task<bool> AdicionarClaim(UsuarioClaimRequest usuarioClaim)
     {
         try
         {
@@ -81,7 +84,7 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
-                return new UsuarioCadastroResponse(result.Succeeded);
+                return result.Succeeded;
             }
 
             throw new Exception($"Usuário com e-mail {usuarioClaim.Email}, não foi encontrado.");
@@ -97,10 +100,10 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// <param name="usuarioClaim">Fornecer um objeto do tipo <see cref="UsuarioClaimRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> RemoverClaim(UsuarioClaimRequest usuarioClaim)
+    public async Task<bool> RemoverClaim(UsuarioClaimRequest usuarioClaim)
     {
         try
         {
@@ -108,7 +111,7 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.RemoveClaimsAsync(user, usuarioClaim.Claims.Select(x => new Claim(x.Key, x.Value)));
-                return new UsuarioCadastroResponse(result.Succeeded);
+                return result.Succeeded;
             }
 
             throw new Exception($"Usuário com e-mail {usuarioClaim.Email}, não foi encontrado.");
@@ -124,10 +127,10 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// <param name="usuarioRole">Fornecer um objeto do tipo <see cref="UsuarioRoleRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> AdicionarRole(UsuarioRoleRequest usuarioRole)
+    public async Task<bool> AdicionarRole(UsuarioRoleRequest usuarioRole)
     {
         try
         {
@@ -136,7 +139,7 @@ public class IdentityService : IIdentityService
             if (user is IdentityUser)
             {
                 var result = await _userManager.AddToRolesAsync(user, usuarioRole.Roles);
-                return new UsuarioCadastroResponse(result.Succeeded);
+                return result.Succeeded;
             }
 
             throw new Exception($"Usuário com e-mail {usuarioRole.Email}, não foi encontrado.");
@@ -146,25 +149,26 @@ public class IdentityService : IIdentityService
             throw;
         }
     }
+    #endregion
 
+    #region Métodos para gerenciamento de usuários
     /// <summary>
     /// Altera a senha de usuário.
     /// </summary>
     /// <param name="usuarioLoginAtualizarSenha">Fornecer um objeto do tipo <see cref="UsuarioAtualizarSenhaResquest"/>.</param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> AtualizarSenha(UsuarioAtualizarSenhaResquest usuarioLoginAtualizarSenha, string email)
+    public async Task<bool> AtualizarSenha(UsuarioAtualizarSenhaResquest usuarioLoginAtualizarSenha, string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
 
         if (user is IdentityUser)
         {
-            var result = await _userManager.ChangePasswordAsync(user, usuarioLoginAtualizarSenha.SenhaAtual, usuarioLoginAtualizarSenha.NovaSenha);
-            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded);
+            var result = await _userManager.ChangePasswordAsync(user, usuarioLoginAtualizarSenha.SenhaAtual, usuarioLoginAtualizarSenha.NovaSenha);            
 
-            return usuarioResponse;
+            return result.Succeeded;
         }
 
         throw new UnauthorizedAccessException($"Usuário com e-mail {email}, não foi encontrado.");
@@ -175,10 +179,10 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// <param name="usuarioLoginAtualizarSenha">Fornecer um objeto do tipo <see cref="UsuarioCadastroRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> AtualizarSenhaInterno(UsuarioCadastroRequest usuarioLoginAtualizarSenha)
+    public async Task<bool> AtualizarSenhaInterno(UsuarioCadastroRequest usuarioLoginAtualizarSenha)
     {
         var user = await _userManager.FindByEmailAsync(usuarioLoginAtualizarSenha.Email);
 
@@ -186,9 +190,8 @@ public class IdentityService : IIdentityService
         {
             await _userManager.RemovePasswordAsync(user);
             var result = await _userManager.AddPasswordAsync(user, usuarioLoginAtualizarSenha.Senha);
-            var usuarioResponse = new UsuarioCadastroResponse(result.Succeeded);
 
-            return usuarioResponse;
+            return result.Succeeded;
         }
 
         throw new ArgumentException($"Usuário com e-mail {usuarioLoginAtualizarSenha.Email}, não foi encontrado.");
@@ -199,10 +202,10 @@ public class IdentityService : IIdentityService
     /// </summary>
     /// <param name="usuarioCadastro">Fornecer um objeto do tipo <see cref="UsuarioCadastroRequest"/></param>
     /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioCadastroResponse"/>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="bool"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioCadastroResponse> CadastrarUsuario(UsuarioCadastroRequest usuarioCadastro)
+    public async Task<bool> CadastrarUsuario(UsuarioCadastroRequest usuarioCadastro)
     {
         IdentityUser identityUser = new IdentityUser
         {
@@ -215,9 +218,35 @@ public class IdentityService : IIdentityService
         if (result.Succeeded)
             await _userManager.SetLockoutEnabledAsync(identityUser, false);
 
-        return new UsuarioCadastroResponse(result.Succeeded);
+        return result.Succeeded;
     }
 
+    /// <summary>
+    /// Método para obter todos os usuário cadastrados.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuariosResponse"/>
+    /// ao final da operação.
+    /// </returns>
+    public async Task<UsuariosResponse> ObterTodosUsuarios()
+    {
+        var result = await _userManager.Users.AsNoTracking().ToListAsync();
+
+        if (result is List<IdentityUser>)
+            return new UsuariosResponse(result.Select(x => new UsuarioDto(x.Email, x.EmailConfirmed,
+                                                                                   _userManager.GetClaimsAsync(x)
+                                                                                               .Result,
+                                                                                   _userManager.GetRolesAsync(x)
+                                                                                               .Result
+                                                                         )
+                                                            )
+            );
+
+        throw new Exception("Não foi encontrado usuários cadastrado.");
+    }
+    #endregion
+
+    #region Métodos para Autenticação
     /// <summary>
     /// Método para autenticação do usuário.
     /// </summary>
@@ -244,50 +273,51 @@ public class IdentityService : IIdentityService
     }
 
     /// <summary>
+    /// Método para realizar logout.
+    /// </summary>
+    /// /// <param name="refreshToken">Fornecer uma <see cref="string"/> com o refresh token</param>
+    /// <returns>O método retorna um <see cref="bool"/></returns>
+    public async Task<bool> Logout(string refreshToken)
+    {
+        var users = await _userManager.Users.ToListAsync();
+        var user = users.FirstOrDefault(u =>
+            _userManager.GetAuthenticationTokenAsync(u, "JWT", "RefreshToken").Result == refreshToken);
+
+        if (user is IdentityUser)
+        {
+            await _userManager.RemoveAuthenticationTokenAsync(user, "JWT", "RefreshToken");
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Método para renovar token.
     /// </summary>
-    /// <param name="usuarioId">Fornecer uma <see cref="string"/> com o ID do cliente</param>
+    /// <param name="refreshToken">Fornecer uma <see cref="string"/> com o refresh token</param>
     /// <returns>
     /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioLoginResponse"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioLoginResponse> LoginSemSenha(string usuarioId)
+    public async Task<UsuarioLoginResponse> LoginSemSenha(string refreshToken)
     {
-        var usuario = await _userManager.FindByIdAsync(usuarioId);
+        IdentityUser? user = _userManager.Users.FirstOrDefault(u =>
+            _userManager.GetAuthenticationTokenAsync(u, "JWT", "RefreshToken").Result == refreshToken);
 
-        List<string> errors = new List<string>();
-        if (await _userManager.IsLockedOutAsync(usuario))
+        if(user is not IdentityUser)
+            throw new UnauthorizedAccessException("Token de atualização inválido");
+
+        if (await _userManager.IsLockedOutAsync(user))
             throw new UnauthorizedAccessException("Essa conta está bloqueada");
-        else if (!await _userManager.IsEmailConfirmedAsync(usuario))
+
+        if (!await _userManager.IsEmailConfirmedAsync(user))
             throw new UnauthorizedAccessException("Essa conta precisa confirmar seu e-mail antes de realizar o login");
 
-        return await GerarCredenciais(usuario.Email);
+        return await GerarCredenciais(user.Email);
     }
-
-    /// <summary>
-    /// Método para obter todos os usuário cadastrados.
-    /// </summary>
-    /// <returns>
-    /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuariosResponse"/>
-    /// ao final da operação.
-    /// </returns>
-    public async Task<UsuariosResponse> ObterTodosUsuarios()
-    {
-        var result = await _userManager.Users.AsNoTracking().ToListAsync();
-
-        if (result is List<IdentityUser>)
-            return new UsuariosResponse(true, result.Select(x => new UsuarioDto(x.Email, x.EmailConfirmed, 
-                                                                                         _userManager.GetClaimsAsync(x)
-                                                                                                     .Result,
-                                                                                         _userManager.GetRolesAsync(x)
-                                                                                                     .Result
-                                                                               )
-                                                            )
-            );
-
-        throw new Exception("Não foi encontrado usuários cadastrado.");
-    }
-
+    #endregion
+        
+    #region Métodos Privados para gerar token
     /// <summary>
     /// Método para gerar token.
     /// </summary>
@@ -351,18 +381,21 @@ public class IdentityService : IIdentityService
     /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioLoginResponse"/>
     /// ao final da operação.
     /// </returns>
-    private async Task<UsuarioLoginResponse> GerarCredenciais(string email)
+    private async Task<UsuarioLoginResponse> GerarCredenciais(string email, bool gerarRefreshToken = true)
     {
         var user = await _userManager.FindByEmailAsync(email);
         var accessTokenClaims = await ObterClaims(user, adicionarClaimsUsuario: true);
-        var refreshTokenClaims = await ObterClaims(user, adicionarClaimsUsuario: false);
-
-        var dataExpiracaoAccessToken = DateTime.Now.AddMinutes(_jwtOptions.AccessTokenExpiration);
-        var dataExpiracaoRefreshToken = DateTime.Now.AddMinutes(_jwtOptions.RefreshTokenExpiration);
-
+        var dataExpiracaoAccessToken = DateTime.Now.AddHours(_jwtOptions.AccessTokenExpiration);
         var accessToken = GerarToken(accessTokenClaims, dataExpiracaoAccessToken);
-        var refreshToken = GerarToken(refreshTokenClaims, dataExpiracaoRefreshToken);
+        
+        var refreshTokenClaims = await ObterClaims(user, adicionarClaimsUsuario: false);
+        var dataExpiracaoRefreshToken = DateTime.Now.AddHours(_jwtOptions.RefreshTokenExpiration);
+        // Para evitar a geração de token de refresh, caso o usuário estar usando um token de refresh.
+        var refreshToken = gerarRefreshToken ? GerarToken(refreshTokenClaims, dataExpiracaoRefreshToken) : string.Empty;
 
-        return new UsuarioLoginResponse(true, accessToken, refreshToken);
+        await _userManager.SetAuthenticationTokenAsync(user, "JWT", "RefreshToken", refreshToken);  
+
+        return new UsuarioLoginResponse(accessToken, refreshToken);
     }
+    #endregion
 }

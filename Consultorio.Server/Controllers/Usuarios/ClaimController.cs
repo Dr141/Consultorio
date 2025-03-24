@@ -23,12 +23,12 @@ public class ClaimController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost(Name = "AdicionarClaim")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> Adicionar(UsuarioClaimRequest adicionarClaim)
+    public async Task<ActionResult<bool>> Adicionar(UsuarioClaimRequest adicionarClaim)
     {
         try
         {
             await _identity.AdicionarClaim(adicionarClaim);
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted, true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
@@ -38,12 +38,12 @@ public class ClaimController : ControllerBase
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpDelete(Name = "RemoverClaim")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> Remover(UsuarioClaimRequest removerClaim)
+    public async Task<ActionResult<bool>> Remover(UsuarioClaimRequest removerClaim)
     {
         try
         {
             await _identity.RemoverClaim(removerClaim);
-            return StatusCode(StatusCodes.Status202Accepted);
+            return StatusCode(StatusCodes.Status202Accepted, true);
         }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }

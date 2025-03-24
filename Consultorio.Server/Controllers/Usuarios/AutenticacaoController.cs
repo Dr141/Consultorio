@@ -1,49 +1,124 @@
-﻿using Consultorio.Identity.Modelo.DTOs.Response;
+﻿using Consultorio.Identity.Modelo.Configuracao;
 using Consultorio.Identity.Modelo.DTOs.Resquest;
 using Consultorio.Identity.Modelo.Interfaces.Servicos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.Extensions.Options;
+
 namespace Consultorio.Server.Controllers.Usuarios;
 
 [Route("[controller]")]
-[Authorize]
+[AllowAnonymous]
 [ApiController]
 public class AutenticacaoController : ControllerBase
 {
     private readonly IIdentityService _identity;
-
-    public AutenticacaoController(IIdentityService identity) => _identity = identity;
+    private readonly JwtOptions _jwtOptions;
+    public AutenticacaoController(IIdentityService identity, IOptions<JwtOptions> jwtOptions)
+    {
+        _identity = identity;
+        _jwtOptions = jwtOptions.Value;
+    }
 
     [EndpointSummary("Login")]
     [EndpointDescription("Método para realizar autenticação na API.")]
-    [ProducesResponseType(typeof(UsuarioLoginResponse), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [AllowAnonymous]
+    [ProducesResponseType(typeof(bool), 200)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]    
     [HttpPost(Name = "Login")]
-    public async Task<ActionResult<UsuarioLoginResponse>> Login(UsuarioLoginRequest usuario)
+    public async Task<ActionResult<bool>> Login(UsuarioLoginRequest usuario)
     {
         try
         {
             var result = await _identity.Login(usuario);
-            return Ok(result);
+            // Configuração do AccessToken (expira em 15 minutos)
+            var accessTokenOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Expira em 1 hora
+                Path = "/" // Disponível para toda a aplicação
+            };
+
+            // Configuração do RefreshToken (expira em 7 dias)
+            var refreshTokenOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration), // Expira em 7 dias
+                Path = "/"
+            };
+
+            // Armazena os cookies
+            Response.Cookies.Append("AccessToken", result.AccessToken, accessTokenOptions);
+            Response.Cookies.Append("RefreshToken", result.RefreshToken, refreshTokenOptions);
+
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    [EndpointSummary("AtualizarToken")]
+    [EndpointSummary("Refresh")]
     [EndpointDescription("Método para atualizar token do usuário autenticado na API.")]
-    [ProducesResponseType(typeof(UsuarioCadastroResponse), 200)]
+    [ProducesResponseType(typeof(bool), 200)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [HttpGet(Name = "AtualizarToken")]
-    public async Task<ActionResult<UsuarioCadastroResponse>> AtualizarToken()
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    [HttpGet(Name = "Refresh")]
+    public async Task<ActionResult<bool>> Refresh()
     {
         try
         {
-            var usuarioId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _identity.LoginSemSenha(usuarioId);
-            return Ok(result);
+            var refreshToken = Request.Cookies["RefreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Unauthorized("Refresh Token não encontrado");
+            }
+
+            var newToken = await _identity.LoginSemSenha(refreshToken);
+            if (newToken == null)
+            {
+                return Unauthorized(new { message = "Refresh Token inválido ou expirado" });
+            }
+
+            var accessTokenOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Novo access token com 1 hora
+                Path = "/"
+            };
+
+            Response.Cookies.Append("AccessToken", newToken.AccessToken, accessTokenOptions);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [EndpointSummary("Logout")]
+    [EndpointDescription("Método para realizar Logout.")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]       
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    [HttpPut(Name = "Logout")]
+    public async Task<ActionResult<bool>> Logout()
+    {
+        try
+        {
+            var refreshToken = Request.Cookies["RefreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return Unauthorized(new { message = "Refresh Token não encontrado" });
+            }
+
+            await _identity.Logout(refreshToken);
+
+            Response.Cookies.Delete("AccessToken");
+            Response.Cookies.Delete("RefreshToken");
+
+            return Ok(true);
+        }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }
