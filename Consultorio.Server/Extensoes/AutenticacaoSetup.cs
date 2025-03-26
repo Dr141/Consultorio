@@ -37,32 +37,32 @@ public static class AutenticacaoSetup
 
         var jwtBearerEvents = new JwtBearerEvents
         {
-#if DEBUG
             OnMessageReceived = context =>
-            {                
-                Console.WriteLine("Verifica se o token está presente no cabeçalho");
-                var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-                Console.WriteLine($"Headers['Authorization']: {token}");
-                Console.WriteLine("Log do token recebido");
-                Console.WriteLine($"Token: {context.Token}");
-                Console.WriteLine();
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
             {
-                Console.WriteLine("Log do erro de autenticação");
-                Console.WriteLine($"Erro de Autenticação: {context.Exception.Message}");
-                if (context.Exception.InnerException != null)
-                    Console.WriteLine($"Erro de Autenticação InnerException: {context.Exception.InnerException.Message}");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("Log do token validado");
-                Console.WriteLine("Token Validado!");
+                context.Token = "Refresh".Equals(context.Request.RouteValues["action"]) 
+                                         ? context.Request.Cookies["RefreshToken"] 
+                                         : context.Request.Cookies["AccessToken"];
                 return Task.CompletedTask;
             }
-#endif
+            //,
+            //OnForbidden = context =>
+            //{
+            //    return Task.CompletedTask;
+            //},
+            //OnAuthenticationFailed = context =>
+            //{
+            //    Console.WriteLine("Log do erro de autenticação");
+            //    Console.WriteLine($"Erro de Autenticação: {context.Exception.Message}");
+            //    if (context.Exception.InnerException != null)
+            //        Console.WriteLine($"Erro de Autenticação InnerException: {context.Exception.InnerException.Message}");
+            //    return Task.CompletedTask;
+            //},
+            //OnTokenValidated = context =>
+            //{
+            //    Console.WriteLine("Log do token validado");
+            //    Console.WriteLine("Token Validado!");
+            //    return Task.CompletedTask;
+            //}
         };
 
         services.AddAuthentication(options =>

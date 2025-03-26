@@ -2,4 +2,4 @@
 
 namespace Consultorio.Identity.Modelo.DTOs.Response;
 
-public record UsuarioLoginResponse(string AccessToken, string RefreshToken);
+public record UsuarioLoginResponse(string AccessToken, string RefreshToken, List<string>? Roles);

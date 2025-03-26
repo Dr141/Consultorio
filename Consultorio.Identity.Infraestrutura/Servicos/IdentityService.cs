@@ -310,15 +310,15 @@ public class IdentityService : IIdentityService
     /// <summary>
     /// Método para renovar token.
     /// </summary>
-    /// <param name="refreshToken">Fornecer uma <see cref="string"/> com o refresh token</param>
+    /// <param name="usuarioId">Fornecer uma <see cref="string"/> com o refresh token</param>
     /// <returns>
     /// A <see cref="Task"/> é uma operação assíncrona que retorna um <see cref="UsuarioLoginResponse"/>
     /// ao final da operação.
     /// </returns>
-    public async Task<UsuarioLoginResponse> LoginSemSenha(string refreshToken)
+    public async Task<UsuarioLoginResponse> LoginSemSenha(string usuarioId)
     {
-        IdentityUser? user = _userManager.Users.FirstOrDefault(u =>
-            _userManager.GetAuthenticationTokenAsync(u, "JWT", "RefreshToken").Result == refreshToken);
+        IdentityUser? user = _userManager.Users.AsNoTracking()
+                                               .FirstOrDefault(u => u.Id.Equals(usuarioId));
 
         if(user is not IdentityUser)
             throw new UnauthorizedAccessException("Token de atualização inválido");
@@ -410,7 +410,12 @@ public class IdentityService : IIdentityService
         var refreshToken = gerarRefreshToken ? GerarToken(refreshTokenClaims, dataExpiracaoRefreshToken) : string.Empty;
         //por enquanto o token não sera salvo no db
         //await _userManager.SetAuthenticationTokenAsync(user, "JWT", "RefreshToken", refreshToken);
-        return new UsuarioLoginResponse(accessToken, refreshToken);
+        var testet = accessTokenClaims.Where(claim => claim.Type.Equals("role"))
+                                                                                    .Select(claim => claim.Value).ToList();
+        return new UsuarioLoginResponse(accessToken, refreshToken, accessTokenClaims.Where(claim => claim.Type.Equals("role"))
+                                                                                    .Select(claim => claim.Value)
+                                                                                    .ToList()
+        );
     }
     #endregion
 }
