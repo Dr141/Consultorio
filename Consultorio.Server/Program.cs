@@ -9,7 +9,7 @@ builder.Services.RegisterServices(builder.Configuration);
 builder.Services.ConfigAuthentication(builder.Configuration);
 var app = builder.Build();
 
-app.Services.Migrations();
+app.Services.Migrations(app.Configuration);
 app.UseDefaultFiles();
 app.MapStaticAssets();
 

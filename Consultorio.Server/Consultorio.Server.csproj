@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Consultorio.Autenticacao.Modelo\Consultorio.Identity.Modelo.csproj" />
     <ProjectReference Include="..\Consultorio.Identity.Infraestrutura\Consultorio.Identity.Infraestrutura.csproj" />
+    <ProjectReference Include="..\Consultorio.Infraestrutura\Consultorio.Infraestrutura.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,36 +1,66 @@
 ﻿using Consultorio.Infraestrutura.Contexto;
 using Consultorio.Infraestrutura.Interfaces.Base;
 using Consultorio.Modelo.Entidades.Base;
+using Microsoft.EntityFrameworkCore;
 
 namespace Consultorio.Infraestrutura.Repositorios.Base;
-
-public abstract class Repositorio<TEntidade> : IRepositorio<TEntidade> where TEntidade : Entidade
+/// <summary>
+/// Classe base para os repositórios
+/// </summary>
+/// <typeparam name="TEntidade"></typeparam>
+/// <param name="contexto"></param>
+public abstract class Repositorio<TEntidade>(ConsultorioContexto contexto) : IRepositorio<TEntidade> where TEntidade : Entidade
 {
-    private readonly ConsultorioContexto _contexto;
-    protected Repositorio(ConsultorioContexto contexto) => _contexto = contexto;
+    private readonly ConsultorioContexto _contexto = contexto;
 
-    public Task<TEntidade> Adicionar(TEntidade tentidade)
+    /// <summary>
+    /// Adiciona uma entidade
+    /// </summary>
+    /// <param name="entidade"></param>
+    /// <returns>Retorna a <see cref="TEntidade"/></returns>
+    public async Task<TEntidade> Adicionar(TEntidade entidade)
     {
-        throw new NotImplementedException();
+        _contexto.Set<TEntidade>().Add(entidade);
+        await _contexto.SaveChangesAsync();
+        return entidade;
     }
 
-    public Task<TEntidade> Atualizar(TEntidade tentidade)
+    /// <summary>
+    /// Atualiza uma entidade
+    /// </summary>
+    /// <param name="entidade"></param>
+    /// <returns>Retorna a <see cref="TEntidade"/></returns>
+    public Task<TEntidade> Atualizar(TEntidade entidade)
     {
-        throw new NotImplementedException();
+        _contexto.Set<TEntidade>().Update(entidade);
+        _contexto.SaveChanges();
+        return Task.FromResult(entidade);
     }
 
-    public Task<TEntidade> ObterId(int id)
-    {
-        throw new NotImplementedException();
-    }
+    /// <summary>
+    /// Obtem uma entidade pelo id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns>Retorna a <see cref="TEntidade"/></returns>
+    public async Task<TEntidade?> ObterId(int id)
+        => await _contexto.Set<TEntidade>().FindAsync(id);
 
-    public Task<List<TEntidade>> ObterTodos()
-    {
-        throw new NotImplementedException();
-    }
+    /// <summary>
+    /// Obtem todas as entidades
+    /// </summary>
+    /// <returns>Retorna uma <see cref="List{TEntidade}"/></returns>
+    public async Task<List<TEntidade>> ObterTodos()
+        => await _contexto.Set<TEntidade>().AsNoTracking().ToListAsync();
 
-    public Task Remover(TEntidade tentidade)
+    /// <summary>
+    /// Remove uma entidade
+    /// </summary>
+    /// <param name="entidade"></param>
+    /// <returns>Retorna uma <see cref="Task.CompletedTask"/></returns>
+    public Task Remover(TEntidade entidade)
     {
-        throw new NotImplementedException();
+        _contexto.Set<TEntidade>().Remove(entidade);
+        _contexto.SaveChangesAsync();
+        return Task.CompletedTask;
     }
 }
