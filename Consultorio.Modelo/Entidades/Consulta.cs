@@ -12,4 +12,7 @@ public class Consulta : Entidade
     public Medico? Medico { get; set; }
     [ForeignKey("IdMedico")]
     public int IdMedico { get; init; }
+    public Agenda? Agenda { get; set; }
+    [ForeignKey("IdAgenda")]
+    public int IdAgenda { get; init; }
 }

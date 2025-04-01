@@ -65,7 +65,8 @@ public class AutenticacaoController : ControllerBase
             // Armazena os cookies
             Response.Cookies.Append("AccessToken", result.AccessToken, accessTokenOptions);
             Response.Cookies.Append("RefreshToken", result.RefreshToken, refreshTokenOptions);
-            Response.Cookies.Append("Roles", string.Join("-", result.Roles), roles);
+            if(result.Roles is not null)
+                Response.Cookies.Append("Roles", string.Join("-", result.Roles), roles);
 
             return Ok(true);
         }
@@ -83,6 +84,9 @@ public class AutenticacaoController : ControllerBase
         try
         {
             var usuarioId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if(string.IsNullOrEmpty(usuarioId))
+                return Unauthorized(new { message = "Usuário não autenticado" });
+
             var newAuthen = await _identity.LoginSemSenha(usuarioId);
             var accessTokenOptions = new CookieOptions
             {
@@ -105,7 +109,7 @@ public class AutenticacaoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     [HttpDelete(Name = "Logout")]
-    public async Task<ActionResult<bool>> Logout()
+    public ActionResult<bool> Logout()
     {
         try
         {

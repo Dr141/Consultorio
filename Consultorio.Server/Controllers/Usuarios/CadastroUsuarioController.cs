@@ -20,7 +20,7 @@ public class CadastroUsuarioController : ControllerBase
 
     [EndpointSummary("Cadastrar")]
     [EndpointDescription("Método para realizar Cadastro na API.")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPost(Name = "Cadastrar")]
     public async Task<ActionResult<bool>> Cadastrar(UsuarioCadastroRequest cadastro)
@@ -28,14 +28,14 @@ public class CadastroUsuarioController : ControllerBase
         try
         {
             var result = await _identity.CadastrarUsuario(cadastro);
-            return StatusCode(StatusCodes.Status201Created, true);
+            return Ok(true);
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [EndpointSummary("AtualizarSenha")]
     [EndpointDescription("Método para atualizar senha do usuário autenticado na API.")]
-    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [HttpPut(Name = "AtualizarSenha")]
     public async Task<ActionResult<bool>> AtualizarSenha(UsuarioAtualizarSenhaResquest atualizarSenha)
@@ -43,14 +43,15 @@ public class CadastroUsuarioController : ControllerBase
         try
         {
             var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value;
-
+            if (string.IsNullOrEmpty(emailClaim))
+                return BadRequest(new { message = "Usuário não autenticado" });
             if (atualizarSenha.SenhaAtual.Equals(atualizarSenha.NovaSenha, StringComparison.CurrentCultureIgnoreCase))
-                return BadRequest("A nova senha deve ser diferente da senha atual.");
+                return BadRequest(new { message = "A nova senha deve ser diferente da senha atual." });
             var result = await _identity.AtualizarSenha(atualizarSenha, emailClaim);
 
-            return StatusCode(StatusCodes.Status202Accepted, true);
+            return Ok(true);
 
         }
-        catch (Exception ex) { return BadRequest(ex.Message); }
+        catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
     }
 }

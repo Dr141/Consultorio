@@ -9,10 +9,8 @@ namespace Consultorio.Infraestrutura.Repositorios.Base;
 /// </summary>
 /// <typeparam name="TEntidade"></typeparam>
 /// <param name="contexto"></param>
-public abstract class Repositorio<TEntidade>(ConsultorioContexto contexto) : IRepositorio<TEntidade> where TEntidade : Entidade
+public class Repositorio<TEntidade>(ConsultorioContexto _contexto) : IRepositorio<TEntidade> where TEntidade : Entidade
 {
-    private readonly ConsultorioContexto _contexto = contexto;
-
     /// <summary>
     /// Adiciona uma entidade
     /// </summary>

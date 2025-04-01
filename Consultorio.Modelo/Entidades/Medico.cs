@@ -10,6 +10,7 @@ public class Medico : Entidade
     [ForeignKey("IdPessoa")]
     public int IdPessoa { get; init; }
     public required string Crm { get; init; }
-    public IList<Especialidade>? Especialidades { get; set; }
+    public required IList<Especialidade> Especialidades { get; set; }
     public ICollection<Consulta>? Consultas { get; set; }
+    public ICollection<Agenda>? Agendas { get; set; }
 }

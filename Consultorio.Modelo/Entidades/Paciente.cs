@@ -10,4 +10,5 @@ public class Paciente : Entidade
     public required int IdPessoa { get; init; }
     public ICollection<Exame>? Exames { get; set; }
     public ICollection<Consulta>? Consultas { get; set; }
+    public ICollection<Agenda>? Agendas { get; set; }
 }

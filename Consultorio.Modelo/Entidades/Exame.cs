@@ -10,4 +10,7 @@ public class Exame : Entidade
     public Paciente? Paciente { get; set; }
     [ForeignKey("IdPaciente")]
     public int IdPaciente { get; init; }
+    public Agenda? Agenda { get; set; }
+    [ForeignKey("IdAgenda")]
+    public required int IdAgenda { get; init; }
 }

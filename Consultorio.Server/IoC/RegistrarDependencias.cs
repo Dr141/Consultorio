@@ -31,11 +31,7 @@ public static class RegistrarDependencias
             .AddDefaultTokenProviders();
 
         services.AddScoped<IIdentityService, IdentityService>();
-        services.AddScoped<IRepositorio<Consulta>, Repositorio<Consulta>>();
-        services.AddScoped<IRepositorio<Exame>, Repositorio<Exame>>();
-        services.AddScoped<IRepositorio<Medico>, Repositorio<Medico>>();
-        services.AddScoped<IRepositorio<Paciente>, Repositorio<Paciente>>();
-        services.AddScoped<IRepositorio<Pessoa>, Repositorio<Pessoa>>();
+        services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));
     }
 
     /// <summary>

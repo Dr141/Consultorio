@@ -10,11 +10,10 @@ public static class AutenticacaoSetup
 {
     public static void ConfigAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        var jwtAppSettingOptions = configuration.GetSection(nameof(JwtOptions));
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("JwtOptions:SecurityKey").Value));
+        var jwtOptionsSecurityKey = configuration.GetSection("JwtOptions:SecurityKey").Value;
+        if(string.IsNullOrEmpty(jwtOptionsSecurityKey)) throw new ArgumentNullException("SecurityKey não configurada");
 
-        services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));
-        
+        services.Configure<JwtOptions>(configuration.GetSection("JwtOptions"));        
         services.Configure<IdentityOptions>(options =>
         {
             options.Password.RequireDigit = true;
@@ -24,7 +23,7 @@ public static class AutenticacaoSetup
             options.Password.RequiredLength = 6;
         });
 
-        var tokenValidationParameters = new TokenValidationParameters
+        TokenValidationParameters tokenValidationParameters = new ()
         {
             ValidateIssuer = true,
             ValidateAudience = true,
@@ -32,10 +31,10 @@ public static class AutenticacaoSetup
             ValidateIssuerSigningKey = true,
             ValidIssuer = configuration.GetSection("JwtOptions:Issuer").Value,
             ValidAudience = configuration.GetSection("JwtOptions:Audience").Value,
-            IssuerSigningKey = securityKey
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptionsSecurityKey))
         };
 
-        var jwtBearerEvents = new JwtBearerEvents
+        JwtBearerEvents jwtBearerEvents = new ()
         {
             OnMessageReceived = context =>
             {
