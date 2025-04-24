@@ -18,6 +18,8 @@ Este é um sistema de gerenciamento para um consultório médico, desenvolvido e
 - **Entity Framework Core** com suporte a PostgreSQL
 - **ASP.NET Core** para construção de APIs
 - **Microsoft Identity** para autenticação e autorização
+- **Angular** para o front-end
+- **Ionic** para o front-end
 
 ## Estrutura do Projeto
 
