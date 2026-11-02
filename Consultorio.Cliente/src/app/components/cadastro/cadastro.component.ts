@@ -7,7 +7,8 @@ import { ConsultorioApiService } from '../../services/api/consultorio-api.servic
 @Component({
   selector: 'app-cadastro',
   templateUrl: './cadastro.component.html',
-  styleUrls: ['./cadastro.component.scss']
+  styleUrls: ['./cadastro.component.scss'],
+  standalone: false
 })
 export class CadastroComponent  implements OnInit {
   public cadastro: FormGroup | any
@@ -18,10 +19,10 @@ export class CadastroComponent  implements OnInit {
   ngOnInit(): void {
     this.cadastro = new FormGroup({
       email: new FormControl('', [Validators.required, Validators.email]),
-      senha: new FormControl('', [Validators.required, Validators.minLength(6)]),
-      confirmarSenha: new FormControl('', [Validators.required])
+      senha: new FormControl('', [Validators.required, Validators.minLength(8)]),
+      confirmarSenha: new FormControl('', [Validators.required, Validators.minLength(8)]),
     }, {
-      validators: [ConfirmarSenha('senha', 'confirmarSenha')]
+      validators: ConfirmarSenha('senha', 'confirmarSenha')
     })
   }
 
@@ -29,22 +30,20 @@ export class CadastroComponent  implements OnInit {
     return this.modalCtrl.dismiss(false, 'cancel');
   }
 
-  async confirm() {
+  confirm() {
     if (this.cadastro.valid) {
-      await this.api.cadastro({
+      this.api.cadastro({
         Email: this.cadastro.get('email')?.value,
-        Senha: this.cadastro.get('senha')?.value,
-        SenhaConfirmacao: this.cadastro.get('confirmarSenha')?.value
+        Password: this.cadastro.get('senha')?.value
       }).subscribe({
         next: () => {
-          this.modalCtrl.dismiss('confirm')
+          this.modalCtrl.dismiss(true, 'confirm');
         },
-        error: error => {
-          this.erro = error.message
+        error: (erro: any) => {
+          this.erro = erro.message;
         }
-      })    
+      })
     }
+  }
 
-    return
-  }  
 }

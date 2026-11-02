@@ -1,0 +1,25 @@
+.consulta-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.observacao-texto {
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: var(--ion-color-dark);
+  line-height: 1.5;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--ion-color-light-shade);
+  padding-top: 8px;
+}

@@ -1,0 +1,36 @@
+.exame-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resultado-box {
+  background-color: var(--ion-color-light);
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+
+  p {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--ion-color-dark);
+  }
+}
+
+.sem-resultado {
+  font-size: 13px;
+  color: var(--ion-color-medium);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--ion-color-light-shade);
+  padding-top: 8px;
+}

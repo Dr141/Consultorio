@@ -1,43 +1,135 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Consultorio.Aplicacao.DTOs.Request;
+using Consultorio.Aplicacao.DTOs.Response;
+using Consultorio.Aplicacao.Interfaces;
+using Consultorio.Dominio.Excecoes;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+namespace Consultorio.Server.Controllers.Agenda;
 
-namespace Consultorio.Server.Controllers.Agenda
+[Route("api/[controller]")]
+[Authorize]
+[ApiController]
+public class AgendaController(IAgendaAppService agendaAppService) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AgendaController : ControllerBase
+    [HttpGet]
+    [EndpointSummary("Obter todos os horários de agenda")]
+    [ProducesResponseType(typeof(List<AgendaResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AgendaResponse>>> ObterTodos()
     {
-        // GET: api/<AgendaController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
+        return Ok(await agendaAppService.ObterTodosAsync());
+    }
 
-        // GET api/<AgendaController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+    [HttpGet("{id:int}")]
+    [EndpointSummary("Obter horário de agenda por id")]
+    [ProducesResponseType(typeof(AgendaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AgendaResponse>> ObterPorId(int id)
+    {
+        var agenda = await agendaAppService.ObterPorIdAsync(id);
+        if (agenda is null) return NotFound(new { message = $"Horário de agenda com id {id} não encontrado." });
+        return Ok(agenda);
+    }
 
-        // POST api/<AgendaController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+    [HttpGet("medico/{idMedico:int}")]
+    [EndpointSummary("Obter agenda por médico e data")]
+    [ProducesResponseType(typeof(List<AgendaResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AgendaResponse>>> ObterPorMedicoEData(int idMedico, [FromQuery] DateTime? data)
+    {
+        var dataFiltro = data ?? DateTime.UtcNow.Date;
+        return Ok(await agendaAppService.ObterPorMedicoEDataAsync(idMedico, dataFiltro));
+    }
 
-        // PUT api/<AgendaController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
+    [HttpGet("paciente/{idPaciente:int}")]
+    [EndpointSummary("Obter agenda por paciente")]
+    [ProducesResponseType(typeof(List<AgendaResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AgendaResponse>>> ObterPorPaciente(int idPaciente)
+    {
+        return Ok(await agendaAppService.ObterPorPacienteAsync(idPaciente));
+    }
 
-        // DELETE api/<AgendaController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+    [HttpPost]
+    [EndpointSummary("Cadastrar novo horário de agenda")]
+    [ProducesResponseType(typeof(AgendaResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AgendaResponse>> Adicionar([FromBody] AgendaRequest request)
+    {
+        try
         {
+            var criada = await agendaAppService.AdicionarAsync(request);
+            return CreatedAtAction(nameof(ObterPorId), new { id = criada.Id }, criada);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:int}")]
+    [EndpointSummary("Atualizar horário de agenda")]
+    [ProducesResponseType(typeof(AgendaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AgendaResponse>> Atualizar(int id, [FromBody] AgendaRequest request)
+    {
+        try
+        {
+            var atualizada = await agendaAppService.AtualizarAsync(id, request);
+            return Ok(atualizada);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/agendar/{idPaciente:int}")]
+    [EndpointSummary("Agendar paciente em horário")]
+    [ProducesResponseType(typeof(AgendaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AgendaResponse>> AgendarPaciente(int id, int idPaciente)
+    {
+        try
+        {
+            var atualizada = await agendaAppService.AgendarPacienteAsync(id, idPaciente);
+            return Ok(atualizada);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/liberar")]
+    [EndpointSummary("Liberar horário agendado")]
+    [ProducesResponseType(typeof(AgendaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AgendaResponse>> LiberarHorario(int id)
+    {
+        try
+        {
+            var atualizada = await agendaAppService.LiberarHorarioAsync(id);
+            return Ok(atualizada);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:int}")]
+    [EndpointSummary("Excluir horário de agenda")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Remover(int id)
+    {
+        try
+        {
+            await agendaAppService.RemoverAsync(id);
+            return NoContent();
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

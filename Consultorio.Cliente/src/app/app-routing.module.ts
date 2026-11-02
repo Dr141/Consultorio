@@ -4,11 +4,11 @@ import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadChildren: () => import('./home/home.module').then(m => m.HomePageModule)
   },
   {
     path: 'login',
-    loadChildren: () => import('./user/login/login.module').then( m => m.LoginPageModule)
+    loadChildren: () => import('./user/login/login.module').then(m => m.LoginPageModule)
   },
   {
     path: '',
@@ -17,8 +17,28 @@ const routes: Routes = [
   },
   {
     path: 'users',
-    loadChildren: () => import('./user/users/users.module').then( m => m.UsersPageModule)
+    loadChildren: () => import('./user/users/users.module').then(m => m.UsersPageModule)
   },
+  {
+    path: 'pacientes',
+    loadChildren: () => import('./pacientes/pacientes.module').then(m => m.PacientesPageModule)
+  },
+  {
+    path: 'medicos',
+    loadChildren: () => import('./medicos/medicos.module').then(m => m.MedicosPageModule)
+  },
+  {
+    path: 'agenda',
+    loadChildren: () => import('./agenda/agenda.module').then(m => m.AgendaPageModule)
+  },
+  {
+    path: 'consultas',
+    loadChildren: () => import('./consultas/consultas.module').then(m => m.ConsultasPageModule)
+  },
+  {
+    path: 'exames',
+    loadChildren: () => import('./exames/exames.module').then(m => m.ExamesPageModule)
+  }
 ];
 
 @NgModule({

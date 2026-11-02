@@ -1,0 +1,47 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ agenda ? 'Editar Horário' : 'Novo Horário na Agenda' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">Fechar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    <ion-item>
+      <ion-label position="floating">Data</ion-label>
+      <ion-input type="date" formControlName="data"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Horário (HH:mm)</ion-label>
+      <ion-input type="time" formControlName="hora"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Médico Responsável</ion-label>
+      <ion-select formControlName="idMedico" placeholder="Selecione o médico">
+        @for (m of medicos; track m.id) {
+          <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Paciente (Opcional)</ion-label>
+      <ion-select formControlName="idPaciente" placeholder="Selecione para agendar imediatamente">
+        <ion-select-option [value]="null">Nenhum (Horário Disponível)</ion-select-option>
+        @for (p of pacientes; track p.id) {
+          <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+
+    <div class="ion-padding-top">
+      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+        {{ salvando ? 'Salvando...' : 'Salvar Horário' }}
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

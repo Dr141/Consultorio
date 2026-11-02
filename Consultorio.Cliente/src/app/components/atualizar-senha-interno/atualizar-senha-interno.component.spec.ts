@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule } from '../../shared/ionic.module';
+import { provideIonicAngular } from '@ionic/angular';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AtualizarSenhaInternoComponent } from './atualizar-senha-interno.component';
 
@@ -10,7 +13,8 @@ describe('AtualizarSenhaInternoComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ AtualizarSenhaInternoComponent ],
-      imports: [IonicModule.forRoot()]
+      imports: [IonicModule],
+      providers: [provideIonicAngular(), provideHttpClient(), provideHttpClientTesting()]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AtualizarSenhaInternoComponent);

@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Gestão de Pacientes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()">
+        <ion-icon slot="icon-only" name="person-add"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por nome ou CPF"></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @if (carregando) {
+    <div class="ion-text-center ion-padding">
+      <ion-spinner></ion-spinner>
+      <p>Carregando pacientes...</p>
+    </div>
+  } @else if (pacientesFiltrados.length === 0) {
+    <div class="ion-text-center ion-padding">
+      <ion-icon name="people-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
+      <h3>Nenhum paciente encontrado</h3>
+      <p>Toque no botão + para cadastrar um novo paciente.</p>
+    </div>
+  } @else {
+    <ion-list>
+      @for (p of pacientesFiltrados; track p.id) {
+        <ion-item-sliding>
+          <ion-item button (click)="editar(p)">
+            <ion-avatar slot="start">
+              <ion-icon name="person-circle" style="font-size: 40px; color: var(--ion-color-primary);"></ion-icon>
+            </ion-avatar>
+            <ion-label>
+              <h2>{{ p.nome }}</h2>
+              <p>CPF: {{ p.cpf }} | Tel: {{ p.telefone }}</p>
+              @if (p.observacao) {
+                <p><em>{{ p.observacao }}</em></p>
+              }
+            </ion-label>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="primary" (click)="editar(p)">
+              <ion-icon slot="icon-only" name="create"></ion-icon>
+            </ion-item-option>
+            <ion-item-option color="danger" (click)="remover(p)">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      }
+    </ion-list>
+  }
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="adicionar()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

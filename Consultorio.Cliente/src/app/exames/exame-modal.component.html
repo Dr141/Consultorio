@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ exame ? 'Resultado / Editar Exame' : 'Solicitar Exame' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">Fechar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    @if (!exame) {
+      <ion-item>
+        <ion-label>Paciente</ion-label>
+        <ion-select formControlName="idPaciente" placeholder="Selecione o paciente">
+          @for (p of pacientes; track p.id) {
+            <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Descrição do Exame</ion-label>
+        <ion-input formControlName="descricao" placeholder="Ex: Hemograma, Ressonância Magnética, ECG"></ion-input>
+      </ion-item>
+    } @else {
+      <ion-item lines="none">
+        <ion-label>
+          <h2><strong>Exame:</strong> {{ exame.descricao }}</h2>
+          <p><strong>Paciente:</strong> {{ exame.nomePaciente }}</p>
+        </ion-label>
+      </ion-item>
+    }
+
+    <ion-item>
+      <ion-label position="floating">Resultado do Exame / Laudo</ion-label>
+      <ion-textarea formControlName="resultado" rows="5" placeholder="Insira o laudo ou resultado do exame"></ion-textarea>
+    </ion-item>
+
+    <div class="ion-padding-top">
+      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+        {{ salvando ? 'Salvando...' : 'Salvar Exame' }}
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

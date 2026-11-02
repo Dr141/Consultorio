@@ -1,4 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 namespace Consultorio.Identity.Modelo.Configuracao;
@@ -8,12 +8,11 @@ namespace Consultorio.Identity.Modelo.Configuracao;
 /// </summary>
 public class JwtOptions
 {
-    public string Issuer { get; set; }
-    public string Audience { get; set; }
-    public string SecurityKey { get; set; }
-    public int AccessTokenExpiration { get; set; }
-    public int RefreshTokenExpiration { get; set; }
-    public SigningCredentials SigningCredentials { 
-        get { return new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecurityKey)), SecurityAlgorithms.HmacSha512); } 
-    }
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public string SecurityKey { get; set; } = string.Empty;
+    public int AccessTokenExpiration { get; set; } = 1;
+    public int RefreshTokenExpiration { get; set; } = 7;
+    public SigningCredentials SigningCredentials =>
+        new(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(string.IsNullOrEmpty(SecurityKey) ? "DefaultSecretKey12345678901234567890" : SecurityKey)), SecurityAlgorithms.HmacSha512);
 }

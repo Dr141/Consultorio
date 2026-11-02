@@ -1,0 +1,57 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ medico ? 'Editar Médico' : 'Novo Médico' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">Fechar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    <ion-item>
+      <ion-label position="floating">Nome Completo</ion-label>
+      <ion-input formControlName="nome" placeholder="Dr. Nome Sobrenome"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">CPF</ion-label>
+      <ion-input formControlName="cpf" placeholder="000.000.000-00"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">CRM</ion-label>
+      <ion-input formControlName="crm" placeholder="Ex: 12345-SP"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Data de Nascimento</ion-label>
+      <ion-input type="date" formControlName="dtNasc"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Telefone</ion-label>
+      <ion-input formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Especialidades</ion-label>
+      <ion-select formControlName="especialidades" multiple="true" placeholder="Selecione as especialidades">
+        @for (esp of listaEspecialidades; track esp.id) {
+          <ion-select-option [value]="esp.id">{{ esp.nome }}</ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Observações</ion-label>
+      <ion-textarea formControlName="observacao" rows="2" placeholder="Informações adicionais"></ion-textarea>
+    </ion-item>
+
+    <div class="ion-padding-top">
+      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+        {{ salvando ? 'Salvando...' : 'Salvar Médico' }}
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

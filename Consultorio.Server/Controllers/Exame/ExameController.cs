@@ -1,43 +1,111 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Consultorio.Aplicacao.DTOs.Request;
+using Consultorio.Aplicacao.DTOs.Response;
+using Consultorio.Aplicacao.Interfaces;
+using Consultorio.Dominio.Excecoes;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+namespace Consultorio.Server.Controllers.Exame;
 
-namespace Consultorio.Server.Controllers.Exame
+[Route("api/[controller]")]
+[Authorize]
+[ApiController]
+public class ExameController(IExameAppService exameAppService) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ExameController : ControllerBase
+    [HttpGet]
+    [EndpointSummary("Obter todos os exames")]
+    [ProducesResponseType(typeof(List<ExameResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ExameResponse>>> ObterTodos()
     {
-        // GET: api/<ExameController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
+        return Ok(await exameAppService.ObterTodosAsync());
+    }
 
-        // GET api/<ExameController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+    [HttpGet("{id:int}")]
+    [EndpointSummary("Obter exame por id")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExameResponse>> ObterPorId(int id)
+    {
+        var exame = await exameAppService.ObterPorIdAsync(id);
+        if (exame is null) return NotFound(new { message = $"Exame com id {id} não encontrado." });
+        return Ok(exame);
+    }
 
-        // POST api/<ExameController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+    [HttpGet("paciente/{idPaciente:int}")]
+    [EndpointSummary("Obter exames por paciente")]
+    [ProducesResponseType(typeof(List<ExameResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ExameResponse>>> ObterPorPaciente(int idPaciente)
+    {
+        return Ok(await exameAppService.ObterPorPacienteAsync(idPaciente));
+    }
 
-        // PUT api/<ExameController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+    [HttpPost]
+    [EndpointSummary("Cadastrar novo exame")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> Adicionar([FromBody] ExameRequest request)
+    {
+        try
         {
+            var criado = await exameAppService.AdicionarAsync(request);
+            return CreatedAtAction(nameof(ObterPorId), new { id = criado.Id }, criado);
         }
-
-        // DELETE api/<ExameController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        catch (DomainException ex)
         {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:int}")]
+    [EndpointSummary("Atualizar exame")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> Atualizar(int id, [FromBody] ExameRequest request)
+    {
+        try
+        {
+            var atualizado = await exameAppService.AtualizarAsync(id, request);
+            return Ok(atualizado);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    public record RegistrarResultadoDto(string Resultado);
+
+    [HttpPatch("{id:int}/resultado")]
+    [EndpointSummary("Registrar resultado do exame")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> RegistrarResultado(int id, [FromBody] RegistrarResultadoDto dto)
+    {
+        try
+        {
+            var atualizado = await exameAppService.RegistrarResultadoAsync(id, dto.Resultado);
+            return Ok(atualizado);
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:int}")]
+    [EndpointSummary("Excluir exame")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Remover(int id)
+    {
+        try
+        {
+            await exameAppService.RemoverAsync(id);
+            return NoContent();
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

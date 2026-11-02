@@ -8,6 +8,7 @@ import { ConfirmarSenha } from '../../extensoes/confirmar-senha.validator';
   selector: 'app-atualizar-senha-interno',
   templateUrl: './atualizar-senha-interno.component.html',
   styleUrls: ['./atualizar-senha-interno.component.scss'],
+  standalone: false
 })
 export class AtualizarSenhaInternoComponent implements OnInit {
   public cadastro: FormGroup | any

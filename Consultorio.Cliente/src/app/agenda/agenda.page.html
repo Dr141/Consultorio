@@ -1,0 +1,79 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Agenda de Consultas e Exames</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()">
+        <ion-icon slot="icon-only" name="calendar-number"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por médico ou paciente"></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  @if (carregando) {
+    <div class="ion-text-center ion-padding">
+      <ion-spinner></ion-spinner>
+      <p>Carregando agenda...</p>
+    </div>
+  } @else if (agendasFiltradas.length === 0) {
+    <div class="ion-text-center ion-padding">
+      <ion-icon name="calendar-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
+      <h3>Nenhum horário agendado</h3>
+      <p>Toque no botão + para disponibilizar um novo horário na agenda.</p>
+    </div>
+  } @else {
+    <ion-list>
+      @for (a of agendasFiltradas; track a.id) {
+        <ion-item-sliding>
+          <ion-item>
+            <ion-icon slot="start" [name]="a.disponivel ? 'checkmark-circle' : 'time'"
+              [style.color]="a.disponivel ? 'var(--ion-color-success)' : 'var(--ion-color-warning)'"
+              style="font-size: 32px;">
+            </ion-icon>
+            <ion-label>
+              <h2>
+                {{ formatarData(a.data) }} às {{ a.hora.substring(0, 5) }}
+                <ion-badge [color]="a.disponivel ? 'success' : 'warning'" style="margin-left: 8px;">
+                  {{ a.disponivel ? 'Disponível' : 'Ocupado' }}
+                </ion-badge>
+              </h2>
+              <p><strong>Médico:</strong> {{ a.nomeMedico || 'Não informado' }}</p>
+              @if (!a.disponivel && a.nomePaciente) {
+                <p><strong>Paciente:</strong> {{ a.nomePaciente }}</p>
+              }
+            </ion-label>
+          </ion-item>
+          <ion-item-options side="end">
+            @if (a.disponivel) {
+              <ion-item-option color="success" (click)="agendarPaciente(a)">
+                <ion-icon slot="icon-only" name="person-add"></ion-icon>
+              </ion-item-option>
+            } @else {
+              <ion-item-option color="warning" (click)="liberarHorario(a)">
+                <ion-icon slot="icon-only" name="refresh"></ion-icon>
+              </ion-item-option>
+            }
+            <ion-item-option color="primary" (click)="editar(a)">
+              <ion-icon slot="icon-only" name="create"></ion-icon>
+            </ion-item-option>
+            <ion-item-option color="danger" (click)="remover(a)">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      }
+    </ion-list>
+  }
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="adicionar()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

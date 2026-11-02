@@ -8,8 +8,8 @@ import { usuario } from '../../types/types';
   selector: 'app-pemissao',
   templateUrl: './pemissao.component.html',
   styleUrls: ['./pemissao.component.scss'],
+  standalone: false
 })
-
 export class PemissaoComponent  implements OnInit {
   public permissao: FormGroup | any
   @Input() api!: ConsultorioApiService

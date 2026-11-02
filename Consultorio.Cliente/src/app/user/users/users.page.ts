@@ -10,6 +10,7 @@ import { PemissaoComponent } from '../../components/pemissao/pemissao.component'
   selector: 'app-users',
   templateUrl: './users.page.html',
   styleUrls: ['./users.page.scss'],
+  standalone: false
 })
 export class UsersPage implements OnInit {
   public users : any;
@@ -17,11 +18,11 @@ export class UsersPage implements OnInit {
   constructor(private modalController: ModalController, private api: ConsultorioApiService, private navCtrl: NavController, private alertController: AlertController) { }
 
   async ngOnInit() {
-    await this.obterTodos()
+    await this.obterTodos();
   }
 
   buttonBack() {
-    this.navCtrl.back()
+    this.navCtrl.back();
   }
 
   async atualizarSenha(pEmail: string) {
@@ -31,33 +32,33 @@ export class UsersPage implements OnInit {
         api: this.api,
         email: pEmail
       }
-    })
+    });
 
-    await modal.present()
+    await modal.present();
   }
 
   obterTodos() {
-    this.api.obterTodos<usuario>().subscribe({
+    this.api.obterTodos<any>().subscribe({
       next: (resul) => {
         if (resul) {
-          this.users = resul.usuarios
+          this.users = resul.usuarios;
         }
       },
       error: (erro) => {
-        this.presentAlert(erro.message)
+        this.presentAlert(erro.message);
       }
-    })
+    });
   }
 
   async cadastro() {
     const modal = await this.modalController.create({
       component: CadastroComponent,
       componentProps: { api: this.api }
-    })
+    });
 
-    await modal.present()
-    await modal.onDidDismiss()
-    await this.obterTodos()
+    await modal.present();
+    await modal.onDidDismiss();
+    await this.obterTodos();
   }
 
   async presentAlert(erro: string) {
@@ -65,7 +66,7 @@ export class UsersPage implements OnInit {
       header: 'Atenção ocorreu erro!',
       message: erro,
       buttons: ['Ok'],
-    })
+    });
 
     await alert.present();
   }
@@ -74,10 +75,10 @@ export class UsersPage implements OnInit {
     const modal = await this.modalController.create({
       component: PemissaoComponent,
       componentProps: { api: this.api, user: pUser }
-    })
+    });
 
-    await modal.present()
-    await modal.onDidDismiss()
-    await this.obterTodos()
+    await modal.present();
+    await modal.onDidDismiss();
+    await this.obterTodos();
   }
 }
