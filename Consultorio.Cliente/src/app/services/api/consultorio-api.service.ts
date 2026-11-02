@@ -11,10 +11,10 @@ export class ConsultorioApiService {
   constructor(private http: HttpClient, private cache: CacheService) { }
 
   refreshToken() {
-    const refreshToken = this.cache.recuperarCookie('RefreshToken');
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${refreshToken}`);
-
-    return this.http.get('Autenticacao', { headers });    
+    //const refreshToken = this.cache.recuperarCookie('RefreshToken');
+    //const headers = new HttpHeaders().set('Authorization', `Bearer ${refreshToken}`);
+    console.log('oi')
+    return this.http.get('autenticacao');    
   }
 
   cadastro(user: any) {

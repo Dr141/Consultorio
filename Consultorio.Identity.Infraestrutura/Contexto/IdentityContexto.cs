@@ -6,7 +6,7 @@ namespace Consultorio.Identity.Infraestrutura.Contexto;
 public class IdentityContexto : IdentityDbContext
 {
     /// <summary>
-    /// Construtor da classe <see cref="IdentityDataContext"/>
+    /// Construtor da classe <see cref="IdentityContexto"/>
     /// </summary>
     /// <param name="options"></param>
     public IdentityContexto(DbContextOptions<IdentityContexto> options) : base(options) { }

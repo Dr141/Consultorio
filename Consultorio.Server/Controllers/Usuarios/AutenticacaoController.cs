@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace Consultorio.Server.Controllers.Usuarios;
 
 [Route("[controller]")]
-[AllowAnonymous]
+[Authorize]
 [ApiController]
 public class AutenticacaoController : ControllerBase
 {
@@ -24,36 +24,49 @@ public class AutenticacaoController : ControllerBase
     [EndpointSummary("Login")]
     [EndpointDescription("Método para realizar autenticação na API.")]
     [ProducesResponseType(typeof(bool), 200)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]    
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [AllowAnonymous]
     [HttpPost(Name = "Login")]
     public async Task<ActionResult<bool>> Login(UsuarioLoginRequest usuario)
     {
         try
         {
             var result = await _identity.Login(usuario);
-            // Configuração do AccessToken (expira em 15 minutos)
+            // Configuração do AccessToken (expira em 1 hora)
             var accessTokenOptions = new CookieOptions
             {
-                HttpOnly = false,
+                HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Expira em 1 hora
+                Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration),
                 Path = "/" // Disponível para toda a aplicação
             };
 
             // Configuração do RefreshToken (expira em 7 dias)
             var refreshTokenOptions = new CookieOptions
             {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration),
+                Path = "/"
+            };
+
+            // Configuração do roles (expira em 7 dias)
+            var roles = new CookieOptions
+            {
                 HttpOnly = false,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration), // Expira em 7 dias
+                Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration),
                 Path = "/"
             };
 
             // Armazena os cookies
             Response.Cookies.Append("AccessToken", result.AccessToken, accessTokenOptions);
             Response.Cookies.Append("RefreshToken", result.RefreshToken, refreshTokenOptions);
+            if(result.Roles is not null)
+                Response.Cookies.Append("Roles", string.Join("-", result.Roles), roles);
 
             return Ok(true);
         }
@@ -64,35 +77,27 @@ public class AutenticacaoController : ControllerBase
     [EndpointDescription("Método para atualizar token do usuário autenticado na API.")]
     [ProducesResponseType(typeof(bool), 200)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]    
     [HttpGet(Name = "Refresh")]
     public async Task<ActionResult<bool>> Refresh()
     {
         try
         {
             var usuarioId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var refreshToken = Request.Cookies["RefreshToken"];
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                return Unauthorized(new { message = "Refresh Token não encontrado" });
-            }
+            if(string.IsNullOrEmpty(usuarioId))
+                return Unauthorized(new { message = "Usuário não autenticado" });
 
-            var newToken = await _identity.LoginSemSenha(refreshToken);
-            if (newToken == null)
-            {
-                return Unauthorized(new { message = "Refresh Token inválido ou expirado" });
-            }
-
+            var newAuthen = await _identity.LoginSemSenha(usuarioId);
             var accessTokenOptions = new CookieOptions
             {
-                HttpOnly = false,
+                HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Novo access token com 1 hora
                 Path = "/"
             };
 
-            Response.Cookies.Append("AccessToken", newToken.AccessToken, accessTokenOptions);
+            Response.Cookies.Append("AccessToken", newAuthen.AccessToken, accessTokenOptions);
             return Ok(true);
         }
         catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
@@ -104,7 +109,7 @@ public class AutenticacaoController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
     [HttpDelete(Name = "Logout")]
-    public async Task<ActionResult<bool>> Logout()
+    public ActionResult<bool> Logout()
     {
         try
         {

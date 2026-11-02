@@ -21,7 +21,7 @@
           Atualizar senha
         </ion-button>
       </ion-item>
-      @if(admin){
+      @if(ehAdmin()){
       <ion-item>
         <ion-button fill="clear" color="medium" size="default" (click)="users()">
           <ion-icon slot="icon-only" name="people" class="ion-padding"></ion-icon>
@@ -45,8 +45,73 @@
       <ion-title size="large">Blank</ion-title>
     </ion-toolbar>
   </ion-header>
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <ion-grid [fixed]="true">
+    <ion-row>
+      <ion-col>
+        <ion-card color="light" class="cardHome" type="button" button="true" (click)="paciente()">
+          <img alt="Silhouette of mountains" src="../../assets/paciente.webp" />
+          <ion-card-header>
+            <ion-card-title>Pacientes</ion-card-title>
+            <ion-card-subtitle>Gestão de pacientes</ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+            Parcientes e prontuário.
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col>
+        <ion-card color="light" class="cardHome" type="button" button="true" (click)="agenda()">
+          <img alt="Silhouette of mountains" src="../../assets/agenda.webp" />
+          <ion-card-header>
+            <ion-card-title>Agenda</ion-card-title>
+            <ion-card-subtitle>Gestão de agenda</ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+            Consultas e exames.
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col>
+        <ion-card color="light" class="cardHome" type="button" button="true" (click)="consulta()">
+          <img alt="Silhouette of mountains" src="../../assets/consulta.webp" />
+          <ion-card-header>
+            <ion-card-title>Consulta</ion-card-title>
+            <ion-card-subtitle>Módulo de consulta</ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+            Consultas médicas.
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col>
+        <ion-card color="light" class="cardHome" type="button" button="true" (click)="exame()">
+          <img class="imgCardHome" alt="Silhouette of mountains" src="../../assets/exames.webp" />
+          <ion-card-header>
+            <ion-card-title>Exames</ion-card-title>
+            <ion-card-subtitle>Módulo de exames</ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+            Resultado de exames
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+      <ion-col>
+        <ion-card color="light" class="cardHome" type="button" button="true" (click)="medico()">
+          <img class="imgCardHome" alt="Silhouette of mountains" src="../../assets/medico.webp" />
+          <ion-card-header>
+            <ion-card-title>Médicos</ion-card-title>
+            <ion-card-subtitle>Gestão de médicos</ion-card-subtitle>
+          </ion-card-header>
+
+          <ion-card-content>
+            Cadastro e atividade
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </ion-content>
