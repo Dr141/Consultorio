@@ -6,33 +6,42 @@ import { RoleService } from '../services/role/role.service';
 import { CacheService } from '../services/cache/cache.service';
 
 @Component({
-    selector: 'app-home',
-    templateUrl: 'home.page.html',
-    styleUrls: ['home.page.scss']
+  selector: 'app-home',
+  templateUrl: 'home.page.html',
+  styleUrls: ['home.page.scss'],
+  standalone: false
 })
 export class HomePage implements OnInit, OnDestroy {
 
-  constructor(private modalController: ModalController, private api: ConsultorioApiService, private role: RoleService, private navCtrl: NavController, private cache: CacheService) { }
-  
+  constructor(
+    private modalController: ModalController,
+    private api: ConsultorioApiService,
+    private role: RoleService,
+    private navCtrl: NavController,
+    private cache: CacheService
+  ) { }
+
   ngOnInit(): void {
-    this.ehAdmin()
+    this.ehAdmin();
   }
 
   ngOnDestroy(): void {
-    this.cache.RemoveTodosCookies()
+    this.cache.RemoveTodosCookies();
   }
 
   logOut() {
     this.api.logout().subscribe({
       next: () => {
-        this.navCtrl.back()
+        this.navCtrl.navigateRoot('login');
       },
-      error: () => { }
-    })
+      error: () => {
+        this.navCtrl.navigateRoot('login');
+      }
+    });
   }
 
   users() {
-    this.navCtrl.navigateForward('users')
+    this.navCtrl.navigateForward('users');
   }
 
   async atualizarSenha() {
@@ -41,28 +50,36 @@ export class HomePage implements OnInit, OnDestroy {
       componentProps: {
         api: this.api
       }
-    })
+    });
 
-    await modal.present()
+    await modal.present();
   }
 
-  public ehAdmin() {
-    var roles = this.role.getRole()
-
+  public ehAdmin(): boolean {
+    const roles = this.role.getRole();
     if (roles) {
-      return roles.search("Administrador") >= 0
+      return roles.search('Administrador') >= 0;
     }
-
-    return false
+    return false;
   }
 
-  public paciente() { }
+  public paciente() {
+    this.navCtrl.navigateForward('pacientes');
+  }
 
-  public agenda() { }
+  public agenda() {
+    this.navCtrl.navigateForward('agenda');
+  }
 
-  public consulta() { }
+  public consulta() {
+    this.navCtrl.navigateForward('consultas');
+  }
 
-  public exame() { }
+  public exame() {
+    this.navCtrl.navigateForward('exames');
+  }
 
-  public medico() { }
+  public medico() {
+    this.navCtrl.navigateForward('medicos');
+  }
 }

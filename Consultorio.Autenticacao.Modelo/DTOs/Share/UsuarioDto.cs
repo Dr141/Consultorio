@@ -1,3 +1,5 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 
-public record UsuarioDto(string Email, Boolean EmailConfirmado, IEnumerable<Claim>? Claims, IEnumerable<string>? Roles);
+namespace Consultorio.Identity.Modelo.DTOs.Share;
+
+public record UsuarioDto(string Email, bool EmailConfirmado, IEnumerable<Claim>? Claims, IEnumerable<string>? Roles);

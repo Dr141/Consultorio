@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ consulta ? 'Observações da Consulta' : 'Nova Consulta Médica' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">Fechar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    @if (!consulta) {
+      <ion-item>
+        <ion-label>Paciente</ion-label>
+        <ion-select formControlName="idPaciente" placeholder="Selecione o paciente">
+          @for (p of pacientes; track p.id) {
+            <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Médico Responsável</ion-label>
+        <ion-select formControlName="idMedico" placeholder="Selecione o médico">
+          @for (m of medicos; track m.id) {
+            <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+    }
+
+    <ion-item>
+      <ion-label position="floating">Prontuário / Evolução Médica / Observações</ion-label>
+      <ion-textarea formControlName="observacao" rows="6" placeholder="Descreva os sintomas, diagnóstico, conduta médica ou prescrições..."></ion-textarea>
+    </ion-item>
+
+    <div class="ion-padding-top">
+      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+        {{ salvando ? 'Salvando...' : 'Salvar Consulta' }}
+      </ion-button>
+    </div>
+  </form>
+</ion-content>
