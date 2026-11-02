@@ -4,6 +4,7 @@ import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { AtualizarSenhaComponent } from '../components/atualizar-senha/atualizar-senha.component';
 import { RoleService } from '../services/role/role.service';
 import { CacheService } from '../services/cache/cache.service';
+import { ThemeService } from '../services/theme/theme.service';
 
 @Component({
   selector: 'app-home',
@@ -18,7 +19,8 @@ export class HomePage implements OnInit, OnDestroy {
     private api: ConsultorioApiService,
     private role: RoleService,
     private navCtrl: NavController,
-    private cache: CacheService
+    private cache: CacheService,
+    public themeService: ThemeService
   ) { }
 
   ngOnInit(): void {
@@ -27,6 +29,10 @@ export class HomePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.cache.RemoveTodosCookies();
+  }
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
   }
 
   logOut() {

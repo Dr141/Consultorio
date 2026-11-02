@@ -1,2 +1,57 @@
-// For information on how to create your own theme, please see:
-// http://ionicframework.com/docs/theming/
+/**
+ * Ionic Theme Variables & Semantic Design Tokens
+ */
+
+:root {
+  /* Cores Principais */
+  --ion-color-primary: #1976d2;
+  --ion-color-primary-rgb: 25, 118, 210;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1565c0;
+  --ion-color-primary-tint: #42a5f5;
+
+  --ion-color-secondary: #00897b;
+  --ion-color-secondary-rgb: 0, 137, 123;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #00796b;
+  --ion-color-secondary-tint: #26a69a;
+
+  /* Tokens Semânticos — Modo Claro */
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-elevated: #f1f5f9;
+  --app-text: #0f172a;
+  --app-text-muted: #64748b;
+  --app-border: rgba(0, 0, 0, 0.08);
+  --app-card-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --app-card-border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+:root.ion-palette-dark {
+  /* Cores Principais — Modo Escuro Ajustado */
+  --ion-color-primary: #38bdf8;
+  --ion-color-primary-rgb: 56, 189, 248;
+  --ion-color-primary-contrast: #0f172a;
+  --ion-color-primary-contrast-rgb: 15, 23, 42;
+  --ion-color-primary-shade: #0284c7;
+  --ion-color-primary-tint: #7dd3fc;
+
+  --ion-color-secondary: #2dd4bf;
+  --ion-color-secondary-rgb: 45, 212, 191;
+  --ion-color-secondary-contrast: #0f172a;
+  --ion-color-secondary-contrast-rgb: 15, 23, 42;
+  --ion-color-secondary-shade: #0d9488;
+  --ion-color-secondary-tint: #5eead4;
+
+  /* Tokens Semânticos — Modo Escuro */
+  --app-bg: #0b0f19;
+  --app-surface: #131c2e;
+  --app-surface-elevated: #1e293b;
+  --app-text: #f8fafc;
+  --app-text-muted: #94a3b8;
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --app-card-border: 1px solid rgba(255, 255, 255, 0.08);
+}

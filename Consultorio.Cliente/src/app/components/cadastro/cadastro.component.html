@@ -1,41 +1,50 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button color="danger" (click)="cancel()">Cancelar</ion-button>
-    </ion-buttons>
-    <ion-title style="text-align:center">Cadastro</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Novo Usuário</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="confirm()" [strong]="true" [disabled]="!cadastro.valid" color="secondary">Confirmar</ion-button>
+      <ion-button (click)="cancel()">Fechar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 <ion-content class="ion-padding">
   @if(erro.length > 0){
-  <ion-card class="erro">
-    <p>{{erro}}</p>
-  </ion-card>
+    <div class="alert-erro">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>{{erro}}</p>
+    </div>
   }
-  <form [formGroup]="cadastro">
-    <ion-list>
-      <ion-item lines="none">
-        <ion-input type="email" label="Email" labelPlacement="floating" placeholder="Digite o seu e-mail" formControlName="email"
-                   helperText="Entre com e-mail válido"
-                   error-text="Email inválido"></ion-input>
+
+  <form [formGroup]="cadastro" (ngSubmit)="confirm()">
+    <ion-list lines="none">
+      <ion-item class="form-item">
+        <ion-input type="email" label="E-mail" labelPlacement="floating" placeholder="usuario@email.com" formControlName="email"
+                   helperText="E-mail que será usado no login"
+                   error-text="Informe um e-mail válido">
+        </ion-input>
       </ion-item>
-      <ion-item lines="none">
-        <ion-input type="password" label="Senha" labelPlacement="floating" formControlName="senha"
-                   helperText="Entre com uma senha válida"
+
+      <ion-item class="form-item">
+        <ion-input type="password" label="Senha" labelPlacement="floating" placeholder="Senha inicial" formControlName="senha"
+                   helperText="Mínimo 6 caracteres"
                    error-text="Senha inválida">
           <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
-      <ion-item lines="none">
-        <ion-input type="password" label="Confirmar senha" labelPlacement="floating" formControlName="confirmarSenha"
+
+      <ion-item class="form-item">
+        <ion-input type="password" label="Confirmar Senha" labelPlacement="floating" placeholder="Repita a senha" formControlName="confirmarSenha"
                    helperText="Repita a senha"
                    error-text="As senhas digitadas não coincidem">
           <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
     </ion-list>
+
+    <div class="ion-padding-top">
+      <ion-button type="submit" expand="block" color="primary" [disabled]="!cadastro.valid">
+        Cadastrar Usuário
+      </ion-button>
+    </div>
   </form>
 </ion-content>

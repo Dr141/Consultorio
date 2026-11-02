@@ -5,59 +5,74 @@
     </ion-buttons>
     <ion-title>Prontuário e Consultas</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="adicionar()">
+      <ion-button (click)="adicionar()" aria-label="Registrar nova consulta">
         <ion-icon slot="icon-only" name="document-text"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
-    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por paciente, médico ou evolução"></ion-searchbar>
+    <div class="searchbar-container">
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por paciente, médico ou evolução"></ion-searchbar>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  @if (carregando) {
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-      <p>Carregando consultas...</p>
-    </div>
-  } @else if (consultasFiltradas.length === 0) {
-    <div class="ion-text-center ion-padding">
-      <ion-icon name="document-text-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
-      <h3>Nenhuma consulta registrada</h3>
-      <p>Toque no botão + para registrar uma nova consulta médica.</p>
-    </div>
-  } @else {
-    <ion-list>
-      @for (c of consultasFiltradas; track c.id) {
-        <ion-card class="consulta-card">
-          <ion-card-header>
-            <div class="header-row">
-              <ion-card-title>{{ c.nomePaciente }}</ion-card-title>
-              <ion-badge color="medium">{{ formatarData(c.dtCriacao) }}</ion-badge>
-            </div>
-            <ion-card-subtitle>Médico: {{ c.nomeMedico }}</ion-card-subtitle>
-          </ion-card-header>
-          <ion-card-content>
-            <p class="observacao-texto">{{ c.observacao }}</p>
-            <div class="card-actions">
-              <ion-button fill="outline" size="small" (click)="editar(c)">
-                <ion-icon slot="start" name="create-outline"></ion-icon>
-                Editar Observação
-              </ion-button>
-              <ion-button fill="clear" color="danger" size="small" (click)="remover(c)">
-                <ion-icon slot="start" name="trash-outline"></ion-icon>
-                Excluir
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      }
-    </ion-list>
-  }
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando consultas...</p>
+      </div>
+    } @else if (consultasFiltradas.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <h3>Nenhuma consulta registrada</h3>
+        <p>Clique no botão + para registrar uma nova consulta médica.</p>
+      </div>
+    } @else {
+      <ion-grid class="ion-no-padding">
+        <ion-row>
+          @for (c of consultasFiltradas; track c.id) {
+            <ion-col size="12" size-md="6" size-xl="4">
+              <ion-card class="registro-card consulta-card">
+                <ion-card-header>
+                  <div class="header-row">
+                    <ion-card-title>{{ c.nomePaciente }}</ion-card-title>
+                    <ion-badge color="medium">{{ formatarData(c.dtCriacao) }}</ion-badge>
+                  </div>
+                  <ion-card-subtitle>
+                    <ion-icon name="medkit-outline"></ion-icon>
+                    Médico: {{ c.nomeMedico }}
+                  </ion-card-subtitle>
+                </ion-card-header>
+
+                <ion-card-content>
+                  <div class="observacao-box">
+                    <p class="observacao-texto">{{ c.observacao }}</p>
+                  </div>
+
+                  <div class="card-actions">
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(c)">
+                      <ion-icon slot="start" name="create-outline"></ion-icon>
+                      Editar Observação
+                    </ion-button>
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(c)">
+                      <ion-icon slot="start" name="trash-outline"></ion-icon>
+                      Excluir
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
+  </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

@@ -1,12 +1,29 @@
-#cardLogin {
-  width: 300px;
-  margin: 10% auto auto auto;
+.form-item {
+  --background: var(--app-surface-elevated);
+  --border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.roles-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--app-border);
+  padding-top: 16px;
+}
+
+.roles-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px 4px;
+  color: var(--app-text);
+}
+
+.role-item {
+  --background: var(--app-surface);
+  --border-radius: 10px;
+  margin-bottom: 8px;
 }
 
 ion-button {
-  text-transform: none
-}
-
-#itemConfirmar {
-  margin-top: 5px
+  --border-radius: 10px;
+  text-transform: none;
 }

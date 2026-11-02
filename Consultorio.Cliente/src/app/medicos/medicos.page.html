@@ -5,61 +5,93 @@
     </ion-buttons>
     <ion-title>Corpo Clínico / Médicos</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="adicionar()">
+      <ion-button (click)="adicionar()" aria-label="Cadastrar novo médico">
         <ion-icon slot="icon-only" name="person-add"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
-    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por médico, CRM ou especialidade"></ion-searchbar>
+    <div class="searchbar-container">
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por médico, CRM ou especialidade"></ion-searchbar>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  @if (carregando) {
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-      <p>Carregando médicos...</p>
-    </div>
-  } @else if (medicosFiltrados.length === 0) {
-    <div class="ion-text-center ion-padding">
-      <ion-icon name="medkit-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
-      <h3>Nenhum médico encontrado</h3>
-      <p>Toque no botão + para cadastrar um novo médico.</p>
-    </div>
-  } @else {
-    <ion-list>
-      @for (m of medicosFiltrados; track m.id) {
-        <ion-item-sliding>
-          <ion-item button (click)="editar(m)">
-            <ion-avatar slot="start">
-              <ion-icon name="medkit" style="font-size: 40px; color: var(--ion-color-secondary);"></ion-icon>
-            </ion-avatar>
-            <ion-label>
-              <h2>{{ m.nome }}</h2>
-              <p><strong>CRM:</strong> {{ m.crm }} | Tel: {{ m.telefone }}</p>
-              <div class="badges-container">
-                @for (esp of formatarEspecialidades(m.especialidades); track esp) {
-                  <ion-badge color="primary" class="badge-esp">{{ esp }}</ion-badge>
-                }
-              </div>
-            </ion-label>
-          </ion-item>
-          <ion-item-options side="end">
-            <ion-item-option color="primary" (click)="editar(m)">
-              <ion-icon slot="icon-only" name="create"></ion-icon>
-            </ion-item-option>
-            <ion-item-option color="danger" (click)="remover(m)">
-              <ion-icon slot="icon-only" name="trash"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
-        </ion-item-sliding>
-      }
-    </ion-list>
-  }
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando médicos...</p>
+      </div>
+    } @else if (medicosFiltrados.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="medkit-outline"></ion-icon>
+        <h3>Nenhum médico encontrado</h3>
+        <p>Clique no botão + para cadastrar um novo médico.</p>
+      </div>
+    } @else {
+      <ion-grid class="ion-no-padding">
+        <ion-row>
+          @for (m of medicosFiltrados; track m.id) {
+            <ion-col size="12" size-md="6" size-xl="4">
+              <ion-card class="registro-card">
+                <ion-card-header>
+                  <div class="card-header-flex">
+                    <ion-avatar class="card-avatar">
+                      <ion-icon name="medkit"></ion-icon>
+                    </ion-avatar>
+                    <div class="header-titles">
+                      <ion-card-title>{{ m.nome }}</ion-card-title>
+                      <ion-card-subtitle>CRM: {{ m.crm }}</ion-card-subtitle>
+                    </div>
+                  </div>
+                </ion-card-header>
+
+                <ion-card-content>
+                  <div class="info-row">
+                    <ion-icon name="call-outline"></ion-icon>
+                    <span>{{ m.telefone || 'Não informado' }}</span>
+                  </div>
+
+                  @if (m.dtNasc) {
+                    <div class="info-row">
+                      <ion-icon name="calendar-outline"></ion-icon>
+                      <span>Nasc: {{ m.dtNasc | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+
+                  <div class="badges-container">
+                    @for (esp of formatarEspecialidades(m.especialidades); track esp) {
+                      <ion-badge color="secondary" class="badge-esp">{{ esp }}</ion-badge>
+                    }
+                  </div>
+
+                  @if (m.observacao) {
+                    <p class="observacao-box"><em>{{ m.observacao }}</em></p>
+                  }
+
+                  <div class="card-actions">
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(m)">
+                      <ion-icon slot="start" name="create-outline"></ion-icon>
+                      Editar
+                    </ion-button>
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(m)">
+                      <ion-icon slot="start" name="trash-outline"></ion-icon>
+                      Excluir
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
+  </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

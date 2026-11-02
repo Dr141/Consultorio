@@ -5,59 +5,87 @@
     </ion-buttons>
     <ion-title>Gestão de Pacientes</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="adicionar()">
+      <ion-button (click)="adicionar()" aria-label="Cadastrar novo paciente">
         <ion-icon slot="icon-only" name="person-add"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
-    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por nome ou CPF"></ion-searchbar>
+    <div class="searchbar-container">
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por nome ou CPF"></ion-searchbar>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  @if (carregando) {
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-      <p>Carregando pacientes...</p>
-    </div>
-  } @else if (pacientesFiltrados.length === 0) {
-    <div class="ion-text-center ion-padding">
-      <ion-icon name="people-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
-      <h3>Nenhum paciente encontrado</h3>
-      <p>Toque no botão + para cadastrar um novo paciente.</p>
-    </div>
-  } @else {
-    <ion-list>
-      @for (p of pacientesFiltrados; track p.id) {
-        <ion-item-sliding>
-          <ion-item button (click)="editar(p)">
-            <ion-avatar slot="start">
-              <ion-icon name="person-circle" style="font-size: 40px; color: var(--ion-color-primary);"></ion-icon>
-            </ion-avatar>
-            <ion-label>
-              <h2>{{ p.nome }}</h2>
-              <p>CPF: {{ p.cpf }} | Tel: {{ p.telefone }}</p>
-              @if (p.observacao) {
-                <p><em>{{ p.observacao }}</em></p>
-              }
-            </ion-label>
-          </ion-item>
-          <ion-item-options side="end">
-            <ion-item-option color="primary" (click)="editar(p)">
-              <ion-icon slot="icon-only" name="create"></ion-icon>
-            </ion-item-option>
-            <ion-item-option color="danger" (click)="remover(p)">
-              <ion-icon slot="icon-only" name="trash"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
-        </ion-item-sliding>
-      }
-    </ion-list>
-  }
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando pacientes...</p>
+      </div>
+    } @else if (pacientesFiltrados.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="people-outline"></ion-icon>
+        <h3>Nenhum paciente encontrado</h3>
+        <p>Clique no botão + para cadastrar um novo paciente.</p>
+      </div>
+    } @else {
+      <ion-grid class="ion-no-padding">
+        <ion-row>
+          @for (p of pacientesFiltrados; track p.id) {
+            <ion-col size="12" size-md="6" size-xl="4">
+              <ion-card class="registro-card">
+                <ion-card-header>
+                  <div class="card-header-flex">
+                    <ion-avatar class="card-avatar">
+                      <ion-icon name="person-circle"></ion-icon>
+                    </ion-avatar>
+                    <div class="header-titles">
+                      <ion-card-title>{{ p.nome }}</ion-card-title>
+                      <ion-card-subtitle>CPF: {{ p.cpf }}</ion-card-subtitle>
+                    </div>
+                  </div>
+                </ion-card-header>
+
+                <ion-card-content>
+                  <div class="info-row">
+                    <ion-icon name="call-outline"></ion-icon>
+                    <span>{{ p.telefone || 'Não informado' }}</span>
+                  </div>
+
+                  @if (p.dtNasc) {
+                    <div class="info-row">
+                      <ion-icon name="calendar-outline"></ion-icon>
+                      <span>Nasc: {{ p.dtNasc | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+
+                  @if (p.observacao) {
+                    <p class="observacao-box"><em>{{ p.observacao }}</em></p>
+                  }
+
+                  <div class="card-actions">
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(p)">
+                      <ion-icon slot="start" name="create-outline"></ion-icon>
+                      Editar
+                    </ion-button>
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(p)">
+                      <ion-icon slot="start" name="trash-outline"></ion-icon>
+                      Excluir
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
+  </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

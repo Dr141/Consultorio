@@ -1,25 +1,75 @@
+ion-col {
+  padding: 8px;
+}
+
 .consulta-card {
-  margin-bottom: 16px;
-  border-radius: 8px;
-}
-
-.header-row {
+  margin: 0;
+  height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    ion-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--app-text);
+    }
+  }
+
+  ion-card-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--app-text-muted);
+
+    ion-icon {
+      font-size: 15px;
+    }
+  }
+
+  .observacao-box {
+    background-color: var(--app-surface-elevated);
+    padding: 12px;
+    border-radius: 10px;
+    margin: 8px 0;
+    min-height: 70px;
+
+    .observacao-texto {
+      white-space: pre-wrap;
+      font-size: 13px;
+      color: var(--app-text);
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
 }
 
-.observacao-texto {
-  white-space: pre-wrap;
-  font-size: 14px;
-  color: var(--ion-color-dark);
-  line-height: 1.5;
-}
+.empty-state, .loading-state {
+  margin-top: 40px;
 
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  border-top: 1px solid var(--ion-color-light-shade);
-  padding-top: 8px;
+  ion-icon {
+    font-size: 64px;
+    color: var(--app-text-muted);
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--app-text-muted);
+    margin: 0;
+  }
 }

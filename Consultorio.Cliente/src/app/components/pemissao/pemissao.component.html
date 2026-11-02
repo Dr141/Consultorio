@@ -1,50 +1,56 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button color="danger" (click)="cancel()">Cancelar</ion-button>
-    </ion-buttons>
-    <ion-title style="text-align:center">Configurar permissão(Role)</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Permissões (Roles)</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="confirm()" [strong]="true" [disabled]="!permissao.valid" color="secondary">Confirmar</ion-button>
+      <ion-button (click)="cancel()">Fechar</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+
 <ion-content class="ion-padding">
-  <form [formGroup]="permissao">
-    <ion-list>
-      <ion-item lines="none">
-        <ion-input type="email" label="Email" labelPlacement="floating" placeholder="Digite o seu e-mail" formControlName="email"
-                   helperText="Entre com e-mail válido"
-                   error-text="Email inválido"></ion-input>
+  <form [formGroup]="permissao" (ngSubmit)="confirm()">
+    <ion-list lines="none">
+      <ion-item class="form-item">
+        <ion-input type="email" label="E-mail" labelPlacement="floating" formControlName="email" readonly="true">
+        </ion-input>
       </ion-item>
-      <ion-item lines="none">
-        <ion-select label="Selecione a Role" label-placement="floating" formControlName="role">
+
+      <ion-item class="form-item">
+        <ion-select label="Atribuir Nova Permissão" label-placement="floating" formControlName="role" placeholder="Selecione">
           @for (role of roles; track role) {
-          <ion-select-option [value]="role">{{ role }}</ion-select-option>
+            <ion-select-option [value]="role">{{ role }}</ion-select-option>
           }
         </ion-select>
       </ion-item>
     </ion-list>
-  </form>
-  <ion-list lines="full">
-    <ion-item>
-      <ion-label style="font-weight:bold;text-align:center">
-        Permissões configurada no usuário
-      </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label style="font-weight:bold">
-        E-mail
-      </ion-label>
-      <ion-label style="text-align:end;font-weight:bold">
-        Excluir
-      </ion-label>
-    </ion-item>
-    <ion-item *ngFor="let role of user.roles">
-      <ion-label>{{role}}</ion-label>
-      <ion-button class="desk-button" color="medium" (click)="remover(role)">
-        <ion-icon name="trash-outline"></ion-icon>
+
+    <div class="ion-padding-top ion-padding-bottom">
+      <ion-button type="submit" expand="block" color="secondary" [disabled]="!permissao.valid">
+        Adicionar Permissão
       </ion-button>
-    </ion-item>
-  </ion-list>
+    </div>
+  </form>
+
+  <div class="roles-section">
+    <h4 class="roles-title">Permissões Atuais do Usuário</h4>
+    <ion-list lines="inset">
+      @for (role of user.roles; track role) {
+        <ion-item class="role-item">
+          <ion-icon slot="start" name="shield-outline" color="primary"></ion-icon>
+          <ion-label>
+            <h3>{{ role }}</h3>
+          </ion-label>
+          <ion-button slot="end" fill="clear" color="danger" (click)="remover(role)" aria-label="Remover permissão">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      } @empty {
+        <ion-item lines="none">
+          <ion-label color="medium" class="ion-text-center">
+            Nenhuma permissão especial vinculada.
+          </ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  </div>
 </ion-content>

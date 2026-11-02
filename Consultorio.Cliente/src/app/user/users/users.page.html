@@ -1,36 +1,67 @@
 <ion-header [translucent]="true">
-  <ion-toolbar style="text-align:center">
+  <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-button size="large" (click)="buttonBack()">
-        <ion-icon name="arrow-back-outline"></ion-icon>
+      <ion-button size="large" (click)="buttonBack()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Gerenciamento de usuários</ion-title>
+    <ion-title>Gerenciamento de Usuários</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-list lines="full">
-    <ion-item>
-      <ion-label style="font-weight:bold">
-        E-mail
-      </ion-label>
-      <ion-label style="text-align:end;font-weight:bold">
-        Ações
-      </ion-label>
-    </ion-item>
-    <ion-item *ngFor="let user of users">
-      <ion-label>{{user.email}}</ion-label>
-      <ion-button class="desk-button" color="medium" (click)="permissoes(user)">
-        <ion-icon name="business-outline"></ion-icon>
-      </ion-button>
-      <ion-button class="desk-button" color="medium" (click)="atualizarSenha(user.email)">
-        <ion-icon name="id-card-outline"></ion-icon>
-      </ion-button>
-    </ion-item>
-  </ion-list>
-  <ion-fab horizontal="end" vertical="bottom" slot="fixed">
-    <ion-fab-button color="medium" (click)="cadastro()">
+  <div class="page-container">
+    <ion-card class="users-card">
+      <ion-card-header>
+        <div class="header-content">
+          <div>
+            <ion-card-title>Usuários Cadastrados</ion-card-title>
+            <ion-card-subtitle>Gerencie as permissões e senhas de acesso</ion-card-subtitle>
+          </div>
+          <ion-button fill="solid" color="primary" class="btn-novo-desk" (click)="cadastro()">
+            <ion-icon slot="start" name="person-add-outline"></ion-icon>
+            Novo Usuário
+          </ion-button>
+        </div>
+      </ion-card-header>
+
+      <ion-card-content class="ion-no-padding">
+        <ion-list lines="inset">
+          @for (user of users; track user.email) {
+            <ion-item class="user-item">
+              <ion-avatar slot="start" class="user-avatar">
+                <ion-icon name="person-circle-outline"></ion-icon>
+              </ion-avatar>
+
+              <ion-label class="user-label">
+                <h3 class="user-email">{{ user.email }}</h3>
+                <p class="user-meta">Perfil de Acesso ao Sistema</p>
+              </ion-label>
+
+              <div slot="end" class="user-actions">
+                <ion-button fill="outline" color="secondary" size="small" (click)="permissoes(user)">
+                  <ion-icon slot="start" name="shield-checkmark-outline"></ion-icon>
+                  <span class="action-text">Permissões</span>
+                </ion-button>
+                <ion-button fill="outline" color="medium" size="small" (click)="atualizarSenha(user.email)">
+                  <ion-icon slot="start" name="key-outline"></ion-icon>
+                  <span class="action-text">Senha</span>
+                </ion-button>
+              </div>
+            </ion-item>
+          } @empty {
+            <div class="ion-text-center ion-padding empty-state">
+              <ion-icon name="people-outline"></ion-icon>
+              <p>Nenhum usuário cadastrado.</p>
+            </div>
+          }
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <ion-fab horizontal="end" vertical="bottom" slot="fixed" class="fab-mobile">
+    <ion-fab-button color="primary" (click)="cadastro()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

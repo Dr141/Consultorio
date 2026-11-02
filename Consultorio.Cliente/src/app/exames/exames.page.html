@@ -5,68 +5,84 @@
     </ion-buttons>
     <ion-title>Exames e Laudos</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="adicionar()">
+      <ion-button (click)="adicionar()" aria-label="Solicitar novo exame">
         <ion-icon slot="icon-only" name="flask"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
-    <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por exame ou paciente"></ion-searchbar>
+    <div class="searchbar-container">
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por exame ou paciente"></ion-searchbar>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  @if (carregando) {
-    <div class="ion-text-center ion-padding">
-      <ion-spinner></ion-spinner>
-      <p>Carregando exames...</p>
-    </div>
-  } @else if (examesFiltrados.length === 0) {
-    <div class="ion-text-center ion-padding">
-      <ion-icon name="flask-outline" style="font-size: 64px; color: #aaa;"></ion-icon>
-      <h3>Nenhum exame solicitado</h3>
-      <p>Toque no botão + para registrar uma nova solicitação de exame.</p>
-    </div>
-  } @else {
-    <ion-list>
-      @for (e of examesFiltrados; track e.id) {
-        <ion-card class="exame-card">
-          <ion-card-header>
-            <div class="header-row">
-              <ion-card-title>{{ e.descricao }}</ion-card-title>
-              <ion-badge [color]="e.resultado ? 'success' : 'warning'">
-                {{ e.resultado ? 'Laudo Disponível' : 'Aguardando Resultado' }}
-              </ion-badge>
-            </div>
-            <ion-card-subtitle>Paciente: {{ e.nomePaciente }}</ion-card-subtitle>
-          </ion-card-header>
-          <ion-card-content>
-            @if (e.resultado) {
-              <div class="resultado-box">
-                <strong>Resultado:</strong>
-                <p>{{ e.resultado }}</p>
-              </div>
-            } @else {
-              <p class="sem-resultado"><em>Nenhum laudo ou resultado lançado até o momento.</em></p>
-            }
-            <div class="card-actions">
-              <ion-button fill="outline" size="small" (click)="editar(e)">
-                <ion-icon slot="start" name="clipboard-outline"></ion-icon>
-                {{ e.resultado ? 'Editar Laudo' : 'Lançar Laudo' }}
-              </ion-button>
-              <ion-button fill="clear" color="danger" size="small" (click)="remover(e)">
-                <ion-icon slot="start" name="trash-outline"></ion-icon>
-                Excluir
-              </ion-button>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      }
-    </ion-list>
-  }
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando exames...</p>
+      </div>
+    } @else if (examesFiltrados.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="flask-outline"></ion-icon>
+        <h3>Nenhum exame solicitado</h3>
+        <p>Clique no botão + para registrar uma nova solicitação de exame.</p>
+      </div>
+    } @else {
+      <ion-grid class="ion-no-padding">
+        <ion-row>
+          @for (e of examesFiltrados; track e.id) {
+            <ion-col size="12" size-md="6" size-xl="4">
+              <ion-card class="registro-card exame-card">
+                <ion-card-header>
+                  <div class="header-row">
+                    <ion-card-title>{{ e.descricao }}</ion-card-title>
+                    <ion-badge [color]="e.resultado ? 'success' : 'warning'">
+                      {{ e.resultado ? 'Laudo Pronto' : 'Aguardando' }}
+                    </ion-badge>
+                  </div>
+                  <ion-card-subtitle>
+                    <ion-icon name="person-outline"></ion-icon>
+                    Paciente: {{ e.nomePaciente }}
+                  </ion-card-subtitle>
+                </ion-card-header>
+
+                <ion-card-content>
+                  @if (e.resultado) {
+                    <div class="resultado-box">
+                      <strong class="resultado-titulo">Resultado / Laudo:</strong>
+                      <p class="resultado-texto">{{ e.resultado }}</p>
+                    </div>
+                  } @else {
+                    <div class="sem-resultado-box">
+                      <ion-icon name="hourglass-outline"></ion-icon>
+                      <span>Aguardando emissão do laudo clínico</span>
+                    </div>
+                  }
+
+                  <div class="card-actions">
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(e)">
+                      <ion-icon slot="start" name="clipboard-outline"></ion-icon>
+                      {{ e.resultado ? 'Editar Laudo' : 'Lançar Laudo' }}
+                    </ion-button>
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(e)">
+                      <ion-icon slot="start" name="trash-outline"></ion-icon>
+                      Excluir
+                    </ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+    }
+  </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

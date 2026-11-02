@@ -9,33 +9,42 @@
 
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="salvar()">
-    <ion-item>
-      <ion-label position="floating">Nome Completo</ion-label>
-      <ion-input formControlName="nome" placeholder="Digite o nome"></ion-input>
-    </ion-item>
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-input label="Nome Completo" labelPlacement="floating" formControlName="nome" placeholder="Digite o nome completo"></ion-input>
+          </ion-item>
+        </ion-col>
 
-    <ion-item>
-      <ion-label position="floating">CPF</ion-label>
-      <ion-input formControlName="cpf" placeholder="000.000.000-00"></ion-input>
-    </ion-item>
+        <ion-col size="12" size-sm="6">
+          <ion-item class="form-item">
+            <ion-input label="CPF" labelPlacement="floating" formControlName="cpf" placeholder="000.000.000-00"></ion-input>
+          </ion-item>
+        </ion-col>
 
-    <ion-item>
-      <ion-label position="floating">Data de Nascimento</ion-label>
-      <ion-input type="date" formControlName="dtNasc"></ion-input>
-    </ion-item>
+        <ion-col size="12" size-sm="6">
+          <ion-item class="form-item">
+            <ion-input type="date" label="Data de Nascimento" labelPlacement="floating" formControlName="dtNasc"></ion-input>
+          </ion-item>
+        </ion-col>
 
-    <ion-item>
-      <ion-label position="floating">Telefone</ion-label>
-      <ion-input formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
-    </ion-item>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-input label="Telefone" labelPlacement="floating" formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
+          </ion-item>
+        </ion-col>
 
-    <ion-item>
-      <ion-label position="floating">Observações / Histórico Clínico</ion-label>
-      <ion-textarea formControlName="observacao" rows="3" placeholder="Informações adicionais"></ion-textarea>
-    </ion-item>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-textarea label="Observações / Histórico Clínico" labelPlacement="floating" formControlName="observacao" rows="3" placeholder="Informações clínicas relevantes..."></ion-textarea>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
 
     <div class="ion-padding-top">
-      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+      <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
         {{ salvando ? 'Salvando...' : 'Salvar Paciente' }}
       </ion-button>
     </div>

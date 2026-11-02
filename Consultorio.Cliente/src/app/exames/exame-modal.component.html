@@ -9,36 +9,48 @@
 
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="salvar()">
-    @if (!exame) {
-      <ion-item>
-        <ion-label>Paciente</ion-label>
-        <ion-select formControlName="idPaciente" placeholder="Selecione o paciente">
-          @for (p of pacientes; track p.id) {
-            <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
-          }
-        </ion-select>
-      </ion-item>
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        @if (!exame) {
+          <ion-col size="12">
+            <ion-item class="form-item">
+              <ion-select label="Paciente" labelPlacement="floating" formControlName="idPaciente" placeholder="Selecione o paciente">
+                @for (p of pacientes; track p.id) {
+                  <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+          </ion-col>
 
-      <ion-item>
-        <ion-label position="floating">Descrição do Exame</ion-label>
-        <ion-input formControlName="descricao" placeholder="Ex: Hemograma, Ressonância Magnética, ECG"></ion-input>
-      </ion-item>
-    } @else {
-      <ion-item lines="none">
-        <ion-label>
-          <h2><strong>Exame:</strong> {{ exame.descricao }}</h2>
-          <p><strong>Paciente:</strong> {{ exame.nomePaciente }}</p>
-        </ion-label>
-      </ion-item>
-    }
+          <ion-col size="12">
+            <ion-item class="form-item">
+              <ion-input label="Descrição do Exame" labelPlacement="floating" formControlName="descricao" placeholder="Ex: Hemograma Completo, ECG, Raio-X"></ion-input>
+            </ion-item>
+          </ion-col>
+        } @else {
+          <ion-col size="12">
+            <div class="exame-info-card">
+              <h3><strong>Exame:</strong> {{ exame.descricao }}</h3>
+              <p><strong>Paciente:</strong> {{ exame.nomePaciente }}</p>
+            </div>
+          </ion-col>
+        }
 
-    <ion-item>
-      <ion-label position="floating">Resultado do Exame / Laudo</ion-label>
-      <ion-textarea formControlName="resultado" rows="5" placeholder="Insira o laudo ou resultado do exame"></ion-textarea>
-    </ion-item>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-textarea label="Resultado do Exame / Laudo Médico"
+                          labelPlacement="floating"
+                          formControlName="resultado"
+                          rows="5"
+                          placeholder="Insira o laudo, valores de referência ou conclusões do exame...">
+            </ion-textarea>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
 
     <div class="ion-padding-top">
-      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+      <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
         {{ salvando ? 'Salvando...' : 'Salvar Exame' }}
       </ion-button>
     </div>

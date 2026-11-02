@@ -9,33 +9,45 @@
 
 <ion-content class="ion-padding">
   <form [formGroup]="form" (ngSubmit)="salvar()">
-    @if (!consulta) {
-      <ion-item>
-        <ion-label>Paciente</ion-label>
-        <ion-select formControlName="idPaciente" placeholder="Selecione o paciente">
-          @for (p of pacientes; track p.id) {
-            <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
-          }
-        </ion-select>
-      </ion-item>
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        @if (!consulta) {
+          <ion-col size="12" size-sm="6">
+            <ion-item class="form-item">
+              <ion-select label="Paciente" labelPlacement="floating" formControlName="idPaciente" placeholder="Selecione o paciente">
+                @for (p of pacientes; track p.id) {
+                  <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+          </ion-col>
 
-      <ion-item>
-        <ion-label>Médico Responsável</ion-label>
-        <ion-select formControlName="idMedico" placeholder="Selecione o médico">
-          @for (m of medicos; track m.id) {
-            <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
-          }
-        </ion-select>
-      </ion-item>
-    }
+          <ion-col size="12" size-sm="6">
+            <ion-item class="form-item">
+              <ion-select label="Médico Responsável" labelPlacement="floating" formControlName="idMedico" placeholder="Selecione o médico">
+                @for (m of medicos; track m.id) {
+                  <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+          </ion-col>
+        }
 
-    <ion-item>
-      <ion-label position="floating">Prontuário / Evolução Médica / Observações</ion-label>
-      <ion-textarea formControlName="observacao" rows="6" placeholder="Descreva os sintomas, diagnóstico, conduta médica ou prescrições..."></ion-textarea>
-    </ion-item>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-textarea label="Prontuário / Evolução Médica / Observações"
+                          labelPlacement="floating"
+                          formControlName="observacao"
+                          rows="6"
+                          placeholder="Descreva sintomas, histórico, diagnósticos ou condutas prescritas...">
+            </ion-textarea>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
 
     <div class="ion-padding-top">
-      <ion-button expand="block" type="submit" [disabled]="form.invalid || salvando">
+      <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
         {{ salvando ? 'Salvando...' : 'Salvar Consulta' }}
       </ion-button>
     </div>

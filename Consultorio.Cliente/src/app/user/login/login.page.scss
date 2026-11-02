@@ -1,16 +1,81 @@
+.login-content {
+  --background: var(--app-bg);
+}
+
+.login-brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.login-wrapper {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 3vw, 32px);
+  box-sizing: border-box;
+}
+
 #cardLogin {
-  width: 300px;
-  margin: 10% auto auto auto;
+  width: 100%;
+  max-width: 440px;
+  margin: 0;
+  border-radius: 18px;
+  overflow: hidden;
+
+  .icon-avatar {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px auto;
+    border-radius: 50%;
+    background-color: rgba(var(--ion-color-primary-rgb), 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 34px;
+      color: var(--ion-color-primary);
+    }
+  }
+
+  ion-card-title {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  ion-card-subtitle {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--app-text-muted);
+  }
 
   #contentErro {
-    background-color: rgb(44, 11, 14);
-    color: rgb(234, 134, 143);
-    border: 2px solid rgb(132, 32, 41);
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    margin: 16px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
   }
 }
-ion-button{
-    text-transform: none
+
+.input-item {
+  --background: var(--app-surface-elevated);
+  --border-radius: 10px;
+  margin-bottom: 14px;
 }
-#itemEntrar{
-    margin-top: 5px
+
+.submit-container {
+  margin-top: 18px;
+
+  ion-button {
+    --border-radius: 10px;
+    height: 46px;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 16px;
+  }
 }

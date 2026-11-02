@@ -1,12 +1,12 @@
-#cardLogin {
-  width: 300px;
-  margin: 10% auto auto auto;
+.form-item {
+  --background: var(--app-surface-elevated);
+  --border-radius: 10px;
+  margin-bottom: 12px;
 }
 
 ion-button {
-  text-transform: none
-}
-
-#itemConfirmar {
-  margin-top: 5px
+  --border-radius: 10px;
+  height: 44px;
+  font-weight: 600;
+  text-transform: none;
 }

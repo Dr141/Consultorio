@@ -3,6 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ModalController, NavController } from '@ionic/angular';
 import { CadastroComponent } from '../../components/cadastro/cadastro.component';
 import { ConsultorioApiService } from '../../services/api/consultorio-api.service';
+import { ThemeService } from '../../services/theme/theme.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,8 @@ export class LoginPage implements OnInit {
   constructor(
     private modalController: ModalController,
     private api: ConsultorioApiService,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    public themeService: ThemeService
   ) { }
 
   ionViewWillEnter() {
@@ -42,6 +44,10 @@ export class LoginPage implements OnInit {
         }
       });
     }
+  }
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
   }
 
   async openModal() {

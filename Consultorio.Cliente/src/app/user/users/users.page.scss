@@ -1,0 +1,83 @@
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-novo-desk {
+  --border-radius: 8px;
+  font-weight: 600;
+  text-transform: none;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.fab-mobile {
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.users-card {
+  margin: 0;
+  border-radius: 14px;
+}
+
+.user-item {
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  --min-height: 64px;
+
+  .user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    color: var(--ion-color-primary);
+  }
+
+  .user-email {
+    font-weight: 600;
+    font-size: 15px;
+    word-break: break-all;
+    white-space: normal;
+  }
+
+  .user-meta {
+    font-size: 13px;
+    color: var(--app-text-muted);
+  }
+}
+
+.user-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  ion-button {
+    --border-radius: 8px;
+    text-transform: none;
+    font-weight: 500;
+  }
+
+  @media (max-width: 575px) {
+    .action-text {
+      display: none;
+    }
+  }
+}
+
+.empty-state {
+  color: var(--app-text-muted);
+  font-size: 15px;
+
+  ion-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+    color: var(--app-text-muted);
+  }
+}
