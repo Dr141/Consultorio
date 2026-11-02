@@ -1,0 +1,164 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag de versão para a release (ex: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: 'Consultorio.Cliente/package-lock.json'
+
+      - name: Restore .NET Solution
+        run: dotnet restore Consultorio.sln
+
+      - name: Run Backend Unit Tests (xUnit)
+        run: dotnet test Consultorio.sln --configuration Release --no-restore --verbosity normal
+
+      - name: Install Frontend Dependencies
+        working-directory: Consultorio.Cliente
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Frontend Unit Tests (Karma / ChromeHeadless)
+        working-directory: Consultorio.Cliente
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+  release:
+    name: Build, Package and Release
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Release Tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: 'Consultorio.Cliente/package-lock.json'
+
+      - name: Build Frontend Angular (Production)
+        working-directory: Consultorio.Cliente
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - name: Publish Linux (linux-x64)
+        run: |
+          dotnet publish Consultorio.Server/Consultorio.Server.csproj -c Release -r linux-x64 --self-contained false -o publish/linux-x64
+          tar -czvf consultorio-server-linux-x64.tar.gz -C publish/linux-x64 .
+
+      - name: Publish Windows (win-x64)
+        run: |
+          sudo apt-get update && sudo apt-get install -y zip
+          dotnet publish Consultorio.Server/Consultorio.Server.csproj -c Release -r win-x64 --self-contained false -o publish/win-x64
+          cd publish/win-x64 && zip -r ../../consultorio-server-win-x64.zip . && cd ../..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Release ${{ env.RELEASE_TAG }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            consultorio-server-linux-x64.tar.gz
+            consultorio-server-win-x64.zip
+            docker-compose.yml
+            .env.example
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Build & Push Docker Image (GHCR)
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'Dr141' || github.repository_owner == 'dr141'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Determine Docker Tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "DOCKER_TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          else
+            echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ env.DOCKER_TAG }}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Consultorio.Server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

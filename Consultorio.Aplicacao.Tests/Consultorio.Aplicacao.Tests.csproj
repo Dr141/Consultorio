@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Consultorio.Aplicacao\Consultorio.Aplicacao.csproj" />
     <ProjectReference Include="..\Consultorio.Dominio\Consultorio.Dominio.csproj" />
+    <ProjectReference Include="..\Consultorio.Infraestrutura\Consultorio.Infraestrutura.csproj" />
   </ItemGroup>
 
 </Project>

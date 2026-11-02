@@ -1,9 +1,11 @@
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Aplicacao.Servicos;
 using Consultorio.Dominio.Interfaces.Repositorios;
+using Consultorio.Dominio.Interfaces.Servicos;
 using Consultorio.Identity.Infraestrutura.Contexto;
 using Consultorio.Identity.Infraestrutura.Servicos;
 using Consultorio.Identity.Modelo.Interfaces.Servicos;
+using Consultorio.Infraestrutura.Cache;
 using Consultorio.Infraestrutura.Contexto;
 using Consultorio.Infraestrutura.Repositorios;
 using Consultorio.Infraestrutura.Repositorios.Base;
@@ -34,6 +36,25 @@ public static class RegistrarDependencias
 
         // Identity Service
         services.AddScoped<IIdentityService, IdentityService>();
+
+        // Cache Distribuído (Redis com fallback gracioso para memória)
+        bool redisHabilitado = configuration.GetValue<bool>("Redis:Enabled", false);
+        string? redisConn = configuration.GetValue<string>("Redis:ConnectionString");
+
+        if (redisHabilitado && !string.IsNullOrWhiteSpace(redisConn))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConn;
+                options.InstanceName = configuration.GetValue<string>("Redis:InstanceName", "Consultorio:");
+            });
+        }
+        else
+        {
+            services.AddDistributedMemoryCache();
+        }
+
+        services.AddSingleton<ICacheService, RedisCacheService>();
 
         // Repositórios de Domínio / Infraestrutura
         services.AddScoped(typeof(IRepositorio<>), typeof(Repositorio<>));

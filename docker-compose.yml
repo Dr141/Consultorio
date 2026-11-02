@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: consultorio-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: Consultorio
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d Consultorio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - consultorio-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: consultorio-redis
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - consultorio-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Consultorio.Server/Dockerfile
+    container_name: consultorio-api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__ConsultorioConection=Host=db;Port=5432;Database=Consultorio;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres123}
+      - ConnectionStrings__IdentityConection=Host=db;Port=5432;Database=Identity;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres123}
+      - Redis__ConnectionString=redis:6379
+      - Redis__Enabled=true
+      - Migration__RunMigration=true
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - consultorio-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  consultorio-net:
+    driver: bridge

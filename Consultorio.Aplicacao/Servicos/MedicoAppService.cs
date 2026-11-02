@@ -4,24 +4,59 @@ using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Entidades;
 using Consultorio.Dominio.Excecoes;
 using Consultorio.Dominio.Interfaces.Repositorios;
+using Consultorio.Dominio.Interfaces.Servicos;
 using Consultorio.Dominio.ValueObjects;
 
 namespace Consultorio.Aplicacao.Servicos;
 
 public class MedicoAppService(
     IMedicoRepositorio medicoRepositorio,
-    IPessoaRepositorio pessoaRepositorio) : IMedicoAppService
+    IPessoaRepositorio pessoaRepositorio,
+    ICacheService? cacheService = null) : IMedicoAppService
 {
+    private const string CacheKeyTodos = "medicos:todos";
+
     public async Task<List<MedicoResponse>> ObterTodosAsync()
     {
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<List<MedicoResponse>>(CacheKeyTodos);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var medicos = await medicoRepositorio.ObterTodosDetalhado();
-        return medicos.Select(MapearResponse).ToList();
+        var response = medicos.Select(MapearResponse).ToList();
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(CacheKeyTodos, response);
+        }
+
+        return response;
     }
 
     public async Task<MedicoResponse?> ObterPorIdAsync(int id)
     {
+        string cacheKey = $"medicos:{id}";
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<MedicoResponse>(cacheKey);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var medico = await medicoRepositorio.ObterDetalhadoPorId(id);
-        return medico is null ? null : MapearResponse(medico);
+        if (medico is null) return null;
+
+        var response = MapearResponse(medico);
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(cacheKey, response);
+        }
+
+        return response;
     }
 
     public async Task<MedicoResponse> AdicionarAsync(MedicoRequest request)
@@ -65,6 +100,13 @@ public class MedicoAppService(
 
         var medico = new Medico(pessoa, crmVo, request.Especialidades);
         var salvo = await medicoRepositorio.Adicionar(medico);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"medicos:{salvo.Id}");
+        }
+
         return MapearResponse(salvo);
     }
 
@@ -96,6 +138,13 @@ public class MedicoAppService(
 
         medico.Atualizar(crmVo, request.Especialidades);
         var atualizado = await medicoRepositorio.Atualizar(medico);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"medicos:{id}");
+        }
+
         return MapearResponse(atualizado);
     }
 
@@ -105,6 +154,12 @@ public class MedicoAppService(
             ?? throw new DomainException($"Médico com id {id} não encontrado.");
 
         await medicoRepositorio.Remover(medico);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"medicos:{id}");
+        }
     }
 
     public static MedicoResponse MapearResponse(Medico m) =>

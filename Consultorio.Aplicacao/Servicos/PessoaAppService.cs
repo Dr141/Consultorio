@@ -4,22 +4,58 @@ using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Entidades;
 using Consultorio.Dominio.Excecoes;
 using Consultorio.Dominio.Interfaces.Repositorios;
+using Consultorio.Dominio.Interfaces.Servicos;
 using Consultorio.Dominio.ValueObjects;
 
 namespace Consultorio.Aplicacao.Servicos;
 
-public class PessoaAppService(IPessoaRepositorio pessoaRepositorio) : IPessoaAppService
+public class PessoaAppService(
+    IPessoaRepositorio pessoaRepositorio,
+    ICacheService? cacheService = null) : IPessoaAppService
 {
+    private const string CacheKeyTodos = "pessoas:todos";
+
     public async Task<List<PessoaResponse>> ObterTodosAsync()
     {
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<List<PessoaResponse>>(CacheKeyTodos);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var pessoas = await pessoaRepositorio.ObterTodos();
-        return pessoas.Select(MapearResponse).ToList();
+        var response = pessoas.Select(MapearResponse).ToList();
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(CacheKeyTodos, response);
+        }
+
+        return response;
     }
 
     public async Task<PessoaResponse?> ObterPorIdAsync(int id)
     {
+        string cacheKey = $"pessoas:{id}";
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<PessoaResponse>(cacheKey);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var pessoa = await pessoaRepositorio.ObterId(id);
-        return pessoa is null ? null : MapearResponse(pessoa);
+        if (pessoa is null) return null;
+
+        var response = MapearResponse(pessoa);
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(cacheKey, response);
+        }
+
+        return response;
     }
 
     public async Task<PessoaResponse> AdicionarAsync(PessoaRequest request)
@@ -34,6 +70,13 @@ public class PessoaAppService(IPessoaRepositorio pessoaRepositorio) : IPessoaApp
         var pessoa = new Pessoa(request.Nome, cpfVo, request.DtNasc, telefoneVo, request.Observacao);
 
         var salvo = await pessoaRepositorio.Adicionar(pessoa);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"pessoas:{salvo.Id}");
+        }
+
         return MapearResponse(salvo);
     }
 
@@ -52,6 +95,13 @@ public class PessoaAppService(IPessoaRepositorio pessoaRepositorio) : IPessoaApp
         pessoa.Atualizar(request.Nome, cpfVo, request.DtNasc, telefoneVo, request.Observacao);
 
         var atualizado = await pessoaRepositorio.Atualizar(pessoa);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"pessoas:{id}");
+        }
+
         return MapearResponse(atualizado);
     }
 
@@ -61,6 +111,12 @@ public class PessoaAppService(IPessoaRepositorio pessoaRepositorio) : IPessoaApp
             ?? throw new DomainException($"Pessoa com id {id} não encontrada.");
 
         await pessoaRepositorio.Remover(pessoa);
+
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"pessoas:{id}");
+        }
     }
 
     public static PessoaResponse MapearResponse(Pessoa p) =>

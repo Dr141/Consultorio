@@ -4,30 +4,80 @@ using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Entidades;
 using Consultorio.Dominio.Excecoes;
 using Consultorio.Dominio.Interfaces.Repositorios;
+using Consultorio.Dominio.Interfaces.Servicos;
 
 namespace Consultorio.Aplicacao.Servicos;
 
 public class AgendaAppService(
     IAgendaRepositorio agendaRepositorio,
     IMedicoRepositorio medicoRepositorio,
-    IPacienteRepositorio pacienteRepositorio) : IAgendaAppService
+    IPacienteRepositorio pacienteRepositorio,
+    ICacheService? cacheService = null) : IAgendaAppService
 {
+    private const string CacheKeyTodos = "agenda:todos";
+
     public async Task<List<AgendaResponse>> ObterTodosAsync()
     {
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<List<AgendaResponse>>(CacheKeyTodos);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var agendas = await agendaRepositorio.ObterTodosDetalhado();
-        return agendas.Select(MapearResponse).ToList();
+        var response = agendas.Select(MapearResponse).ToList();
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(CacheKeyTodos, response, TimeSpan.FromMinutes(10));
+        }
+
+        return response;
     }
 
     public async Task<AgendaResponse?> ObterPorIdAsync(int id)
     {
+        string cacheKey = $"agenda:{id}";
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<AgendaResponse>(cacheKey);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var agenda = await agendaRepositorio.ObterDetalhadoPorId(id);
-        return agenda is null ? null : MapearResponse(agenda);
+        if (agenda is null) return null;
+
+        var response = MapearResponse(agenda);
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(cacheKey, response, TimeSpan.FromMinutes(10));
+        }
+
+        return response;
     }
 
     public async Task<List<AgendaResponse>> ObterPorMedicoEDataAsync(int idMedico, DateTime data)
     {
+        string cacheKey = $"agenda:medico:{idMedico}:{data:yyyyMMdd}";
+        if (cacheService is not null)
+        {
+            var emCache = await cacheService.ObterAsync<List<AgendaResponse>>(cacheKey);
+            if (emCache is not null)
+                return emCache;
+        }
+
         var agendas = await agendaRepositorio.ObterPorMedicoEData(idMedico, data);
-        return agendas.Select(MapearResponse).ToList();
+        var response = agendas.Select(MapearResponse).ToList();
+
+        if (cacheService is not null)
+        {
+            await cacheService.DefinirAsync(cacheKey, response, TimeSpan.FromMinutes(10));
+        }
+
+        return response;
     }
 
     public async Task<List<AgendaResponse>> ObterPorPacienteAsync(int idPaciente)
@@ -57,6 +107,9 @@ public class AgendaAppService(
 
         var agenda = new Agenda(request.Data, request.Hora, request.IdMedico, request.IdPaciente);
         var salvo = await agendaRepositorio.Adicionar(agenda);
+
+        await InvalidarCacheAsync(salvo.Id, salvo.IdMedico, salvo.Data);
+
         var detalhado = await agendaRepositorio.ObterDetalhadoPorId(salvo.Id);
         return MapearResponse(detalhado ?? salvo);
     }
@@ -79,6 +132,9 @@ public class AgendaAppService(
 
         agenda.AtualizarHorario(request.Data, request.Hora, request.IdMedico);
         var atualizado = await agendaRepositorio.Atualizar(agenda);
+
+        await InvalidarCacheAsync(id, atualizado.IdMedico, atualizado.Data);
+
         var detalhado = await agendaRepositorio.ObterDetalhadoPorId(atualizado.Id);
         return MapearResponse(detalhado ?? atualizado);
     }
@@ -93,6 +149,9 @@ public class AgendaAppService(
 
         agenda.AgendarPaciente(idPaciente);
         var atualizado = await agendaRepositorio.Atualizar(agenda);
+
+        await InvalidarCacheAsync(id, atualizado.IdMedico, atualizado.Data);
+
         var detalhado = await agendaRepositorio.ObterDetalhadoPorId(atualizado.Id);
         return MapearResponse(detalhado ?? atualizado);
     }
@@ -104,6 +163,9 @@ public class AgendaAppService(
 
         agenda.LiberarHorario();
         var atualizado = await agendaRepositorio.Atualizar(agenda);
+
+        await InvalidarCacheAsync(id, atualizado.IdMedico, atualizado.Data);
+
         var detalhado = await agendaRepositorio.ObterDetalhadoPorId(atualizado.Id);
         return MapearResponse(detalhado ?? atualizado);
     }
@@ -114,6 +176,20 @@ public class AgendaAppService(
             ?? throw new DomainException($"Horário de agenda com id {id} não encontrado.");
 
         await agendaRepositorio.Remover(agenda);
+        await InvalidarCacheAsync(id, agenda.IdMedico, agenda.Data);
+    }
+
+    private async Task InvalidarCacheAsync(int id, int? idMedico, DateTime data)
+    {
+        if (cacheService is not null)
+        {
+            await cacheService.RemoverAsync(CacheKeyTodos);
+            await cacheService.RemoverAsync($"agenda:{id}");
+            if (idMedico.HasValue)
+            {
+                await cacheService.RemoverAsync($"agenda:medico:{idMedico.Value}:{data:yyyyMMdd}");
+            }
+        }
     }
 
     public static AgendaResponse MapearResponse(Agenda a) =>
