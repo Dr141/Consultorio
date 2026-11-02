@@ -170,21 +170,21 @@ jobs:
           if [ -n "$INPUT_BRANCH" ]; then
             SOURCE_BRANCH="$INPUT_BRANCH"
           else
-            # Localiza todas as branches remotas que contêm o commit atual da tag
-            CANDIDATE_BRANCHES=$(git branch -r --contains "$GITHUB_SHA" | sed 's|origin/||' | sed 's|HEAD -> .*||' | tr -d ' *' | grep -v '^$' | grep -v '^main$')
+            # Localiza todas as branches remotas que contêm o commit atual da tag (excluindo HEAD, main e master)
+            CANDIDATE_BRANCHES=$(git branch -r --contains "$GITHUB_SHA" 2>/dev/null | sed 's|origin/||' | sed 's|HEAD -> .*||' | tr -d ' *' | grep -v '^$' | grep -v -E '^(main|master|HEAD)$' || true)
             SOURCE_BRANCH=$(echo "$CANDIDATE_BRANCHES" | head -n 1)
           fi
 
           echo "📌 Branch de origem selecionada: '$SOURCE_BRANCH'"
 
           if [ -z "$SOURCE_BRANCH" ]; then
-            echo "ℹ️ A tag $VERSION foi gerada diretamente na branch 'main' ou nenhuma branch secundária foi identificada. Nenhuma ação de PR necessária."
+            echo "ℹ️ A tag $VERSION foi gerada diretamente na branch principal ('main'/'master') ou nenhuma branch secundária foi identificada. Nenhuma ação de PR necessária."
             exit 0
           fi
 
           # Atualiza estado local da main e da branch de origem
-          git fetch origin main
-          git fetch origin "$SOURCE_BRANCH"
+          git fetch origin main || true
+          git fetch origin "$SOURCE_BRANCH" || true
 
           # Verifica se o commit da branch já é ancestral direto da main (já mesclado)
           if git merge-base --is-ancestor "origin/$SOURCE_BRANCH" "origin/main"; then
@@ -253,7 +253,10 @@ jobs:
           ALL_RELEASES=$(gh release list --limit 100 --exclude-drafts --json tagName --jq '.[].tagName' 2>/dev/null || echo "")
 
           # Filtra todas as releases a partir da 4ª (ou seja, preserva as 3 mais recentes)
-          OLD_RELEASES=$(echo "$ALL_RELEASES" | tail -n +4)
+          OLD_RELEASES=$(echo "$ALL_RELEASES" | tail -n +4 || true)
+
+          # Remove linhas em branco
+          OLD_RELEASES=$(echo "$OLD_RELEASES" | grep -v '^$' || true)
 
           if [ -z "$OLD_RELEASES" ]; then
             echo "✅ Existem 3 ou menos releases publicadas. Nenhuma exclusão necessária."
