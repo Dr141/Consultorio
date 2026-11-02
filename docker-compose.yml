@@ -11,6 +11,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d Consultorio"]
       interval: 5s
@@ -49,6 +50,9 @@ services:
       - Redis__ConnectionString=redis:6379
       - Redis__Enabled=true
       - Migration__RunMigration=true
+      - JwtOptions__Issuer=http://localhost
+      - JwtOptions__Audience=Audience
+      - JwtOptions__SecurityKey=A494384E-8732-434C-AC6A-1D0E3396B981-A494384E-8732-434C-AC6A-1D0E3396B981
     ports:
       - "${APP_PORT:-8080}:8080"
     depends_on:

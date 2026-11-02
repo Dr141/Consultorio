@@ -22,12 +22,16 @@ public static class RegistrarDependencias
     public static void RegisterServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<IdentityContexto>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("IdentityConection"))
-        );
+        {
+            options.UseNpgsql(configuration.GetConnectionString("IdentityConection"));
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddDbContext<ConsultorioContexto>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("ConsultorioConection"))
-        );
+        {
+            options.UseNpgsql(configuration.GetConnectionString("ConsultorioConection"));
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddDefaultIdentity<IdentityUser>()
             .AddRoles<IdentityRole>()
@@ -84,11 +88,54 @@ public static class RegistrarDependencias
 
         if (!runMigration) return;
 
-        using var scope = service.CreateScope();
-        var dbAppIdentity = scope.ServiceProvider.GetRequiredService<IdentityContexto>();
-        dbAppIdentity.Database.Migrate();
+        try
+        {
+            EnsureDatabaseExists(configuration.GetConnectionString("IdentityConection"));
+            EnsureDatabaseExists(configuration.GetConnectionString("ConsultorioConection"));
 
-        var dbAppConsultorio = scope.ServiceProvider.GetRequiredService<ConsultorioContexto>();
-        dbAppConsultorio.Database.Migrate();
+            using var scope = service.CreateScope();
+            var dbAppIdentity = scope.ServiceProvider.GetRequiredService<IdentityContexto>();
+            dbAppIdentity.Database.Migrate();
+
+            var dbAppConsultorio = scope.ServiceProvider.GetRequiredService<ConsultorioContexto>();
+            dbAppConsultorio.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVISO] Migrações de banco de dados: {ex.Message}");
+        }
+    }
+
+    private static void EnsureDatabaseExists(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString)) return;
+
+        try
+        {
+            var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+            var targetDatabase = builder.Database;
+            if (string.IsNullOrWhiteSpace(targetDatabase) || targetDatabase.Equals("postgres", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            builder.Database = "postgres";
+            using var conn = new Npgsql.NpgsqlConnection(builder.ConnectionString);
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT 1 FROM pg_database WHERE datname = @name";
+            cmd.Parameters.AddWithValue("name", targetDatabase);
+            var exists = cmd.ExecuteScalar() != null;
+
+            if (!exists)
+            {
+                using var createCmd = conn.CreateCommand();
+                createCmd.CommandText = $"CREATE DATABASE \"{targetDatabase}\"";
+                createCmd.ExecuteNonQuery();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AVISO] Verificação/Criação do banco de dados ({connectionString}): {ex.Message}");
+        }
     }
 }
