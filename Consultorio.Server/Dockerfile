@@ -26,7 +26,7 @@ COPY . .
 
 # Construir o frontend Angular
 WORKDIR /src/Consultorio.Cliente
-RUN npm install
+RUN npm install --legacy-peer-deps
 RUN npm run build
 
 # Construir e publicar o projeto ASP.NET

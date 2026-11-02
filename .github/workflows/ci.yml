@@ -1,0 +1,49 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (.NET 10 + Angular 22)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 💻 Configurar .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 🟩 Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: 'Consultorio.Cliente/package-lock.json'
+
+      - name: 📦 Restaurar Dependências .NET
+        run: dotnet restore Consultorio.sln
+
+      - name: 🧪 Executar Testes Backend (.NET 10 / xUnit)
+        run: dotnet test Consultorio.sln --configuration Release --no-restore --verbosity normal
+
+      - name: 📦 Instalar Dependências Frontend (Angular 22)
+        working-directory: Consultorio.Cliente
+        run: npm ci --legacy-peer-deps
+
+      - name: 🧪 Executar Testes Frontend (Karma / ChromeHeadless)
+        working-directory: Consultorio.Cliente
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: 🔨 Compilar Frontend Angular (Produção)
+        working-directory: Consultorio.Cliente
+        run: npm run build
+
+      - name: 🔨 Compilar Backend Server
+        run: dotnet build Consultorio.Server/Consultorio.Server.csproj -c Release --no-restore

@@ -1,160 +1,152 @@
-name: Release
+name: Release Build & Publish
 
 on:
   push:
     tags:
-      - 'v*.*.*'
       - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag de versão para a release (ex: v1.0.0)'
-        required: true
+        description: 'Tag de versão (ex: v1.0.0)'
+        required: false
         default: 'v1.0.0'
+      target_branch:
+        description: 'Branch de origem para PR e Merge na main (opcional, detectada automaticamente se vazia)'
+        required: false
+        default: ''
+      prerelease:
+        description: 'Marcar como Pré-lançamento (Prerelease)?'
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: 'Criar como Rascunho (Draft)?'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  pull-requests: write
   packages: write
 
 jobs:
-  test:
-    name: Run Automated Tests
+  build-and-release:
+    name: Build & Release Consultorio
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-          cache-dependency-path: 'Consultorio.Cliente/package-lock.json'
-
-      - name: Restore .NET Solution
-        run: dotnet restore Consultorio.sln
-
-      - name: Run Backend Unit Tests (xUnit)
-        run: dotnet test Consultorio.sln --configuration Release --no-restore --verbosity normal
-
-      - name: Install Frontend Dependencies
-        working-directory: Consultorio.Cliente
-        run: npm ci --legacy-peer-deps
-
-      - name: Run Frontend Unit Tests (Karma / ChromeHeadless)
-        working-directory: Consultorio.Cliente
-        run: npm test -- --watch=false --browsers=ChromeHeadless
-
-  release:
-    name: Build, Package and Release
-    needs: test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
+      - name: 📥 Checkout do Código
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Determine Release Tag
-        id: vars
+      - name: 🌐 Buscar todas as referências remotas
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-          else
-            echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          fi
+          git fetch origin "+refs/heads/*:refs/remotes/origin/*" --tags --force
 
-      - name: Setup .NET 10 SDK
+      - name: 💻 Configurar .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: Setup Node.js 22
+      - name: 🟩 Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: 'Consultorio.Cliente/package-lock.json'
 
-      - name: Build Frontend Angular (Production)
+      - name: 🧪 Executar Testes Automatizados (.NET 10 / xUnit)
+        run: |
+          dotnet restore Consultorio.sln
+          dotnet test Consultorio.sln --configuration Release --no-restore --verbosity normal
+
+      - name: 🧪 Executar Testes Frontend (Angular 22 / Karma)
         working-directory: Consultorio.Cliente
         run: |
           npm ci --legacy-peer-deps
+          npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: 🔨 Compilar Frontend Angular (Produção)
+        working-directory: Consultorio.Cliente
+        run: |
           npm run build
 
-      - name: Publish Linux (linux-x64)
+      - name: 🔨 Compilar e Publicar Binários .NET Server
         run: |
+          which zip || (sudo apt-get update && sudo apt-get install -y zip)
+          # Publicar Linux
           dotnet publish Consultorio.Server/Consultorio.Server.csproj -c Release -r linux-x64 --self-contained false -o publish/linux-x64
-          tar -czvf consultorio-server-linux-x64.tar.gz -C publish/linux-x64 .
-
-      - name: Publish Windows (win-x64)
-        run: |
-          sudo apt-get update && sudo apt-get install -y zip
+          # Publicar Windows
           dotnet publish Consultorio.Server/Consultorio.Server.csproj -c Release -r win-x64 --self-contained false -o publish/win-x64
-          cd publish/win-x64 && zip -r ../../consultorio-server-win-x64.zip . && cd ../..
 
-      - name: Create GitHub Release
+      - name: 📦 Preparar Artefatos e Checksums (SHA-256)
+        id: prepare_artifacts
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          VERSION="${RAW_TAG:-v1.0.0}"
+          echo "Tag de Versão: $VERSION"
+
+          mkdir -p release_artifacts
+
+          # Empacota binários do Server para Linux e Windows
+          tar -czvf "release_artifacts/Consultorio-Server-linux-x64-${VERSION}.tar.gz" -C publish/linux-x64 .
+          cd publish/win-x64
+          zip -r "../../release_artifacts/Consultorio-Server-win-x64-${VERSION}.zip" .
+          cd ../..
+
+          # Copia arquivos de orquestração Docker
+          cp docker-compose.yml "release_artifacts/docker-compose.yml"
+          cp .env.example "release_artifacts/.env.example"
+
+          # Gera Checksums SHA-256 para integridade
+          cd release_artifacts
+          sha256sum "Consultorio-Server-linux-x64-${VERSION}.tar.gz" > checksums.txt
+          sha256sum "Consultorio-Server-win-x64-${VERSION}.zip" >> checksums.txt
+          sha256sum "docker-compose.yml" >> checksums.txt
+          sha256sum ".env.example" >> checksums.txt
+          cd ..
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Criar GitHub Release e Anexar Binários
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: Release ${{ env.RELEASE_TAG }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          name: "Consultorio ${{ steps.prepare_artifacts.outputs.version }}"
+          tag_name: ${{ steps.prepare_artifacts.outputs.version }}
           files: |
-            consultorio-server-linux-x64.tar.gz
-            consultorio-server-win-x64.zip
-            docker-compose.yml
-            .env.example
+            release_artifacts/Consultorio-Server-*.tar.gz
+            release_artifacts/Consultorio-Server-*.zip
+            release_artifacts/docker-compose.yml
+            release_artifacts/.env.example
+            release_artifacts/checksums.txt
+          generate_release_notes: true
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ github.event.inputs.prerelease || false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  docker:
-    name: Build & Push Docker Image (GHCR)
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'Dr141' || github.repository_owner == 'dr141'
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Determine Docker Tag
-        id: vars
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "DOCKER_TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-          else
-            echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          fi
-
-      - name: Log in to GitHub Container Registry
+      - name: 🐳 Login no GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
+      - name: 🏷️ Extrair Metadados Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=${{ env.DOCKER_TAG }}
+            type=raw,value=${{ steps.prepare_artifacts.outputs.version }}
             type=raw,value=latest
 
-      - name: Set up Docker Buildx
+      - name: 🛠️ Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Docker Image
+      - name: 🚀 Compilar e Enviar Imagem Docker (GHCR)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -162,3 +154,117 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: 🔀 Criar Pull Request e Fazer Merge com a Main
+        id: pr_and_merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          VERSION="${RAW_TAG:-v1.0.0}"
+          INPUT_BRANCH="${{ github.event.inputs.target_branch }}"
+
+          echo "🔍 Identificando a branch de origem para o commit $GITHUB_SHA..."
+
+          if [ -n "$INPUT_BRANCH" ]; then
+            SOURCE_BRANCH="$INPUT_BRANCH"
+          else
+            # Localiza todas as branches remotas que contêm o commit atual da tag
+            CANDIDATE_BRANCHES=$(git branch -r --contains "$GITHUB_SHA" | sed 's|origin/||' | sed 's|HEAD -> .*||' | tr -d ' *' | grep -v '^$' | grep -v '^main$')
+            SOURCE_BRANCH=$(echo "$CANDIDATE_BRANCHES" | head -n 1)
+          fi
+
+          echo "📌 Branch de origem selecionada: '$SOURCE_BRANCH'"
+
+          if [ -z "$SOURCE_BRANCH" ]; then
+            echo "ℹ️ A tag $VERSION foi gerada diretamente na branch 'main' ou nenhuma branch secundária foi identificada. Nenhuma ação de PR necessária."
+            exit 0
+          fi
+
+          # Atualiza estado local da main e da branch de origem
+          git fetch origin main
+          git fetch origin "$SOURCE_BRANCH"
+
+          # Verifica se o commit da branch já é ancestral direto da main (já mesclado)
+          if git merge-base --is-ancestor "origin/$SOURCE_BRANCH" "origin/main"; then
+            echo "✅ A branch '$SOURCE_BRANCH' já se encontra totalmente integrada na 'main'. Pulando criação de PR."
+            exit 0
+          fi
+
+          echo "🚀 Abrindo/Localizando Pull Request de '$SOURCE_BRANCH' para 'main'..."
+
+          # Verifica se já existe um PR aberto para essa branch
+          EXISTING_PR=$(gh pr list --head "$SOURCE_BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          PR_NUM=""
+          if [ -z "$EXISTING_PR" ]; then
+            PR_URL=$(gh pr create \
+              --base main \
+              --head "$SOURCE_BRANCH" \
+              --title "chore(release): merge $SOURCE_BRANCH into main ($VERSION)" \
+              --body "Release $VERSION concluída e publicada com sucesso a partir da branch $SOURCE_BRANCH." 2>/dev/null || echo "")
+
+            if [ -n "$PR_URL" ]; then
+              echo "✅ Pull Request criado com sucesso: $PR_URL"
+              PR_NUM=$(gh pr list --head "$SOURCE_BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+            else
+              echo "⚠️ Não foi possível criar o PR via GitHub CLI (possível restrição de permissão de Actions no repositório)."
+            fi
+          else
+            echo "ℹ️ Pull Request aberto já existente detectado: #$EXISTING_PR"
+            PR_NUM="$EXISTING_PR"
+          fi
+
+          # Tenta realizar o merge do PR via gh CLI com exclusão automática da branch remota (--delete-branch)
+          MERGED=false
+          if [ -n "$PR_NUM" ]; then
+            echo "🔀 Tentando mesclar o Pull Request #$PR_NUM via GitHub CLI..."
+            if gh pr merge "$PR_NUM" --merge --delete-branch --subject "chore(release): merge $SOURCE_BRANCH into main ($VERSION)" 2>/dev/null; then
+              echo "🎉 Pull Request #$PR_NUM mesclado e branch remota excluída com sucesso na branch 'main'!"
+              MERGED=true
+            else
+              echo "⚠️ gh pr merge encontrou restrição de política. Executando fallback via Git direto..."
+            fi
+          fi
+
+          # Fallback de merge direto via Git caso gh pr merge falhe ou PR não tenha sido criado
+          if [ "$MERGED" = false ]; then
+            echo "⚙️ Executando sincronização e merge direto na branch 'main' via Git..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B main origin/main
+            git merge "origin/$SOURCE_BRANCH" --no-edit -m "chore(release): merge $SOURCE_BRANCH into main ($VERSION)"
+            git push origin main
+            echo "🎉 Branch 'main' sincronizada e enviada para o repositório com sucesso!"
+          fi
+
+          # Garante a exclusão da branch remota no GitHub caso ainda exista
+          echo "🗑️ Garantindo exclusão da branch remota '$SOURCE_BRANCH' no GitHub..."
+          git push origin --delete "$SOURCE_BRANCH" 2>/dev/null || true
+
+      - name: 🧹 Limpar Releases Antigas (Manter apenas as 3 mais recentes publicadas)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Verificando releases publicadas no repositório..."
+
+          # Obtém as tags de todas as releases publicadas, ordenadas da mais recente para a mais antiga (excluindo rascunhos)
+          ALL_RELEASES=$(gh release list --limit 100 --exclude-drafts --json tagName --jq '.[].tagName' 2>/dev/null || echo "")
+
+          # Filtra todas as releases a partir da 4ª (ou seja, preserva as 3 mais recentes)
+          OLD_RELEASES=$(echo "$ALL_RELEASES" | tail -n +4)
+
+          if [ -z "$OLD_RELEASES" ]; then
+            echo "✅ Existem 3 ou menos releases publicadas. Nenhuma exclusão necessária."
+          else
+            echo "🗑️ Releases antigas identificadas para remoção dos binários pesados:"
+            echo "$OLD_RELEASES"
+
+            for TAG in $OLD_RELEASES; do
+              echo "Excluindo release antiga (removendo binários e preservando a Git tag): $TAG..."
+              gh release delete "$TAG" --yes 2>/dev/null || true
+            done
+
+            echo "🎉 Limpeza concluída com sucesso! Apenas as 3 releases mais recentes foram mantidas."
+          fi
