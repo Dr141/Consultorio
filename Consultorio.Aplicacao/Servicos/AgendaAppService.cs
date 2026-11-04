@@ -202,8 +202,8 @@ public class AgendaAppService(
             a.IdPaciente,
             a.Paciente?.Pessoa?.Nome,
             a.Disponivel,
-            a.IdConsulta,
-            a.IdExame,
+            a.Consulta?.Id ?? a.IdConsulta,
+            a.Exame?.Id ?? a.IdExame,
             a.DtCriacao
         );
 }

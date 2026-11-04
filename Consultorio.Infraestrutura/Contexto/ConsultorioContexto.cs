@@ -92,16 +92,6 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .WithMany(p => p.Agendas)
                 .HasForeignKey(a => a.IdPaciente)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            builder.HasOne(a => a.Consulta)
-                .WithOne(c => c.Agenda)
-                .HasForeignKey<Agenda>(a => a.IdConsulta)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            builder.HasOne(a => a.Exame)
-                .WithOne(e => e.Agenda)
-                .HasForeignKey<Agenda>(a => a.IdExame)
-                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuração de Consulta
@@ -121,6 +111,11 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .HasForeignKey(c => c.IdMedico)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+
+            builder.HasOne(c => c.Agenda)
+                .WithOne(a => a.Consulta)
+                .HasForeignKey<Consulta>(c => c.IdAgenda)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuração de Exame
@@ -135,6 +130,11 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .HasForeignKey(e => e.IdPaciente)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+
+            builder.HasOne(e => e.Agenda)
+                .WithOne(a => a.Exame)
+                .HasForeignKey<Exame>(e => e.IdAgenda)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

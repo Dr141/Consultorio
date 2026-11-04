@@ -44,10 +44,12 @@ export class HomePage implements OnInit {
   }
 
   users() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/users');
   }
 
   async atualizarSenha() {
+    (document.activeElement as HTMLElement)?.blur();
     const modal = await this.modalController.create({
       component: AtualizarSenhaComponent,
       componentProps: {
@@ -67,22 +69,27 @@ export class HomePage implements OnInit {
   }
 
   public paciente() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/pacientes');
   }
 
   public agenda() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/agenda');
   }
 
   public consulta() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/consultas');
   }
 
   public exame() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/exames');
   }
 
   public medico() {
+    (document.activeElement as HTMLElement)?.blur();
     this.navCtrl.navigateForward('/medicos');
   }
 }
