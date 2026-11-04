@@ -7,7 +7,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { CadastroComponent } from './components/cadastro/cadastro.component';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AtualizarSenhaComponent } from './components/atualizar-senha/atualizar-senha.component';
 import { AtualizarSenhaInternoComponent } from './components/atualizar-senha-interno/atualizar-senha-interno.component';
 import { PemissaoComponent } from './components/pemissao/pemissao.component';
@@ -19,8 +19,11 @@ import { IonicModule } from './shared/ionic.module';
   imports: [BrowserModule, CommonModule, IonicModule, AppRoutingModule, ReactiveFormsModule],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideIonicAngular(),
-    provideHttpClient(withFetch(), withInterceptors([AuthInterceptor]))
+    provideIonicAngular({
+      backButtonText: 'Voltar',
+      backButtonDefaultHref: '/home'
+    }),
+    provideHttpClient(withInterceptors([AuthInterceptor]))
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

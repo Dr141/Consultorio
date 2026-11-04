@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { Agenda, Paciente } from '../types/types';
@@ -21,7 +22,9 @@ export class AgendaPage implements OnInit {
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -29,16 +32,28 @@ export class AgendaPage implements OnInit {
     this.carregarPacientes();
   }
 
+  ionViewWillEnter() {
+    this.carregarAgenda();
+    this.carregarPacientes();
+  }
+
   carregarAgenda() {
     this.carregando = true;
+    this.cdr.markForCheck();
     this.api.obterAgendas().subscribe({
       next: (lista) => {
-        this.agendas = lista;
+        this.agendas = lista || [];
         this.filtrar();
         this.carregando = false;
+        this.cdr.detectChanges();
       },
       error: async (err) => {
         this.carregando = false;
+        this.cdr.detectChanges();
+        if (err?.status === 401 || err?.message?.includes('401')) {
+          this.router.navigate(['/login']);
+          return;
+        }
         const toast = await this.toastCtrl.create({
           message: err.message || 'Erro ao carregar agenda.',
           duration: 3000,
@@ -51,7 +66,10 @@ export class AgendaPage implements OnInit {
 
   carregarPacientes() {
     this.api.obterPacientes().subscribe({
-      next: (p) => this.pacientes = p,
+      next: (p) => {
+        this.pacientes = p || [];
+        this.cdr.detectChanges();
+      },
       error: () => {}
     });
   }

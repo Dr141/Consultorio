@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { Consulta } from '../types/types';
@@ -20,23 +21,36 @@ export class ConsultasPage implements OnInit {
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
   ngOnInit() {
     this.carregarConsultas();
   }
 
+  ionViewWillEnter() {
+    this.carregarConsultas();
+  }
+
   carregarConsultas() {
     this.carregando = true;
+    this.cdr.markForCheck();
     this.api.obterConsultas().subscribe({
       next: (lista) => {
-        this.consultas = lista;
+        this.consultas = lista || [];
         this.filtrar();
         this.carregando = false;
+        this.cdr.detectChanges();
       },
       error: async (err) => {
         this.carregando = false;
+        this.cdr.detectChanges();
+        if (err?.status === 401 || err?.message?.includes('401')) {
+          this.router.navigate(['/login']);
+          return;
+        }
         const toast = await this.toastCtrl.create({
           message: err.message || 'Erro ao carregar consultas.',
           duration: 3000,

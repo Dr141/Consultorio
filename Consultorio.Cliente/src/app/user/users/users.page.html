@@ -1,9 +1,7 @@
 <ion-header [translucent]="true">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-button size="large" (click)="buttonBack()" aria-label="Voltar">
-        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
-      </ion-button>
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
     </ion-buttons>
     <ion-title>Gerenciamento de Usuários</ion-title>
     <ion-buttons slot="end">
@@ -14,53 +12,60 @@
 
 <ion-content [fullscreen]="true">
   <div class="page-container">
-    <ion-card class="users-card">
-      <ion-card-header>
-        <div class="header-content">
-          <div>
-            <ion-card-title>Usuários Cadastrados</ion-card-title>
-            <ion-card-subtitle>Gerencie as permissões e senhas de acesso</ion-card-subtitle>
-          </div>
-          <ion-button fill="solid" color="primary" class="btn-novo-desk" (click)="cadastro()">
-            <ion-icon slot="start" name="person-add-outline"></ion-icon>
-            Novo Usuário
-          </ion-button>
-        </div>
-      </ion-card-header>
-
-      <ion-card-content class="ion-no-padding">
-        <ion-list lines="inset">
-          @for (user of users; track user.email) {
-            <ion-item class="user-item">
-              <ion-avatar slot="start" class="user-avatar">
-                <ion-icon name="person-circle-outline"></ion-icon>
-              </ion-avatar>
-
-              <ion-label class="user-label">
-                <h3 class="user-email">{{ user.email }}</h3>
-                <p class="user-meta">Perfil de Acesso ao Sistema</p>
-              </ion-label>
-
-              <div slot="end" class="user-actions">
-                <ion-button fill="outline" color="secondary" size="small" (click)="permissoes(user)">
-                  <ion-icon slot="start" name="shield-checkmark-outline"></ion-icon>
-                  <span class="action-text">Permissões</span>
-                </ion-button>
-                <ion-button fill="outline" color="medium" size="small" (click)="atualizarSenha(user.email)">
-                  <ion-icon slot="start" name="key-outline"></ion-icon>
-                  <span class="action-text">Senha</span>
-                </ion-button>
-              </div>
-            </ion-item>
-          } @empty {
-            <div class="ion-text-center ion-padding empty-state">
-              <ion-icon name="people-outline"></ion-icon>
-              <p>Nenhum usuário cadastrado.</p>
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando usuários...</p>
+      </div>
+    } @else {
+      <ion-card class="users-card">
+        <ion-card-header>
+          <div class="header-content">
+            <div>
+              <ion-card-title>Usuários Cadastrados</ion-card-title>
+              <ion-card-subtitle>Gerencie as permissões e senhas de acesso</ion-card-subtitle>
             </div>
-          }
-        </ion-list>
-      </ion-card-content>
-    </ion-card>
+            <ion-button fill="solid" color="primary" class="btn-novo-desk" (click)="cadastro()">
+              <ion-icon slot="start" name="person-add-outline"></ion-icon>
+              Novo Usuário
+            </ion-button>
+          </div>
+        </ion-card-header>
+
+        <ion-card-content class="ion-no-padding">
+          <ion-list lines="inset">
+            @for (user of users; track user.email) {
+              <ion-item class="user-item">
+                <ion-avatar slot="start" class="user-avatar">
+                  <ion-icon name="person-circle-outline"></ion-icon>
+                </ion-avatar>
+
+                <ion-label class="user-label">
+                  <h3 class="user-email">{{ user.email }}</h3>
+                  <p class="user-meta">Perfil de Acesso ao Sistema</p>
+                </ion-label>
+
+                <div slot="end" class="user-actions">
+                  <ion-button fill="outline" color="secondary" size="small" (click)="permissoes(user)">
+                    <ion-icon slot="start" name="shield-checkmark-outline"></ion-icon>
+                    <span class="action-text">Permissões</span>
+                  </ion-button>
+                  <ion-button fill="outline" color="medium" size="small" (click)="atualizarSenha(user.email)">
+                    <ion-icon slot="start" name="key-outline"></ion-icon>
+                    <span class="action-text">Senha</span>
+                  </ion-button>
+                </div>
+              </ion-item>
+            } @empty {
+              <div class="ion-text-center ion-padding empty-state">
+                <ion-icon name="people-outline"></ion-icon>
+                <p>Nenhum usuário cadastrado.</p>
+              </div>
+            }
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+    }
   </div>
 
   <ion-fab horizontal="end" vertical="bottom" slot="fixed" class="fab-mobile">
