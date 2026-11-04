@@ -11,7 +11,7 @@ public class Agenda : Entidade
     public Medico? Medico { get; private set; }
     public int? IdPaciente { get; private set; }
     public Paciente? Paciente { get; private set; }
-    public bool Disponivel { get; private set; } = true;
+    public bool Disponivel => IdPaciente is null && IdConsulta is null && IdExame is null;
     public int? IdConsulta { get; private set; }
     public Consulta? Consulta { get; private set; }
     public int? IdExame { get; private set; }
@@ -27,7 +27,6 @@ public class Agenda : Entidade
         Hora = hora;
         IdMedico = idMedico;
         IdPaciente = idPaciente;
-        Disponivel = idPaciente is null;
     }
 
     public void AgendarPaciente(int idPaciente)
@@ -36,7 +35,6 @@ public class Agenda : Entidade
         DomainException.When(!Disponivel, "O horário já está ocupado.");
 
         IdPaciente = idPaciente;
-        Disponivel = false;
     }
 
     public void LiberarHorario()
@@ -44,21 +42,18 @@ public class Agenda : Entidade
         IdPaciente = null;
         IdConsulta = null;
         IdExame = null;
-        Disponivel = true;
     }
 
     public void VincularConsulta(int idConsulta)
     {
         DomainException.When(idConsulta <= 0, "Id da consulta inválido.");
         IdConsulta = idConsulta;
-        Disponivel = false;
     }
 
     public void VincularExame(int idExame)
     {
         DomainException.When(idExame <= 0, "Id do exame inválido.");
         IdExame = idExame;
-        Disponivel = false;
     }
 
     public void AtualizarHorario(DateTime data, TimeSpan hora, int? idMedico = null)

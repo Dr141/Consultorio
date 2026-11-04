@@ -9,7 +9,7 @@ export const AuthInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      if (error.status === 401 && !req.url.includes('/autenticacao') && !req.url.includes('/cadastroUsuario')) {
         return consultorioService.refreshToken().pipe(
           switchMap(() => {            
             return next(req); // Após o refresh, reenvia a requisição original

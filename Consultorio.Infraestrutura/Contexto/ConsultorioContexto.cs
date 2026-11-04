@@ -82,6 +82,7 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.HasKey(a => a.Id);
             builder.Property(a => a.Data).IsRequired();
             builder.Property(a => a.Hora).IsRequired();
+            builder.Ignore(a => a.Disponivel);
 
             builder.HasOne(a => a.Medico)
                 .WithMany(m => m.Agendas)
