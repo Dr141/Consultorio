@@ -1,4 +1,4 @@
-﻿using Consultorio.Identity.Modelo.Configuracao;
+using Consultorio.Identity.Modelo.Configuracao;
 using Consultorio.Identity.Modelo.DTOs.Resquest;
 using Consultorio.Identity.Modelo.Interfaces.Servicos;
 using Microsoft.AspNetCore.Authorization;
@@ -32,12 +32,14 @@ public class AutenticacaoController : ControllerBase
         try
         {
             var result = await _identity.Login(usuario);
+            var isHttps = Request.IsHttps;
+
             // Configuração do AccessToken (expira em 1 hora)
             var accessTokenOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration),
                 Path = "/" // Disponível para toda a aplicação
             };
@@ -46,8 +48,8 @@ public class AutenticacaoController : ControllerBase
             var refreshTokenOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration),
                 Path = "/"
             };
@@ -56,8 +58,8 @@ public class AutenticacaoController : ControllerBase
             var roles = new CookieOptions
             {
                 HttpOnly = false,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpiration),
                 Path = "/"
             };
@@ -88,11 +90,12 @@ public class AutenticacaoController : ControllerBase
                 return Unauthorized(new { message = "Usuário não autenticado" });
 
             var newAuthen = await _identity.LoginSemSenha(usuarioId);
+            var isHttps = Request.IsHttps;
             var accessTokenOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddHours(_jwtOptions.AccessTokenExpiration), // Novo access token com 1 hora
                 Path = "/"
             };
@@ -119,6 +122,7 @@ public class AutenticacaoController : ControllerBase
 
             Response.Cookies.Delete("AccessToken");
             Response.Cookies.Delete("RefreshToken");
+            Response.Cookies.Delete("Roles");
 
             return Ok(true);
         }

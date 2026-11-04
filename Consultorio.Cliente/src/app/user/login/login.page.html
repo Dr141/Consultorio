@@ -2,9 +2,7 @@
   <ion-toolbar color="transparent">
     <ion-title class="login-brand">Consultório Web</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Ativar modo claro' : 'Ativar modo escuro'">
-        <ion-icon slot="icon-only" [name]="themeService.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-      </ion-button>
+      <app-theme-toggle></app-theme-toggle>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>

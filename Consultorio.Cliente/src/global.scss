@@ -12,7 +12,7 @@
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Optional CSS utils that can be commented out */
+/* Optional CSS utils */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
@@ -31,7 +31,29 @@ ion-content {
   --color: var(--app-text);
 }
 
-/* Container centralizado para telas grandes (Tablets, Laptops e Desktops) */
+/* Toolbars Primárias com contraste perfeito de ícones e botões */
+ion-toolbar[color="primary"] {
+  --color: #ffffff;
+  color: #ffffff;
+
+  ion-title {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  ion-button,
+  ion-back-button,
+  ion-menu-button {
+    --color: #ffffff;
+    color: #ffffff;
+  }
+
+  ion-icon {
+    color: #ffffff;
+  }
+}
+
+/* Container centralizado para telas grandes */
 .page-container {
   width: 100%;
   max-width: 1200px;
@@ -41,12 +63,30 @@ ion-content {
   box-sizing: border-box;
 }
 
-/* Alinhamento da barra de busca em telas largas */
+/* Barra de busca */
 .searchbar-container {
   width: 100%;
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  padding: 0 8px;
+}
+
+ion-searchbar {
+  --background: var(--app-surface);
+  --color: var(--app-text);
+  --placeholder-color: var(--app-text-muted);
+  --icon-color: var(--ion-color-primary);
+  --clear-button-color: var(--app-text-muted);
+  border-radius: 12px;
+}
+
+.ion-palette-dark ion-searchbar {
+  --background: #1e293b;
+  --color: #f8fafc;
+  --placeholder-color: #94a3b8;
+  --icon-color: #38bdf8;
+  --clear-button-color: #cbd5e1;
 }
 
 /* Cards com suporte a modo claro e escuro */
@@ -124,6 +164,22 @@ ion-modal ion-toolbar {
   margin-bottom: 12px;
 }
 
+.ion-palette-dark .form-item {
+  --background: #1e293b;
+  --color: #f8fafc;
+}
+
+/* Calendários e relógios nativos compatíveis com dark mode */
+input[type="date"],
+input[type="time"] {
+  color-scheme: light;
+}
+
+.ion-palette-dark input[type="date"],
+.ion-palette-dark input[type="time"] {
+  color-scheme: dark;
+}
+
 .exame-info-card {
   background-color: var(--app-surface-elevated);
   padding: 12px 14px;
@@ -151,8 +207,65 @@ ion-badge {
   letter-spacing: 0.3px;
 }
 
-/* Ajuste do botão flutuante para não cobrir itens no desktop e mobile */
+/* Botão flutuante */
 ion-fab {
   margin-bottom: clamp(10px, 2vh, 24px);
   margin-inline-end: clamp(10px, 2vw, 24px);
+}
+
+/* Overlays e Diálogos de Alerta */
+.ion-palette-dark ion-alert {
+  --background: #1e293b;
+  --backdrop-opacity: 0.7;
+
+  .alert-title {
+    color: #f8fafc;
+  }
+
+  .alert-sub-title,
+  .alert-message {
+    color: #94a3b8;
+  }
+
+  .alert-input {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 6px;
+  }
+}
+
+.ion-palette-dark ion-popover {
+  --background: #1e293b;
+  --color: #f8fafc;
+}
+
+.ion-palette-dark ion-toast {
+  --background: #1e293b;
+  --color: #f8fafc;
+}
+
+/* Menu lateral */
+.ion-palette-dark ion-menu {
+  ion-toolbar {
+    --background: #0f172a;
+    --color: #f8fafc;
+  }
+
+  ion-content {
+    --background: #0b0f19;
+  }
+
+  .menu-item {
+    --background: #131c2e;
+    --color: #f8fafc;
+
+    h3 {
+      color: #f8fafc;
+    }
+
+    p {
+      color: #94a3b8;
+    }
+  }
 }

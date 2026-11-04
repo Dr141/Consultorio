@@ -2,7 +2,10 @@
   <ion-toolbar color="primary">
     <ion-title>{{ medico ? 'Editar Médico' : 'Novo Médico' }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="fechar()">Fechar</ion-button>
+      <ion-button (click)="fechar()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -61,6 +64,7 @@
 
     <div class="ion-padding-top">
       <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
+        <ion-icon slot="start" [name]="salvando ? 'hourglass-outline' : 'save-outline'"></ion-icon>
         {{ salvando ? 'Salvando...' : 'Salvar Médico' }}
       </ion-button>
     </div>

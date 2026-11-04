@@ -1,4 +1,5 @@
 import { NgModule, ModuleWithProviders, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   IonBackButton, IonModal, IonPopover, IonRouterOutlet, IonRouterLink, IonRouterLinkWithHref,
   IonTabs, IonNav, IonCheckbox, IonDatetime, IonInput, IonInputOtp, IonIcon,
@@ -18,6 +19,7 @@ import {
   IonSplitPane, IonTab, IonTabBar, IonTabButton, IonText, IonThumbnail,
   IonTitle, IonToast, IonToolbar
 } from '@ionic/angular';
+import { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
 
 const IONIC_COMPONENTS = [
   IonBackButton, IonModal, IonPopover, IonRouterOutlet, IonRouterLink, IonRouterLinkWithHref,
@@ -40,8 +42,9 @@ const IONIC_COMPONENTS = [
 ];
 
 @NgModule({
-  imports: [...IONIC_COMPONENTS],
-  exports: [...IONIC_COMPONENTS],
+  declarations: [ThemeToggleComponent],
+  imports: [CommonModule, ...IONIC_COMPONENTS],
+  exports: [...IONIC_COMPONENTS, ThemeToggleComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class IonicModule {

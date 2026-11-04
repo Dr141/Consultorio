@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ModalController, NavController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { AtualizarSenhaComponent } from '../components/atualizar-senha/atualizar-senha.component';
@@ -12,7 +12,7 @@ import { ThemeService } from '../services/theme/theme.service';
   styleUrls: ['home.page.scss'],
   standalone: false
 })
-export class HomePage implements OnInit, OnDestroy {
+export class HomePage implements OnInit {
 
   constructor(
     private modalController: ModalController,
@@ -27,27 +27,24 @@ export class HomePage implements OnInit, OnDestroy {
     this.ehAdmin();
   }
 
-  ngOnDestroy(): void {
-    this.cache.RemoveTodosCookies();
-  }
-
   toggleTheme() {
     this.themeService.toggleTheme();
   }
 
   logOut() {
+    this.cache.RemoveTodosCookies();
     this.api.logout().subscribe({
       next: () => {
-        this.navCtrl.navigateRoot('login');
+        this.navCtrl.navigateRoot('/login');
       },
       error: () => {
-        this.navCtrl.navigateRoot('login');
+        this.navCtrl.navigateRoot('/login');
       }
     });
   }
 
   users() {
-    this.navCtrl.navigateForward('users');
+    this.navCtrl.navigateForward('/users');
   }
 
   async atualizarSenha() {
@@ -70,22 +67,22 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   public paciente() {
-    this.navCtrl.navigateForward('pacientes');
+    this.navCtrl.navigateForward('/pacientes');
   }
 
   public agenda() {
-    this.navCtrl.navigateForward('agenda');
+    this.navCtrl.navigateForward('/agenda');
   }
 
   public consulta() {
-    this.navCtrl.navigateForward('consultas');
+    this.navCtrl.navigateForward('/consultas');
   }
 
   public exame() {
-    this.navCtrl.navigateForward('exames');
+    this.navCtrl.navigateForward('/exames');
   }
 
   public medico() {
-    this.navCtrl.navigateForward('medicos');
+    this.navCtrl.navigateForward('/medicos');
   }
 }

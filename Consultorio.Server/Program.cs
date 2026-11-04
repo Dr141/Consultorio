@@ -13,6 +13,7 @@ var app = builder.Build();
 app.Services.Migrations(app.Configuration);
 
 app.UseDefaultFiles();
+app.UseStaticFiles();
 app.MapStaticAssets();
 app.MapOpenApi();
 

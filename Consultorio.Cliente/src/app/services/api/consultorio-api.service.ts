@@ -13,51 +13,51 @@ export class ConsultorioApiService {
 
   // Autenticação & Usuários
   refreshToken() {
-    return this.http.get('autenticacao');    
+    return this.http.get('/autenticacao');    
   }
 
   cadastro(user: any) {
-    return this.observable(this.http.post('cadastroUsuario', user));
+    return this.observable(this.http.post('/cadastroUsuario', user));
   }
 
   login(email: string, senha: string) {       
-    return this.observable(this.http.post('autenticacao', { Email: email, Senha: senha }));
+    return this.observable(this.http.post('/autenticacao', { Email: email, Senha: senha }));
   }
 
   logout() {
-    return this.observable(this.http.delete('autenticacao', {}));
+    return this.observable(this.http.delete('/autenticacao', {}));
   }
 
   atualizarSenha(newSenha: any) {
-    return this.observable(this.http.put('cadastroUsuario', newSenha));
+    return this.observable(this.http.put('/cadastroUsuario', newSenha));
   }
 
   atualizarSenhaInterno(userNewSenha: any) {
-    return this.observable(this.http.post('usuario', userNewSenha));
+    return this.observable(this.http.post('/usuario', userNewSenha));
   }
 
   obterTodos<T>() {   
-    return this.observable(this.http.get<T>('usuario'));
+    return this.observable(this.http.get<T>('/usuario'));
   }
 
   obterRoles() {
-    return this.observable(this.http.get<string[]>('role'));
+    return this.observable(this.http.get<string[]>('/role'));
   }
 
   adicionarRole(userRole: any) {
-    return this.observable(this.http.post('role', userRole));
+    return this.observable(this.http.post('/role', userRole));
   }
 
   removerRole(userRole: any) {
-    return this.observable(this.http.put('role', userRole));
+    return this.observable(this.http.put('/role', userRole));
   }
 
   adicionarClaim(userClaim: any){
-    return this.observable(this.http.post('claim', userClaim));
+    return this.observable(this.http.post('/claim', userClaim));
   }
 
   removerClaim(userClaim: any) {
-    return this.observable(this.http.delete('claim', userClaim));
+    return this.observable(this.http.delete('/claim', userClaim));
   }
 
   // Pacientes

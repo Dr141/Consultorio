@@ -2,7 +2,10 @@
   <ion-toolbar color="primary">
     <ion-title>Atualizar Senha</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="cancel()">Fechar</ion-button>
+      <ion-button (click)="cancel()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -37,6 +40,7 @@
 
     <div class="ion-padding-top">
       <ion-button type="submit" expand="block" color="primary" [disabled]="!cadastro.valid">
+        <ion-icon slot="start" name="key-outline"></ion-icon>
         Salvar Nova Senha
       </ion-button>
     </div>

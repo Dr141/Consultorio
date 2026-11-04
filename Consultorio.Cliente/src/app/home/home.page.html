@@ -2,9 +2,7 @@
   <ion-toolbar color="primary">
     <ion-title>Consultório Web</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="toggleTheme()" [attr.aria-label]="themeService.isDark() ? 'Ativar modo claro' : 'Ativar modo escuro'">
-        <ion-icon slot="icon-only" [name]="themeService.isDark() ? 'sunny-outline' : 'moon-outline'"></ion-icon>
-      </ion-button>
+      <app-theme-toggle></app-theme-toggle>
       <ion-menu-button auto-hide="false"></ion-menu-button>
     </ion-buttons>
   </ion-toolbar>
@@ -66,7 +64,7 @@
       <ion-row class="ion-justify-content-center">
         <!-- Pacientes -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="paciente()">
+          <ion-card class="cardHome" button="true" (click)="paciente()" [routerLink]="['/pacientes']">
             <div class="card-img-wrapper">
               <img alt="Gestão de Pacientes" src="../../assets/paciente.webp" />
             </div>
@@ -82,7 +80,7 @@
 
         <!-- Agenda -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="agenda()">
+          <ion-card class="cardHome" button="true" (click)="agenda()" [routerLink]="['/agenda']">
             <div class="card-img-wrapper">
               <img alt="Agenda de Consultas" src="../../assets/agenda.webp" />
             </div>
@@ -98,7 +96,7 @@
 
         <!-- Consultas -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="consulta()">
+          <ion-card class="cardHome" button="true" (click)="consulta()" [routerLink]="['/consultas']">
             <div class="card-img-wrapper">
               <img alt="Consultas Médicas" src="../../assets/consulta.webp" />
             </div>
@@ -114,7 +112,7 @@
 
         <!-- Exames -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="exame()">
+          <ion-card class="cardHome" button="true" (click)="exame()" [routerLink]="['/exames']">
             <div class="card-img-wrapper">
               <img alt="Exames e Laudos" src="../../assets/exames.webp" />
             </div>
@@ -130,7 +128,7 @@
 
         <!-- Médicos -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="medico()">
+          <ion-card class="cardHome" button="true" (click)="medico()" [routerLink]="['/medicos']">
             <div class="card-img-wrapper">
               <img alt="Corpo Clínico" src="../../assets/medico.webp" />
             </div>
