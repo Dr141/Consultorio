@@ -11,8 +11,12 @@ public class Medico : Entidade
     public Pessoa Pessoa { get; private set; } = null!;
     public Crm Crm { get; private set; } = null!;
 
-    private readonly List<Especialidade> _especialidades = [];
-    public IReadOnlyCollection<Especialidade> Especialidades => _especialidades.AsReadOnly();
+    private List<Especialidade> _especialidades = [];
+    public IReadOnlyCollection<Especialidade> Especialidades
+    {
+        get => _especialidades.AsReadOnly();
+        private set => _especialidades = value?.ToList() ?? [];
+    }
 
     private readonly List<Consulta> _consultas = [];
     public IReadOnlyCollection<Consulta> Consultas => _consultas.AsReadOnly();

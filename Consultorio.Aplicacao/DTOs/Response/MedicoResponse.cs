@@ -11,5 +11,6 @@ public record MedicoResponse(
     string Telefone,
     string Crm,
     List<Especialidade> Especialidades,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    string? Observacao = null
 );

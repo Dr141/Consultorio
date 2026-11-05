@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ModalController, NavController } from '@ionic/angular';
 import { CadastroComponent } from '../../components/cadastro/cadastro.component';
@@ -19,11 +19,13 @@ export class LoginPage implements OnInit {
     private modalController: ModalController,
     private api: ConsultorioApiService,
     private navCtrl: NavController,
-    public themeService: ThemeService
+    public themeService: ThemeService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ionViewWillEnter() {
     this.erro = '';
+    this.cdr.markForCheck();
   }
 
   ngOnInit() {
@@ -35,12 +37,14 @@ export class LoginPage implements OnInit {
 
   onSubmit() {
     if (this.autenticacao.valid) {
+      this.erro = '';
       this.api.login(this.autenticacao.get('email')?.value, this.autenticacao.get('senha')?.value).subscribe({
         next: () => {
           this.navCtrl.navigateForward('home');
         },
         error: (error) => {
-          this.erro = error.message;
+          this.erro = error?.message || 'E-mail ou senha inválidos.';
+          this.cdr.detectChanges();
         }
       });
     }

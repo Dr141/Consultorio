@@ -99,6 +99,11 @@ public static class RegistrarDependencias
 
             var dbAppConsultorio = scope.ServiceProvider.GetRequiredService<ConsultorioContexto>();
             dbAppConsultorio.Database.Migrate();
+            dbAppConsultorio.Database.ExecuteSqlRaw("""
+                ALTER TABLE "Consulta" ALTER COLUMN "IdAgenda" DROP NOT NULL;
+                ALTER TABLE "Exame" ALTER COLUMN "IdAgenda" DROP NOT NULL;
+                ALTER TABLE "Exame" ALTER COLUMN "Resultado" DROP NOT NULL;
+            """);
         }
         catch (Exception ex)
         {

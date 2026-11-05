@@ -59,14 +59,12 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
 
             builder.Property(m => m.Especialidades)
                 .HasConversion(
-                    esp => string.Join(",", esp.Select(e => (int)e)),
-                    str => string.IsNullOrEmpty(str)
+                    esp => esp.Select(e => (int)e).ToArray(),
+                    arr => (IReadOnlyCollection<Especialidade>)(arr == null
                         ? new List<Especialidade>()
-                        : str.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                             .Select(int.Parse)
-                             .Cast<Especialidade>()
-                             .ToList()
+                        : arr.Cast<Especialidade>().ToList())
                 )
+                .HasColumnType("integer[]")
                 .IsRequired();
 
             builder.HasOne(m => m.Pessoa)

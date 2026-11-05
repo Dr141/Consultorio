@@ -88,14 +88,23 @@ public class MedicoAppService(
             DomainException.When(string.IsNullOrWhiteSpace(request.Telefone), "Telefone é obrigatório.");
 
             var cpfVo = new Cpf(request.Cpf!);
+            var telVo = new Telefone(request.Telefone!);
             if (await pessoaRepositorio.ExisteCpf(cpfVo.Valor))
             {
-                throw new DomainException($"Já existe uma pessoa cadastrada com o CPF {cpfVo.Formatado()}.");
-            }
+                var pessoaExistente = await pessoaRepositorio.ObterPorCpf(cpfVo.Valor);
+                if (pessoaExistente is null || await medicoRepositorio.ObterPorIdPessoa(pessoaExistente.Id) is not null)
+                {
+                    throw new DomainException($"Já existe uma pessoa cadastrada com o CPF {cpfVo.Formatado()}.");
+                }
 
-            var telVo = new Telefone(request.Telefone!);
-            pessoa = new Pessoa(request.Nome!, cpfVo, request.DtNasc!.Value, telVo, request.Observacao);
-            pessoa = await pessoaRepositorio.Adicionar(pessoa);
+                pessoaExistente.Atualizar(request.Nome!, cpfVo, request.DtNasc!.Value, telVo, request.Observacao);
+                pessoa = await pessoaRepositorio.Atualizar(pessoaExistente);
+            }
+            else
+            {
+                pessoa = new Pessoa(request.Nome!, cpfVo, request.DtNasc!.Value, telVo, request.Observacao);
+                pessoa = await pessoaRepositorio.Adicionar(pessoa);
+            }
         }
 
         var medico = new Medico(pessoa, crmVo, request.Especialidades);
@@ -172,6 +181,7 @@ public class MedicoAppService(
             m.Pessoa?.Telefone?.Formatado() ?? string.Empty,
             m.Crm?.Valor ?? string.Empty,
             m.Especialidades.ToList(),
-            m.DtCriacao
+            m.DtCriacao,
+            m.Pessoa?.Observacao
         );
 }

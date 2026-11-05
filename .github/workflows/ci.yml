@@ -47,3 +47,38 @@ jobs:
 
       - name: 🔨 Compilar Backend Server
         run: dotnet build Consultorio.Server/Consultorio.Server.csproj -c Release --no-restore
+
+  e2e-cypress:
+    name: E2E Tests (Cypress)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🟩 Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: 🐳 Subir Ambiente com Docker Compose
+        run: |
+          docker compose up -d --build
+          for i in {1..30}; do
+            if curl -sSf http://localhost:8080 > /dev/null; then
+              echo "Servidor pronto!"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: 📦 Instalar Dependências E2E (Cypress)
+        working-directory: Consultorio.E2E
+        run: |
+          npm install
+          npx cypress install
+
+      - name: 🧪 Executar Suíte E2E (Cypress Headless)
+        working-directory: Consultorio.E2E
+        run: npm run cy:run:headless
