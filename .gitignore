@@ -362,3 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Consultorio.Server/wwwroot/index.html
+
+!Consultorio.E2E/
+!Consultorio.E2E/**
+Consultorio.E2E/node_modules/
+Consultorio.E2E/cypress/screenshots/
+Consultorio.E2E/cypress/videos/
+Consultorio.E2E/cypress/downloads/

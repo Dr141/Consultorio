@@ -1,0 +1,18 @@
+{
+  "name": "consultorio-e2e",
+  "version": "1.0.0",
+  "description": "Testes End-to-End (Cypress) para o sistema Consultório",
+  "private": true,
+  "scripts": {
+    "postinstall": "cypress install",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run --browser chrome",
+    "cy:run:headless": "cypress run --headless",
+    "cy:run:mobile": "cypress run --config viewportWidth=375,viewportHeight=812",
+    "test:e2e": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^14.0.0",
+    "typescript": "~5.6.2"
+  }
+}

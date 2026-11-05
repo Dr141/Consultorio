@@ -1,0 +1,31 @@
+{
+  "admin": {
+    "email": "admin@domain.com",
+    "senha": "Admin@123"
+  },
+  "pacientePadrao": {
+    "nome": "Mariana Costa E2E",
+    "cpf": "11144477735",
+    "cpfFormatado": "111.444.777-35",
+    "dtNasc": "1992-08-20",
+    "telefone": "11998877665",
+    "observacao": "Paciente cadastrada via suíte Cypress E2E"
+  },
+  "pacienteAuxiliar": {
+    "nome": "Roberto Almeida E2E",
+    "cpf": "39053344705",
+    "cpfFormatado": "390.533.447-05",
+    "dtNasc": "1985-03-10",
+    "telefone": "11977665544",
+    "observacao": "Paciente auxiliar para agenda e consultas"
+  },
+  "medicoPadrao": {
+    "nome": "Dr. Henrique Souza E2E",
+    "cpf": "71428793860",
+    "cpfFormatado": "714.287.938-60",
+    "dtNasc": "1978-11-12",
+    "telefone": "11966554433",
+    "crm": "123456-SP",
+    "especialidades": [1, 2]
+  }
+}
