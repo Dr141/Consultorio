@@ -43,8 +43,9 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     // Selecionar Paciente
     cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     // Preencher Descrição do Exame
     cy.get('ion-modal ion-input[formControlName="descricao"] input')
@@ -186,6 +187,7 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
 
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert button.alert-button-role-destructive').click();
+    cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
     cy.contains('ion-card.exame-card', descricaoExame).should('not.exist');

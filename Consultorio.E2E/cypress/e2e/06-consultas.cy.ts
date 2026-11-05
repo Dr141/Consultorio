@@ -43,14 +43,16 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
     // Selecionar Paciente
     cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     // Selecionar Médico
     cy.get('ion-modal ion-select[formControlName="idMedico"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     // Preencher evolução médica
     cy.get('ion-modal ion-textarea[formControlName="observacao"] textarea')
@@ -167,6 +169,7 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
 
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert button.alert-button-role-destructive').click();
+    cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
     cy.contains('ion-card.consulta-card', textoEvolucaoInicial).should('not.exist');

@@ -50,8 +50,9 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     // Selecionar Médico
     cy.get('ion-modal ion-select[formControlName="idMedico"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     cy.get('ion-modal ion-button[type="submit"]').click();
     cy.get('ion-modal').should('not.exist');
@@ -96,8 +97,9 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
 
     cy.get('ion-modal ion-select[formControlName="idMedico"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     cy.get('ion-modal ion-button[type="submit"]').click();
     cy.get('ion-modal').should('not.exist');
@@ -110,8 +112,9 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     });
 
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
     // Verificar alteração de status para Ocupado
@@ -124,6 +127,7 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     // Liberar horário
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
     cy.contains('ion-card.agenda-card', '14:00').within(() => {
@@ -143,15 +147,17 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     // Selecionar Médico
     cy.get('ion-modal ion-select[formControlName="idMedico"]').click();
     cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').first().click();
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     // Selecionar Paciente
     cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
     cy.get('ion-alert').should('be.visible');
-    // Clica no segundo item (o primeiro é "Nenhum")
-    cy.get('ion-alert .alert-radio-button').eq(1).click();
+    // Aguarda opções carregarem: opção 0 é "Nenhum", opção 1 é o primeiro paciente
+    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 2).eq(1).click();
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
+    cy.get('ion-alert').should('not.exist');
 
     cy.get('ion-modal ion-button[type="submit"]').click();
     cy.get('ion-modal').should('not.exist');
@@ -175,6 +181,7 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     });
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert button.alert-button-role-destructive').click();
+    cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
     cy.contains('ion-card.agenda-card', horaComPaciente).should('not.exist');
