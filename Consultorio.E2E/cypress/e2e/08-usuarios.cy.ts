@@ -1,4 +1,4 @@
-describe('07 - Gerenciamento de Usuários e Permissões', () => {
+describe('08 - Gerenciamento de Usuários e Permissões', () => {
   beforeEach(() => {
     cy.loginApi();
   });
