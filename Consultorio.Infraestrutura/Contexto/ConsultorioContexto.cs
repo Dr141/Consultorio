@@ -177,7 +177,7 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
         {
             builder.ToTable("ConsultaAdendo");
             builder.HasKey(a => a.Id);
-            builder.Property(a => a.Texto).HasMaxLength(ConsultaAdendo.TamanhoMaximoTexto).IsRequired();
+            builder.Property(a => a.Texto).HasMaxLength(global::Consultorio.Dominio.Entidades.ConsultaAdendo.TamanhoMaximoTexto).IsRequired();
             builder.Property(a => a.Autor).HasMaxLength(256).IsRequired();
             builder.HasIndex(a => a.IdConsulta);
         });

@@ -13,5 +13,5 @@ public static class UsuarioExtensoes
         ?? string.Empty;
 
     public static UsuarioAtual ObterUsuarioAtual(this ClaimsPrincipal? usuario) =>
-        new(usuario.ObterEmail(), usuario?.IsInRole(nameof(Consultorio.Identity.Modelo.Enumerados.Roles.Administrador)) ?? false);
+        new(usuario.ObterEmail(), usuario?.IsInRole(nameof(global::Consultorio.Identity.Modelo.Enumerados.Roles.Administrador)) ?? false);
 }
