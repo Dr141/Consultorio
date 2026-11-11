@@ -10,6 +10,6 @@ public interface IExameAppService
     Task<List<ExameResponse>> ObterPorPacienteAsync(int idPaciente);
     Task<ExameResponse> AdicionarAsync(ExameRequest request);
     Task<ExameResponse> AtualizarAsync(int id, ExameRequest request);
-    Task<ExameResponse> RegistrarResultadoAsync(int id, string resultado);
+    Task<ExameResponse> RegistrarResultadoAsync(int id, string resultado, int? idMedico = null);
     Task RemoverAsync(int id);
 }

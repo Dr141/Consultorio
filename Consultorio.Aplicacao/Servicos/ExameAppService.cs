@@ -10,7 +10,8 @@ namespace Consultorio.Aplicacao.Servicos;
 public class ExameAppService(
     IExameRepositorio exameRepositorio,
     IPacienteRepositorio pacienteRepositorio,
-    IAgendaRepositorio agendaRepositorio) : IExameAppService
+    IAgendaRepositorio agendaRepositorio,
+    IMedicoRepositorio? medicoRepositorio = null) : IExameAppService
 {
     public async Task<List<ExameResponse>> ObterTodosAsync()
     {
@@ -41,7 +42,13 @@ public class ExameAppService(
                 ?? throw new DomainException($"Agenda com id {request.IdAgenda.Value} não encontrada.");
         }
 
-        var exame = new Exame(request.IdPaciente, request.Descricao, request.Resultado, request.IdAgenda);
+        if (request.IdMedico.HasValue && request.IdMedico.Value > 0 && medicoRepositorio is not null)
+        {
+            _ = await medicoRepositorio.ObterId(request.IdMedico.Value)
+                ?? throw new DomainException($"Médico com id {request.IdMedico.Value} não encontrado.");
+        }
+
+        var exame = new Exame(request.IdPaciente, request.Descricao, request.Resultado, request.IdAgenda, request.IdMedico);
         var salvo = await exameRepositorio.Adicionar(exame);
 
         if (request.IdAgenda.HasValue && request.IdAgenda.Value > 0)
@@ -63,18 +70,30 @@ public class ExameAppService(
         var exame = await exameRepositorio.ObterDetalhadoPorId(id)
             ?? throw new DomainException($"Exame com id {id} não encontrado.");
 
-        exame.Atualizar(request.Descricao, request.Resultado);
+        if (request.IdMedico.HasValue && request.IdMedico.Value > 0 && medicoRepositorio is not null)
+        {
+            _ = await medicoRepositorio.ObterId(request.IdMedico.Value)
+                ?? throw new DomainException($"Médico com id {request.IdMedico.Value} não encontrado.");
+        }
+
+        exame.Atualizar(request.Descricao, request.Resultado, request.IdMedico);
         var atualizado = await exameRepositorio.Atualizar(exame);
         var detalhado = await exameRepositorio.ObterDetalhadoPorId(atualizado.Id);
         return MapearResponse(detalhado ?? atualizado);
     }
 
-    public async Task<ExameResponse> RegistrarResultadoAsync(int id, string resultado)
+    public async Task<ExameResponse> RegistrarResultadoAsync(int id, string resultado, int? idMedico = null)
     {
         var exame = await exameRepositorio.ObterDetalhadoPorId(id)
             ?? throw new DomainException($"Exame com id {id} não encontrado.");
 
-        exame.RegistrarResultado(resultado);
+        if (idMedico.HasValue && idMedico.Value > 0 && medicoRepositorio is not null)
+        {
+            _ = await medicoRepositorio.ObterId(idMedico.Value)
+                ?? throw new DomainException($"Médico com id {idMedico.Value} não encontrado.");
+        }
+
+        exame.RegistrarResultado(resultado, idMedico);
         var atualizado = await exameRepositorio.Atualizar(exame);
         var detalhado = await exameRepositorio.ObterDetalhadoPorId(atualizado.Id);
         return MapearResponse(detalhado ?? atualizado);
@@ -106,6 +125,9 @@ public class ExameAppService(
             dataHora = e.Agenda.Data.Add(e.Agenda.Hora);
         }
 
+        var medico = e.Medico ?? e.Agenda?.Medico;
+        int? idMedico = e.IdMedico ?? e.Agenda?.IdMedico;
+
         return new ExameResponse(
             e.Id,
             e.IdPaciente,
@@ -114,7 +136,10 @@ public class ExameAppService(
             e.Resultado,
             e.IdAgenda,
             dataHora,
-            e.DtCriacao
+            e.DtCriacao,
+            idMedico,
+            medico?.Pessoa?.Nome,
+            medico?.Crm?.Valor
         );
     }
 }

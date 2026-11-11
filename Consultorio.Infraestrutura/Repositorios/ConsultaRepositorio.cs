@@ -51,4 +51,40 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<List<Consulta>> ObterPorPacienteFiltrado(
+        int idPaciente,
+        int? idMedico = null,
+        DateTime? dataInicio = null,
+        DateTime? dataFim = null)
+    {
+        var query = _contexto.Consulta
+            .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
+            .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
+            .Include(c => c.Agenda)
+            .Where(c => c.IdPaciente == idPaciente);
+
+        if (idMedico.HasValue && idMedico.Value > 0)
+        {
+            query = query.Where(c => c.IdMedico == idMedico.Value);
+        }
+
+        if (dataInicio.HasValue)
+        {
+            var dtIniUtc = DateTime.SpecifyKind(dataInicio.Value.Date, DateTimeKind.Utc);
+            query = query.Where(c => (c.Agenda != null && c.Agenda.Data >= dtIniUtc) || (c.Agenda == null && c.DtCriacao >= dtIniUtc));
+        }
+
+        if (dataFim.HasValue)
+        {
+            var dtFimUtc = DateTime.SpecifyKind(dataFim.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            query = query.Where(c => (c.Agenda != null && c.Agenda.Data <= dtFimUtc) || (c.Agenda == null && c.DtCriacao <= dtFimUtc));
+        }
+
+        return await query
+            .OrderByDescending(c => c.Agenda != null ? c.Agenda.Data : c.DtCriacao)
+            .ThenByDescending(c => c.DtCriacao)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }

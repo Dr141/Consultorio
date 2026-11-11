@@ -3,35 +3,79 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
     </ion-buttons>
-    <ion-title>Gestão de Pacientes</ion-title>
+    <ion-title>Pacientes</ion-title>
     <ion-buttons slot="end">
       <app-theme-toggle></app-theme-toggle>
-      <ion-button (click)="adicionar()" aria-label="Cadastrar novo paciente" title="Cadastrar novo paciente">
-        <ion-icon slot="icon-only" name="person-add"></ion-icon>
+      <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Cadastrar novo paciente" title="Cadastrar novo paciente">
+        <ion-icon slot="start" name="person-add-outline"></ion-icon>
+        <span class="ion-hide-md-down">Novo paciente</span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
     <div class="searchbar-container">
-      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por nome ou CPF"></ion-searchbar>
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" [debounce]="150" placeholder="Buscar por nome, CPF ou telefone"></ion-searchbar>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="page-container">
-    @if (carregando) {
-      <div class="ion-text-center ion-padding loading-state">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>Carregando pacientes...</p>
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container com-fab">
+    @if (carregando && pacientes.length === 0) {
+      <div class="loading-state" aria-busy="true" aria-label="Carregando pacientes">
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+              <ion-col size="12" size-md="6" size-xl="4">
+                <ion-card class="skeleton-card">
+                  <div class="skeleton-linha">
+                    <ion-skeleton-text [animated]="true" class="skeleton-avatar"></ion-skeleton-text>
+                    <div style="flex: 1">
+                      <ion-skeleton-text [animated]="true" style="width: 70%"></ion-skeleton-text>
+                      <ion-skeleton-text [animated]="true" style="width: 45%"></ion-skeleton-text>
+                    </div>
+                  </div>
+                  <ion-skeleton-text [animated]="true" style="width: 55%"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 85%"></ion-skeleton-text>
+                </ion-card>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
       </div>
-    } @else if (pacientesFiltrados.length === 0) {
+    } @else if (pacientes.length === 0) {
       <div class="ion-text-center ion-padding empty-state">
         <ion-icon name="people-outline"></ion-icon>
         <h3>Nenhum paciente encontrado</h3>
-        <p>Clique no botão + para cadastrar um novo paciente.</p>
+        <p>Ainda não há pacientes cadastrados. Comece cadastrando o primeiro.</p>
+        <ion-button (click)="adicionar()">
+          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+          Cadastrar paciente
+        </ion-button>
+      </div>
+    } @else if (pacientesFiltrados.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="search-outline"></ion-icon>
+        <h3>Nenhum paciente encontrado</h3>
+        <p>Nenhum resultado para "{{ termoBusca }}". Confira a grafia ou busque pelo CPF.</p>
+        <ion-button fill="outline" (click)="limparBusca()">
+          <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+          Limpar busca
+        </ion-button>
       </div>
     } @else {
+      <div class="lista-resumo">
+        <span class="lista-total">
+          <strong>{{ pacientesFiltrados.length }}</strong>
+          {{ pacientesFiltrados.length === 1 ? 'paciente' : 'pacientes' }}
+          @if (termoBusca) { de {{ pacientes.length }} }
+        </span>
+      </div>
+
       <ion-grid class="ion-no-padding">
         <ion-row>
           @for (p of pacientesFiltrados; track p.id) {
@@ -39,26 +83,28 @@
               <ion-card class="registro-card">
                 <ion-card-header>
                   <div class="card-header-flex">
-                    <ion-avatar class="card-avatar">
-                      <ion-icon name="person-circle"></ion-icon>
-                    </ion-avatar>
+                    <div class="avatar-iniciais" aria-hidden="true">{{ iniciais(p.nome) }}</div>
                     <div class="header-titles">
-                      <ion-card-title>{{ p.nome }}</ion-card-title>
-                      <ion-card-subtitle>CPF: {{ p.cpf }}</ion-card-subtitle>
+                      <ion-card-title [title]="p.nome">{{ p.nome }}</ion-card-title>
+                      <ion-card-subtitle>CPF: {{ p.cpf | cpf }}</ion-card-subtitle>
                     </div>
                   </div>
                 </ion-card-header>
 
                 <ion-card-content>
                   <div class="info-row">
-                    <ion-icon name="call-outline"></ion-icon>
-                    <span>{{ p.telefone || 'Não informado' }}</span>
+                    <ion-icon name="call-outline" aria-hidden="true"></ion-icon>
+                    @if (p.telefone) {
+                      <a class="link-telefone" [href]="'tel:' + p.telefone">{{ p.telefone | telefone }}</a>
+                    } @else {
+                      <span>Telefone não informado</span>
+                    }
                   </div>
 
                   @if (p.dtNasc) {
                     <div class="info-row">
-                      <ion-icon name="calendar-outline"></ion-icon>
-                      <span>Nasc: {{ p.dtNasc | date:'dd/MM/yyyy' }}</span>
+                      <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+                      <span>{{ p.dtNasc | dataBr }} · {{ p.dtNasc | idade }}</span>
                     </div>
                   }
 
@@ -67,11 +113,15 @@
                   }
 
                   <div class="card-actions">
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(p)">
+                    <ion-button fill="solid" color="secondary" size="small" (click)="abrirProntuario(p)" title="Ver e imprimir prontuário em formato de ofício">
+                      <ion-icon slot="start" name="document-text-outline"></ion-icon>
+                      Prontuário
+                    </ion-button>
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(p)" [attr.aria-label]="'Editar ' + p.nome">
                       <ion-icon slot="start" name="create-outline"></ion-icon>
                       Editar
                     </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(p)">
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(p)" [attr.aria-label]="'Excluir ' + p.nome">
                       <ion-icon slot="start" name="trash-outline"></ion-icon>
                       Excluir
                     </ion-button>
@@ -86,7 +136,7 @@
   </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button color="primary" (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()" aria-label="Cadastrar novo paciente">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

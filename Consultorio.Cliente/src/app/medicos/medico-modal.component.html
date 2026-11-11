@@ -11,61 +11,85 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="salvar()">
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <p class="secao-formulario">Dados profissionais</p>
     <ion-grid class="ion-no-padding">
       <ion-row>
         <ion-col size="12">
           <ion-item class="form-item">
-            <ion-input label="Nome Completo" labelPlacement="floating" formControlName="nome" placeholder="Dr. Nome Sobrenome"></ion-input>
+            <ion-input label="Nome completo *" labelPlacement="floating" formControlName="nome"
+                       placeholder="Dra. Nome Sobrenome" autocomplete="name" autocapitalize="words"
+                       [maxlength]="100" [errorText]="erro('nome')"></ion-input>
           </ion-item>
         </ion-col>
 
         <ion-col size="12" size-sm="6">
           <ion-item class="form-item">
-            <ion-input label="CPF" labelPlacement="floating" formControlName="cpf" placeholder="000.000.000-00"></ion-input>
+            <ion-input label="CRM *" labelPlacement="floating" formControlName="crm" placeholder="Ex.: 123456/GO"
+                       autocapitalize="characters" [maxlength]="20" helperText="Número e UF do conselho"
+                       [errorText]="erro('crm')"></ion-input>
           </ion-item>
         </ion-col>
 
         <ion-col size="12" size-sm="6">
           <ion-item class="form-item">
-            <ion-input label="CRM" labelPlacement="floating" formControlName="crm" placeholder="Ex: 12345-SP"></ion-input>
-          </ion-item>
-        </ion-col>
-
-        <ion-col size="12" size-sm="6">
-          <ion-item class="form-item">
-            <ion-input type="date" label="Data de Nascimento" labelPlacement="floating" formControlName="dtNasc"></ion-input>
-          </ion-item>
-        </ion-col>
-
-        <ion-col size="12" size-sm="6">
-          <ion-item class="form-item">
-            <ion-input label="Telefone" labelPlacement="floating" formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
-          </ion-item>
-        </ion-col>
-
-        <ion-col size="12">
-          <ion-item class="form-item">
-            <ion-select label="Especialidades Médicas" labelPlacement="floating" formControlName="especialidades" multiple="true" placeholder="Selecione as especialidades">
+            <ion-select label="Especialidades *" labelPlacement="floating" formControlName="especialidades"
+                        [multiple]="true" placeholder="Selecione" cancelText="Cancelar" okText="Confirmar"
+                        [errorText]="erro('especialidades')">
               @for (esp of listaEspecialidades; track esp.id) {
                 <ion-select-option [value]="esp.id">{{ esp.nome }}</ion-select-option>
               }
             </ion-select>
           </ion-item>
         </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <p class="secao-formulario">Dados pessoais e contato</p>
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        <ion-col size="12" size-sm="6">
+          <ion-item class="form-item">
+            <ion-input label="CPF *" labelPlacement="floating" formControlName="cpf" appMascara="cpf"
+                       inputmode="numeric" placeholder="000.000.000-00" [maxlength]="14"
+                       [errorText]="erro('cpf')"></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12" size-sm="6">
+          <ion-item class="form-item">
+            <ion-input type="date" label="Data de nascimento *" labelPlacement="floating" formControlName="dtNasc"
+                       [max]="hoje" [errorText]="erro('dtNasc')"></ion-input>
+          </ion-item>
+        </ion-col>
 
         <ion-col size="12">
           <ion-item class="form-item">
-            <ion-textarea label="Observações" labelPlacement="floating" formControlName="observacao" rows="2" placeholder="Informações adicionais do profissional..."></ion-textarea>
+            <ion-input type="tel" label="Telefone com DDD *" labelPlacement="floating" formControlName="telefone"
+                       appMascara="telefone" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000"
+                       [maxlength]="15" [errorText]="erro('telefone')"></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-textarea label="Observações" labelPlacement="floating" formControlName="observacao"
+                          [autoGrow]="true" rows="2" [counter]="true" [maxlength]="500"
+                          placeholder="Dias de atendimento, subespecialidades, observações..."></ion-textarea>
           </ion-item>
         </ion-col>
       </ion-row>
     </ion-grid>
 
-    <div class="ion-padding-top">
-      <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
-        <ion-icon slot="start" [name]="salvando ? 'hourglass-outline' : 'save-outline'"></ion-icon>
-        {{ salvando ? 'Salvando...' : 'Salvar Médico' }}
+    <div class="acoes-formulario">
+      <ion-button class="btn-cancelar" fill="outline" color="medium" type="button" (click)="fechar()">Cancelar</ion-button>
+      <ion-button type="submit" color="primary" [disabled]="bloquearEnvio()">
+        @if (salvando) {
+          <ion-spinner slot="start" name="crescent"></ion-spinner>
+        } @else {
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+        }
+        {{ salvando ? 'Salvando...' : 'Salvar médico' }}
       </ion-button>
     </div>
   </form>

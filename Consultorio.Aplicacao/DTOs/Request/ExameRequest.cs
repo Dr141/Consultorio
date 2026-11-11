@@ -11,5 +11,6 @@ public record ExameRequest(
     string Descricao,
 
     string? Resultado,
-    int? IdAgenda
+    int? IdAgenda,
+    int? IdMedico = null
 );

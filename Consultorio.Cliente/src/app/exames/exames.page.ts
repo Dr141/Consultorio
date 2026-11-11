@@ -1,9 +1,13 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { ModalController } from '@ionic/angular';
+import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Exame } from '../types/types';
+import { correspondeBusca } from '../shared/utils/formatadores';
 import { ExameModalComponent } from './exame-modal.component';
+
+type FiltroExame = 'todos' | 'pendentes' | 'laudados';
 
 @Component({
   selector: 'app-exames',
@@ -11,83 +15,84 @@ import { ExameModalComponent } from './exame-modal.component';
   styleUrls: ['./exames.page.scss'],
   standalone: false
 })
-export class ExamesPage implements OnInit {
+export class ExamesPage {
   public exames: Exame[] = [];
   public examesFiltrados: Exame[] = [];
   public termoBusca = '';
   public carregando = false;
+  public filtroStatus: FiltroExame = 'todos';
+  public totais = { todos: 0, pendentes: 0, laudados: 0 };
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef,
-    private router: Router
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit() {
-    this.carregarExames();
-  }
 
   ionViewWillEnter() {
     this.carregarExames();
   }
 
-  carregarExames() {
+  atualizar(evento: Event) {
+    this.carregarExames(() => (evento.target as HTMLIonRefresherElement | null)?.complete());
+  }
+
+  carregarExames(aoConcluir?: () => void) {
     this.carregando = true;
     this.cdr.markForCheck();
-    this.api.obterExames().subscribe({
-      next: (lista) => {
-        this.exames = lista || [];
-        this.filtrar();
+    this.api.obterExames()
+      .pipe(finalize(() => {
         this.carregando = false;
+        aoConcluir?.();
         this.cdr.detectChanges();
-      },
-      error: async (err) => {
-        this.carregando = false;
-        this.cdr.detectChanges();
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.router.navigate(['/login']);
-          return;
-        }
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao carregar exames.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
-    });
+      }))
+      .subscribe({
+        next: (lista) => {
+          const instante = (e: Exame) => new Date(e.dataHora || e.dtCriacao || 0).getTime() || 0;
+          this.exames = [...(lista || [])].sort((a, b) => instante(b) - instante(a));
+          this.filtrar();
+        },
+        error: (err) => this.feedback.erro(err, 'Erro ao carregar exames.')
+      });
+  }
+
+  mudarFiltroStatus(valor: FiltroExame | string | undefined) {
+    this.filtroStatus = (valor as FiltroExame) || 'todos';
+    this.filtrar();
+  }
+
+  limparFiltros() {
+    this.termoBusca = '';
+    this.filtroStatus = 'todos';
+    this.filtrar();
   }
 
   filtrar() {
-    const termo = this.termoBusca.toLowerCase().trim();
-    if (!termo) {
-      this.examesFiltrados = [...this.exames];
-      return;
-    }
+    const encontrados = this.exames.filter(e =>
+      correspondeBusca(this.termoBusca, e.descricao, e.nomePaciente, e.nomeMedico, e.resultado)
+    );
 
-    this.examesFiltrados = this.exames.filter(e =>
-      e.descricao?.toLowerCase().includes(termo) ||
-      e.nomePaciente?.toLowerCase().includes(termo) ||
-      e.resultado?.toLowerCase().includes(termo)
+    this.totais = {
+      todos: encontrados.length,
+      pendentes: encontrados.filter(e => !e.resultado).length,
+      laudados: encontrados.filter(e => !!e.resultado).length
+    };
+
+    this.examesFiltrados = encontrados.filter(e =>
+      this.filtroStatus === 'todos' || (this.filtroStatus === 'pendentes' ? !e.resultado : !!e.resultado)
     );
   }
 
   async adicionar() {
-    const modal = await this.modalCtrl.create({
-      component: ExameModalComponent
-    });
-
-    await modal.present();
-    const { data } = await modal.onDidDismiss();
-    if (data) {
-      this.carregarExames();
-    }
+    await this.abrirModal();
   }
 
   async editar(exame: Exame) {
+    await this.abrirModal(exame);
+  }
+
+  private async abrirModal(exame?: Exame) {
     const modal = await this.modalCtrl.create({
       component: ExameModalComponent,
       componentProps: { exame }
@@ -96,36 +101,26 @@ export class ExamesPage implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss();
     if (data) {
+      this.feedback.sucesso(exame ? 'Laudo salvo com sucesso.' : 'Exame solicitado com sucesso.');
       this.carregarExames();
     }
   }
 
   async remover(exame: Exame) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar Exclusão',
-      message: `Deseja realmente remover o exame ${exame.descricao}?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.api.removerExame(exame.id).subscribe({
-              next: () => this.carregarExames(),
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao excluir exame.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Excluir exame?',
+      mensagem: `O exame "${exame.descricao}" de ${exame.nomePaciente ?? 'paciente'} será removido${exame.resultado ? ', incluindo o laudo' : ''}. Esta ação não pode ser desfeita.`,
+      textoConfirmar: 'Excluir',
+      destrutivo: true
     });
+    if (!confirmado) return;
 
-    await alert.present();
+    this.api.removerExame(exame.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Exame excluído.');
+        this.carregarExames();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao excluir exame.')
+    });
   }
 }

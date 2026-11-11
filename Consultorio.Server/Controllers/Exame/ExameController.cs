@@ -73,7 +73,7 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
         }
     }
 
-    public record RegistrarResultadoDto(string Resultado);
+    public record RegistrarResultadoDto(string Resultado, int? IdMedico = null);
 
     [HttpPatch("{id:int}/resultado")]
     [EndpointSummary("Registrar resultado do exame")]
@@ -83,7 +83,7 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
     {
         try
         {
-            var atualizado = await exameAppService.RegistrarResultadoAsync(id, dto.Resultado);
+            var atualizado = await exameAppService.RegistrarResultadoAsync(id, dto.Resultado, dto.IdMedico);
             return Ok(atualizado);
         }
         catch (DomainException ex)

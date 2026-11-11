@@ -1,9 +1,14 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
+import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Consulta } from '../types/types';
+import { correspondeBusca } from '../shared/utils/formatadores';
 import { ConsultaModalComponent } from './consulta-modal.component';
+
+const LIMITE_TEXTO_RECOLHIDO = 280;
 
 @Component({
   selector: 'app-consultas',
@@ -11,89 +16,81 @@ import { ConsultaModalComponent } from './consulta-modal.component';
   styleUrls: ['./consultas.page.scss'],
   standalone: false
 })
-export class ConsultasPage implements OnInit {
+export class ConsultasPage {
   public consultas: Consulta[] = [];
   public consultasFiltradas: Consulta[] = [];
   public termoBusca = '';
   public carregando = false;
+  public expandidas = new Set<number>();
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
+    private feedback: FeedbackService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
-
-  ngOnInit() {
-    this.carregarConsultas();
-  }
 
   ionViewWillEnter() {
     this.carregarConsultas();
   }
 
-  carregarConsultas() {
-    this.carregando = true;
-    this.cdr.markForCheck();
-    this.api.obterConsultas().subscribe({
-      next: (lista) => {
-        this.consultas = lista || [];
-        this.filtrar();
-        this.carregando = false;
-        this.cdr.detectChanges();
-      },
-      error: async (err) => {
-        this.carregando = false;
-        this.cdr.detectChanges();
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.router.navigate(['/login']);
-          return;
-        }
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao carregar consultas.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
-    });
+  atualizar(evento: Event) {
+    this.carregarConsultas(() => (evento.target as HTMLIonRefresherElement | null)?.complete());
   }
 
-  formatarData(dataStr?: string): string {
-    if (!dataStr) return '';
-    const date = new Date(dataStr);
-    return date.toLocaleDateString('pt-BR');
+  carregarConsultas(aoConcluir?: () => void) {
+    this.carregando = true;
+    this.cdr.markForCheck();
+    this.api.obterConsultas()
+      .pipe(finalize(() => {
+        this.carregando = false;
+        aoConcluir?.();
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (lista) => {
+          const instante = (c: Consulta) => new Date(c.dataHora || c.dtCriacao || 0).getTime() || 0;
+          this.consultas = [...(lista || [])].sort((a, b) => instante(b) - instante(a));
+          this.filtrar();
+        },
+        error: (err) => this.feedback.erro(err, 'Erro ao carregar consultas.')
+      });
+  }
+
+  ehLongo(texto: string | undefined): boolean {
+    return (texto?.length ?? 0) > LIMITE_TEXTO_RECOLHIDO;
+  }
+
+  alternarExpandida(id: number) {
+    if (this.expandidas.has(id)) this.expandidas.delete(id);
+    else this.expandidas.add(id);
   }
 
   filtrar() {
-    const termo = this.termoBusca.toLowerCase().trim();
-    if (!termo) {
-      this.consultasFiltradas = [...this.consultas];
-      return;
-    }
-
     this.consultasFiltradas = this.consultas.filter(c =>
-      c.nomePaciente?.toLowerCase().includes(termo) ||
-      c.nomeMedico?.toLowerCase().includes(termo) ||
-      c.observacao?.toLowerCase().includes(termo)
+      correspondeBusca(this.termoBusca, c.nomePaciente, c.nomeMedico, c.observacao)
     );
   }
 
-  async adicionar() {
-    const modal = await this.modalCtrl.create({
-      component: ConsultaModalComponent
-    });
+  limparBusca() {
+    this.termoBusca = '';
+    this.filtrar();
+  }
 
-    await modal.present();
-    const { data } = await modal.onDidDismiss();
-    if (data) {
-      this.carregarConsultas();
-    }
+  abrirProntuario(consulta: Consulta) {
+    this.router.navigate(['/prontuario'], { queryParams: { idPaciente: consulta.idPaciente } });
+  }
+
+  async adicionar() {
+    await this.abrirModal();
   }
 
   async editar(consulta: Consulta) {
+    await this.abrirModal(consulta);
+  }
+
+  private async abrirModal(consulta?: Consulta) {
     const modal = await this.modalCtrl.create({
       component: ConsultaModalComponent,
       componentProps: { consulta }
@@ -102,36 +99,26 @@ export class ConsultasPage implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss();
     if (data) {
+      this.feedback.sucesso(consulta ? 'Evolução da consulta atualizada.' : 'Consulta registrada com sucesso.');
       this.carregarConsultas();
     }
   }
 
   async remover(consulta: Consulta) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar Exclusão',
-      message: 'Deseja realmente remover o registro desta consulta?',
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.api.removerConsulta(consulta.id).subscribe({
-              next: () => this.carregarConsultas(),
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao excluir consulta.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Excluir consulta?',
+      mensagem: `O registro da consulta de ${consulta.nomePaciente ?? 'paciente'} será removido do histórico. Esta ação não pode ser desfeita.`,
+      textoConfirmar: 'Excluir',
+      destrutivo: true
     });
+    if (!confirmado) return;
 
-    await alert.present();
+    this.api.removerConsulta(consulta.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Consulta excluída.');
+        this.carregarConsultas();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao excluir consulta.')
+    });
   }
 }

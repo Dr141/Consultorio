@@ -1,9 +1,21 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { ModalController } from '@ionic/angular';
+import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Agenda, Paciente } from '../types/types';
+import { combinarDataHora, correspondeBusca, mesmoDia, paraDataLocal, paraInputData, rotuloDia } from '../shared/utils/formatadores';
+import { SelecionarPacienteComponent } from '../shared/selecionar-paciente/selecionar-paciente.component';
 import { AgendaModalComponent } from './agenda-modal.component';
+
+type FiltroStatus = 'todos' | 'disponiveis' | 'ocupados';
+
+interface GrupoAgenda {
+  chave: string;
+  rotulo: string;
+  hoje: boolean;
+  itens: Agenda[];
+}
 
 @Component({
   selector: 'app-agenda',
@@ -11,57 +23,49 @@ import { AgendaModalComponent } from './agenda-modal.component';
   styleUrls: ['./agenda.page.scss'],
   standalone: false
 })
-export class AgendaPage implements OnInit {
+export class AgendaPage {
   public agendas: Agenda[] = [];
-  public agendasFiltradas: Agenda[] = [];
+  public grupos: GrupoAgenda[] = [];
   public pacientes: Paciente[] = [];
   public termoBusca = '';
   public carregando = false;
+  public filtroStatus: FiltroStatus = 'todos';
+  /** Por padrão a agenda mostra de hoje em diante, que é o que a recepção consulta no dia a dia. */
+  public incluirAnteriores = false;
+  public totais = { todos: 0, disponiveis: 0, ocupados: 0 };
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef,
-    private router: Router
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit() {
-    this.carregarAgenda();
-    this.carregarPacientes();
-  }
 
   ionViewWillEnter() {
     this.carregarAgenda();
     this.carregarPacientes();
   }
 
-  carregarAgenda() {
+  atualizar(evento: Event) {
+    this.carregarAgenda(() => (evento.target as HTMLIonRefresherElement | null)?.complete());
+  }
+
+  carregarAgenda(aoConcluir?: () => void) {
     this.carregando = true;
     this.cdr.markForCheck();
-    this.api.obterAgendas().subscribe({
-      next: (lista) => {
-        this.agendas = lista || [];
-        this.filtrar();
+    this.api.obterAgendas()
+      .pipe(finalize(() => {
         this.carregando = false;
+        aoConcluir?.();
         this.cdr.detectChanges();
-      },
-      error: async (err) => {
-        this.carregando = false;
-        this.cdr.detectChanges();
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.router.navigate(['/login']);
-          return;
-        }
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao carregar agenda.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
-    });
+      }))
+      .subscribe({
+        next: (lista) => {
+          this.agendas = [...(lista || [])].sort((a, b) => this.instante(a) - this.instante(b));
+          this.filtrar();
+        },
+        error: (err) => this.feedback.erro(err, 'Erro ao carregar agenda.')
+      });
   }
 
   carregarPacientes() {
@@ -70,145 +74,164 @@ export class AgendaPage implements OnInit {
         this.pacientes = p || [];
         this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => undefined
     });
   }
 
-  formatarData(dataStr: string): string {
-    if (!dataStr) return '';
-    const date = new Date(dataStr);
-    return date.toLocaleDateString('pt-BR');
+  private instante(a: Agenda): number {
+    return combinarDataHora(a.data, a.hora)?.getTime() ?? 0;
+  }
+
+  ehPassado(a: Agenda): boolean {
+    return this.instante(a) < Date.now();
+  }
+
+  descricaoHorario(a: Agenda): string {
+    const dia = paraDataLocal(a.data);
+    const rotulo = dia ? rotuloDia(dia) : '';
+    return `${rotulo} às ${a.hora?.substring(0, 5) ?? ''}${a.nomeMedico ? ' · ' + a.nomeMedico : ''}`;
+  }
+
+  mudarFiltroStatus(valor: FiltroStatus | string | undefined) {
+    this.filtroStatus = (valor as FiltroStatus) || 'todos';
+    this.filtrar();
+  }
+
+  alternarAnteriores() {
+    this.incluirAnteriores = !this.incluirAnteriores;
+    this.filtrar();
+  }
+
+  limparFiltros() {
+    this.termoBusca = '';
+    this.filtroStatus = 'todos';
+    this.incluirAnteriores = true;
+    this.filtrar();
   }
 
   filtrar() {
-    const termo = this.termoBusca.toLowerCase().trim();
-    if (!termo) {
-      this.agendasFiltradas = [...this.agendas];
-      return;
-    }
+    const inicioDeHoje = new Date();
+    inicioDeHoje.setHours(0, 0, 0, 0);
 
-    this.agendasFiltradas = this.agendas.filter(a =>
-      a.nomeMedico?.toLowerCase().includes(termo) ||
-      a.nomePaciente?.toLowerCase().includes(termo)
+    const noPeriodoEBusca = this.agendas.filter(a => {
+      const dia = paraDataLocal(a.data);
+      if (!this.incluirAnteriores && dia && dia < inicioDeHoje) return false;
+      return correspondeBusca(this.termoBusca, a.nomeMedico, a.nomePaciente);
+    });
+
+    this.totais = {
+      todos: noPeriodoEBusca.length,
+      disponiveis: noPeriodoEBusca.filter(a => a.disponivel).length,
+      ocupados: noPeriodoEBusca.filter(a => !a.disponivel).length
+    };
+
+    const visiveis = noPeriodoEBusca.filter(a =>
+      this.filtroStatus === 'todos' ||
+      (this.filtroStatus === 'disponiveis' ? a.disponivel : !a.disponivel)
     );
+
+    const hoje = new Date();
+    const mapa = new Map<string, GrupoAgenda>();
+    for (const a of visiveis) {
+      const dia = paraDataLocal(a.data);
+      const chave = paraInputData(dia) || 'sem-data';
+      if (!mapa.has(chave)) {
+        mapa.set(chave, {
+          chave,
+          rotulo: dia ? rotuloDia(dia) : 'Sem data',
+          hoje: !!dia && mesmoDia(dia, hoje),
+          itens: []
+        });
+      }
+      mapa.get(chave)!.itens.push(a);
+    }
+    this.grupos = Array.from(mapa.values());
   }
 
   async adicionar() {
-    const modal = await this.modalCtrl.create({
-      component: AgendaModalComponent
-    });
-
-    await modal.present();
-    const { data } = await modal.onDidDismiss();
-    if (data) {
-      this.carregarAgenda();
-    }
+    await this.abrirModal();
   }
 
   async editar(agenda: Agenda) {
+    await this.abrirModal(agenda);
+  }
+
+  private async abrirModal(agenda?: Agenda) {
     const modal = await this.modalCtrl.create({
       component: AgendaModalComponent,
-      componentProps: { agenda }
+      componentProps: { agenda },
+      id: 'agenda-modal'
     });
 
     await modal.present();
     const { data } = await modal.onDidDismiss();
     if (data) {
+      this.feedback.sucesso(agenda ? 'Horário atualizado.' : 'Horário adicionado à agenda.');
       this.carregarAgenda();
     }
   }
 
   async agendarPaciente(agenda: Agenda) {
-    const inputs = this.pacientes.map(p => ({
-      name: 'idPaciente',
-      type: 'radio' as const,
-      label: p.nome,
-      value: p.id
-    }));
+    if (this.pacientes.length === 0) {
+      this.feedback.aviso('Cadastre um paciente antes de agendar.');
+      return;
+    }
 
-    const alert = await this.alertCtrl.create({
-      header: 'Agendar Paciente',
-      subHeader: `${this.formatarData(agenda.data)} às ${agenda.hora.substring(0, 5)} - ${agenda.nomeMedico}`,
-      inputs,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Confirmar',
-          handler: (idPacienteEscolhido) => {
-            if (!idPacienteEscolhido) return;
-            this.api.agendarPaciente(agenda.id, idPacienteEscolhido).subscribe({
-              next: () => this.carregarAgenda(),
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao agendar paciente.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const modal = await this.modalCtrl.create({
+      component: SelecionarPacienteComponent,
+      componentProps: {
+        pacientes: this.pacientes,
+        titulo: 'Agendar paciente',
+        subtitulo: this.descricaoHorario(agenda)
+      }
     });
 
-    await alert.present();
+    await modal.present();
+    const { data: idPaciente, role } = await modal.onDidDismiss<number>();
+    if (role !== 'selecionado' || !idPaciente) return;
+
+    const paciente = this.pacientes.find(p => p.id === idPaciente);
+    this.api.agendarPaciente(agenda.id, idPaciente).subscribe({
+      next: () => {
+        this.feedback.sucesso(`${paciente?.nome ?? 'Paciente'} agendado(a) para ${this.descricaoHorario(agenda)}.`);
+        this.carregarAgenda();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao agendar paciente.')
+    });
   }
 
   async liberarHorario(agenda: Agenda) {
-    const alert = await this.alertCtrl.create({
-      header: 'Liberar Horário',
-      message: `Deseja desmarcar o agendamento de ${agenda.nomePaciente}? O horário ficará disponível novamente.`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Liberar',
-          handler: () => {
-            this.api.liberarHorarioAgenda(agenda.id).subscribe({
-              next: () => this.carregarAgenda(),
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao liberar horário.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Liberar horário?',
+      mensagem: `O agendamento de ${agenda.nomePaciente ?? 'paciente'} será desmarcado e o horário ficará disponível novamente.`,
+      textoConfirmar: 'Liberar'
     });
+    if (!confirmado) return;
 
-    await alert.present();
+    this.api.liberarHorarioAgenda(agenda.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Horário liberado.');
+        this.carregarAgenda();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao liberar horário.')
+    });
   }
 
   async remover(agenda: Agenda) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar Exclusão',
-      message: 'Deseja realmente remover este horário da agenda?',
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.api.removerAgenda(agenda.id).subscribe({
-              next: () => this.carregarAgenda(),
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao excluir da agenda.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Excluir horário?',
+      mensagem: `O horário de ${this.descricaoHorario(agenda)} será removido da agenda.`,
+      textoConfirmar: 'Excluir',
+      destrutivo: true
     });
+    if (!confirmado) return;
 
-    await alert.present();
+    this.api.removerAgenda(agenda.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Horário removido da agenda.');
+        this.carregarAgenda();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao excluir da agenda.')
+    });
   }
 }

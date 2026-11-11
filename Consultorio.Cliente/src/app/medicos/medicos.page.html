@@ -3,35 +3,79 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
     </ion-buttons>
-    <ion-title>Corpo Clínico / Médicos</ion-title>
+    <ion-title>Corpo Clínico</ion-title>
     <ion-buttons slot="end">
       <app-theme-toggle></app-theme-toggle>
-      <ion-button (click)="adicionar()" aria-label="Cadastrar novo médico" title="Cadastrar novo médico">
-        <ion-icon slot="icon-only" name="person-add"></ion-icon>
+      <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Cadastrar novo médico" title="Cadastrar novo médico">
+        <ion-icon slot="start" name="person-add-outline"></ion-icon>
+        <span class="ion-hide-md-down">Novo médico</span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
     <div class="searchbar-container">
-      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por médico, CRM ou especialidade"></ion-searchbar>
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" [debounce]="150" placeholder="Buscar por nome, CRM ou especialidade"></ion-searchbar>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="page-container">
-    @if (carregando) {
-      <div class="ion-text-center ion-padding loading-state">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>Carregando médicos...</p>
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container com-fab">
+    @if (carregando && medicos.length === 0) {
+      <div class="loading-state" aria-busy="true" aria-label="Carregando médicos">
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            @for (i of [1, 2, 3]; track i) {
+              <ion-col size="12" size-md="6" size-xl="4">
+                <ion-card class="skeleton-card">
+                  <div class="skeleton-linha">
+                    <ion-skeleton-text [animated]="true" class="skeleton-avatar"></ion-skeleton-text>
+                    <div style="flex: 1">
+                      <ion-skeleton-text [animated]="true" style="width: 70%"></ion-skeleton-text>
+                      <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+                    </div>
+                  </div>
+                  <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 35%"></ion-skeleton-text>
+                </ion-card>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
       </div>
-    } @else if (medicosFiltrados.length === 0) {
+    } @else if (medicos.length === 0) {
       <div class="ion-text-center ion-padding empty-state">
         <ion-icon name="medkit-outline"></ion-icon>
         <h3>Nenhum médico encontrado</h3>
-        <p>Clique no botão + para cadastrar um novo médico.</p>
+        <p>Cadastre os profissionais do corpo clínico para liberar horários na agenda.</p>
+        <ion-button (click)="adicionar()">
+          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+          Cadastrar médico
+        </ion-button>
+      </div>
+    } @else if (medicosFiltrados.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="search-outline"></ion-icon>
+        <h3>Nenhum médico encontrado</h3>
+        <p>Nenhum resultado para "{{ termoBusca }}".</p>
+        <ion-button fill="outline" (click)="limparBusca()">
+          <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+          Limpar busca
+        </ion-button>
       </div>
     } @else {
+      <div class="lista-resumo">
+        <span class="lista-total">
+          <strong>{{ medicosFiltrados.length }}</strong>
+          {{ medicosFiltrados.length === 1 ? 'profissional' : 'profissionais' }}
+          @if (termoBusca) { de {{ medicos.length }} }
+        </span>
+      </div>
+
       <ion-grid class="ion-no-padding">
         <ion-row>
           @for (m of medicosFiltrados; track m.id) {
@@ -39,32 +83,29 @@
               <ion-card class="registro-card">
                 <ion-card-header>
                   <div class="card-header-flex">
-                    <ion-avatar class="card-avatar">
+                    <ion-avatar class="card-avatar" aria-hidden="true">
                       <ion-icon name="medkit"></ion-icon>
                     </ion-avatar>
                     <div class="header-titles">
-                      <ion-card-title>{{ m.nome }}</ion-card-title>
+                      <ion-card-title [title]="m.nome">{{ m.nome }}</ion-card-title>
                       <ion-card-subtitle>CRM: {{ m.crm }}</ion-card-subtitle>
                     </div>
                   </div>
                 </ion-card-header>
 
                 <ion-card-content>
-                  <div class="info-row">
-                    <ion-icon name="call-outline"></ion-icon>
-                    <span>{{ m.telefone || 'Não informado' }}</span>
-                  </div>
-
-                  @if (m.dtNasc) {
-                    <div class="info-row">
-                      <ion-icon name="calendar-outline"></ion-icon>
-                      <span>Nasc: {{ m.dtNasc | date:'dd/MM/yyyy' }}</span>
-                    </div>
-                  }
-
                   <div class="badges-container">
                     @for (esp of formatarEspecialidades(m.especialidades); track esp) {
                       <ion-badge color="secondary" class="badge-esp">{{ esp }}</ion-badge>
+                    }
+                  </div>
+
+                  <div class="info-row">
+                    <ion-icon name="call-outline" aria-hidden="true"></ion-icon>
+                    @if (m.telefone) {
+                      <a class="link-telefone" [href]="'tel:' + m.telefone">{{ m.telefone | telefone }}</a>
+                    } @else {
+                      <span>Telefone não informado</span>
                     }
                   </div>
 
@@ -73,11 +114,11 @@
                   }
 
                   <div class="card-actions">
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(m)">
+                    <ion-button fill="outline" color="primary" size="small" (click)="editar(m)" [attr.aria-label]="'Editar ' + m.nome">
                       <ion-icon slot="start" name="create-outline"></ion-icon>
                       Editar
                     </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(m)">
+                    <ion-button fill="clear" color="danger" size="small" (click)="remover(m)" [attr.aria-label]="'Excluir ' + m.nome">
                       <ion-icon slot="start" name="trash-outline"></ion-icon>
                       Excluir
                     </ion-button>
@@ -92,7 +133,7 @@
   </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button color="primary" (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()" aria-label="Cadastrar novo médico">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

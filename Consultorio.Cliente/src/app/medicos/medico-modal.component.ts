@@ -1,8 +1,12 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ModalController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Medico } from '../types/types';
+import { formatarCpf, formatarTelefone, hojeInputData, paraInputData, somenteDigitos } from '../shared/utils/formatadores';
+import { cpfValidator, dataNaoFuturaValidator, mensagemErro, possuiObrigatoriosPendentes, telefoneValidator } from '../shared/utils/validadores';
+import { NOMES_ESPECIALIDADES } from '../shared/utils/especialidades';
 
 @Component({
   selector: 'app-medico-modal',
@@ -14,62 +18,78 @@ export class MedicoModalComponent implements OnInit {
 
   public form!: FormGroup;
   public salvando = false;
-  public listaEspecialidades: { id: number; nome: string }[] = [];
+  public readonly hoje = hojeInputData();
+  public listaEspecialidades: { id: number; nome: string }[] = Object.entries(NOMES_ESPECIALIDADES)
+    .map(([id, nome]) => ({ id: Number(id), nome }));
 
   constructor(
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
-    private toastCtrl: ToastController
+    private feedback: FeedbackService
   ) {}
 
   ngOnInit() {
     this.carregarEspecialidades();
 
-    const dataFormatada = this.medico?.dtNasc
-      ? new Date(this.medico.dtNasc).toISOString().split('T')[0]
-      : '';
-
     this.form = new FormGroup({
-      nome: new FormControl(this.medico?.nome || '', [Validators.required, Validators.minLength(2)]),
-      cpf: new FormControl(this.medico?.cpf || '', [Validators.required]),
-      crm: new FormControl(this.medico?.crm || '', [Validators.required]),
-      dtNasc: new FormControl(dataFormatada, [Validators.required]),
-      telefone: new FormControl(this.medico?.telefone || '', [Validators.required]),
+      nome: new FormControl(this.medico?.nome || '', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]),
+      cpf: new FormControl(formatarCpf(this.medico?.cpf), [Validators.required, cpfValidator()]),
+      crm: new FormControl(this.medico?.crm || '', [Validators.required, Validators.minLength(2), Validators.maxLength(20)]),
+      dtNasc: new FormControl(paraInputData(this.medico?.dtNasc), [Validators.required, dataNaoFuturaValidator()]),
+      telefone: new FormControl(formatarTelefone(this.medico?.telefone), [Validators.required, telefoneValidator()]),
       especialidades: new FormControl(this.medico?.especialidades || [], [Validators.required]),
-      observacao: new FormControl(this.medico?.observacao || '')
+      observacao: new FormControl(this.medico?.observacao || '', [Validators.maxLength(500)])
     });
   }
 
+  /** A lista local já está pronta; a da API (nomes oficiais) substitui se responder. */
   carregarEspecialidades() {
     this.api.obterEspecialidades().subscribe({
       next: (dados) => {
-        this.listaEspecialidades = dados;
+        if (dados?.length) this.listaEspecialidades = dados;
       },
-      error: () => {
-        // Fallback para especialidades padrão
-        this.listaEspecialidades = [
-          { id: 1, nome: 'ClinicoGeral' },
-          { id: 2, nome: 'Cardiologista' },
-          { id: 3, nome: 'Urologista' },
-          { id: 4, nome: 'Ginecologista' },
-          { id: 5, nome: 'Ortopedista' },
-          { id: 6, nome: 'Pediatra' },
-          { id: 7, nome: 'Dermatologista' }
-        ];
-      }
+      error: () => undefined
     });
   }
 
-  fechar() {
+  erro(campo: string): string {
+    return mensagemErro(this.form.get(campo));
+  }
+
+  bloquearEnvio(): boolean {
+    const especialidades = this.form.get('especialidades')?.value;
+    return this.salvando || possuiObrigatoriosPendentes(this.form) || !especialidades?.length;
+  }
+
+  async fechar() {
+    if (this.form.dirty && !this.salvando) {
+      const descartar = await this.feedback.confirmar({
+        titulo: 'Descartar alterações?',
+        mensagem: 'Os dados preenchidos ainda não foram salvos.',
+        textoConfirmar: 'Descartar',
+        textoCancelar: 'Continuar editando',
+        destrutivo: true
+      });
+      if (!descartar) return;
+    }
     this.modalCtrl.dismiss(false);
   }
 
   salvar() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.feedback.aviso('Revise os campos destacados antes de salvar.');
+      return;
+    }
 
     this.salvando = true;
+    const valores = this.form.value;
     const dados = {
-      ...this.form.value,
+      ...valores,
+      nome: valores.nome?.trim(),
+      crm: valores.crm?.trim().toUpperCase(),
+      cpf: somenteDigitos(valores.cpf),
+      telefone: somenteDigitos(valores.telefone),
       idPessoa: this.medico?.idPessoa
     };
 
@@ -82,14 +102,9 @@ export class MedicoModalComponent implements OnInit {
         this.salvando = false;
         this.modalCtrl.dismiss(true);
       },
-      error: async (err) => {
+      error: (err) => {
         this.salvando = false;
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao salvar médico.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
+        this.feedback.erro(err, 'Erro ao salvar médico.');
       }
     });
   }

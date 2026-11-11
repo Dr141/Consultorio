@@ -269,3 +269,297 @@ ion-fab {
     }
   }
 }
+
+/* ==========================================================================
+   REGRAS GLOBAIS DE IMPRESSÃO (@media print)
+   ========================================================================== */
+@media print {
+  ion-header,
+  ion-toolbar,
+  ion-buttons,
+  app-theme-toggle,
+  ion-menu,
+  .no-print {
+    display: none !important;
+  }
+
+  ion-content {
+    --background: #ffffff !important;
+    --color: #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .page-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .oficio-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .oficio-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+}
+
+/* ==========================================================================
+   UX COMPARTILHADA (estados, resumo de listas, agrupamentos, acessibilidade)
+   ========================================================================== */
+
+/* Foco visível para quem navega por teclado */
+:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Respeita quem prefere menos animação */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Estados vazio / carregando padronizados em todas as telas */
+.empty-state,
+.loading-state {
+  margin: 40px auto 0;
+  max-width: 460px;
+
+  > ion-icon {
+    font-size: 64px;
+    color: var(--app-text-muted);
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--app-text);
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--app-text-muted);
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+
+  ion-button {
+    --border-radius: 10px;
+    text-transform: none;
+  }
+}
+
+/* Cards-esqueleto exibidos enquanto os dados carregam */
+.skeleton-card {
+  margin: 0;
+  padding: 16px;
+  height: 100%;
+
+  .skeleton-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  ion-skeleton-text {
+    --border-radius: 6px;
+    margin: 0 0 8px;
+  }
+
+  .skeleton-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+/* Linha acima da lista: total de registros + filtros rápidos */
+.lista-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 8px 12px;
+
+  .lista-total {
+    font-size: 14px;
+    color: var(--app-text-muted);
+
+    strong {
+      color: var(--app-text);
+    }
+  }
+
+  ion-segment {
+    width: auto;
+    max-width: 100%;
+    --background: var(--app-surface-elevated);
+    border-radius: 10px;
+  }
+
+  ion-segment-button {
+    text-transform: none;
+    min-width: 96px;
+    --indicator-color: var(--ion-color-primary);
+    --color-checked: var(--ion-color-primary-contrast);
+    --border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+}
+
+/* Cabeçalho de agrupamento (ex.: dias da agenda) */
+.grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 8px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--app-text-muted);
+
+  &:first-of-type {
+    margin-top: 4px;
+  }
+
+  &.grupo-hoje {
+    color: var(--ion-color-primary);
+  }
+
+  .grupo-contagem {
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+/* Avatar com iniciais do nome */
+.avatar-iniciais {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb), 0.12);
+}
+
+/* Botões de ação nos cards: maiores e sem caixa alta, mais fáceis de tocar */
+.card-actions ion-button {
+  text-transform: none;
+  letter-spacing: 0;
+  --border-radius: 8px;
+  min-height: 34px;
+}
+
+/* Rodapé fixo dos formulários em modal: o botão salvar fica sempre visível */
+.modal-rodape {
+  ion-toolbar {
+    --background: var(--app-surface);
+    --border-width: 1px 0 0;
+    --border-color: var(--app-border);
+    padding: 8px 12px;
+  }
+
+  ion-button {
+    --border-radius: 10px;
+    height: 46px;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 15px;
+  }
+}
+
+.campo-dica {
+  display: block;
+  margin: -6px 4px 12px;
+  font-size: 12px;
+  color: var(--app-text-muted);
+}
+
+/* Destaque do botão destrutivo em confirmações */
+.alerta-destrutivo .alert-button-role-destructive {
+  color: var(--ion-color-danger) !important;
+  font-weight: 700;
+}
+
+/* Toasts com quebra de linha e leitura confortável */
+ion-toast.app-toast {
+  --border-radius: 12px;
+  --max-width: 560px;
+  --white-space: normal;
+  font-weight: 500;
+}
+
+/* Espaço extra no fim das listas para o FAB não cobrir o último card */
+.page-container.com-fab {
+  padding-bottom: 96px;
+}
+
+/* Ações do formulário fixas no rodapé do modal enquanto se rola o conteúdo */
+.acoes-formulario {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  margin: 8px calc(-1 * var(--padding-end, 16px)) 0 calc(-1 * var(--padding-start, 16px));
+  padding: 12px var(--padding-end, 16px) calc(12px + var(--ion-safe-area-bottom, 0px)) var(--padding-start, 16px);
+  background: var(--app-surface);
+  border-top: 1px solid var(--app-border);
+
+  ion-button {
+    flex: 1;
+    margin: 0;
+    --border-radius: 10px;
+    height: 46px;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 15px;
+  }
+
+  .btn-cancelar {
+    flex: 0 0 auto;
+    min-width: 110px;
+  }
+}
+
+.secao-formulario {
+  margin: 4px 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--app-text-muted);
+}

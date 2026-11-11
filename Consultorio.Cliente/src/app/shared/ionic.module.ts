@@ -20,6 +20,13 @@ import {
   IonTitle, IonToast, IonToolbar
 } from '@ionic/angular';
 import { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
+import { CpfPipe, DataBrPipe, IdadePipe, TelefonePipe } from './pipes/formatacao.pipes';
+import { MascaraDirective } from './directives/mascara.directive';
+import { SelecionarPacienteComponent } from './selecionar-paciente/selecionar-paciente.component';
+
+const COMPARTILHADOS = [
+  ThemeToggleComponent, CpfPipe, TelefonePipe, DataBrPipe, IdadePipe, MascaraDirective, SelecionarPacienteComponent
+];
 
 const IONIC_COMPONENTS = [
   IonBackButton, IonModal, IonPopover, IonRouterOutlet, IonRouterLink, IonRouterLinkWithHref,
@@ -42,9 +49,9 @@ const IONIC_COMPONENTS = [
 ];
 
 @NgModule({
-  declarations: [ThemeToggleComponent],
+  declarations: [...COMPARTILHADOS],
   imports: [CommonModule, ...IONIC_COMPONENTS],
-  exports: [...IONIC_COMPONENTS, ThemeToggleComponent],
+  exports: [...IONIC_COMPONENTS, ...COMPARTILHADOS],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class IonicModule {

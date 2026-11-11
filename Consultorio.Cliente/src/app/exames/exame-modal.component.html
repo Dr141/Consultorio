@@ -11,13 +11,15 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="salvar()">
-    <ion-grid class="ion-no-padding">
-      <ion-row>
-        @if (!exame) {
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    @if (!exame) {
+      <p class="secao-formulario">Solicitação</p>
+      <ion-grid class="ion-no-padding">
+        <ion-row>
           <ion-col size="12">
             <ion-item class="form-item">
-              <ion-select label="Paciente" labelPlacement="floating" formControlName="idPaciente" placeholder="Selecione o paciente">
+              <ion-select label="Paciente *" labelPlacement="floating" formControlName="idPaciente" placeholder="Selecione o paciente"
+                          cancelText="Cancelar" okText="Confirmar" [errorText]="erro('idPaciente')">
                 @for (p of pacientes; track p.id) {
                   <ion-select-option [value]="p.id">{{ p.nome }}</ion-select-option>
                 }
@@ -27,35 +29,66 @@
 
           <ion-col size="12">
             <ion-item class="form-item">
-              <ion-input label="Descrição do Exame" labelPlacement="floating" formControlName="descricao" placeholder="Ex: Hemograma Completo, ECG, Raio-X"></ion-input>
+              <ion-input label="Descrição do exame *" labelPlacement="floating" formControlName="descricao"
+                         placeholder="Ex.: Hemograma completo, ECG, Raio-X de tórax" [maxlength]="200"
+                         [errorText]="erro('descricao')"></ion-input>
             </ion-item>
-          </ion-col>
-        } @else {
-          <ion-col size="12">
-            <div class="exame-info-card">
-              <h3><strong>Exame:</strong> {{ exame.descricao }}</h3>
-              <p><strong>Paciente:</strong> {{ exame.nomePaciente }}</p>
+            <div class="sugestoes-exame" aria-label="Sugestões de exames comuns">
+              @for (s of sugestoes; track s) {
+                <ion-chip outline="true" color="primary" (click)="usarSugestao(s)">{{ s }}</ion-chip>
+              }
             </div>
           </ion-col>
-        }
+        </ion-row>
+      </ion-grid>
+    } @else {
+      <div class="exame-info-card">
+        <h3><strong>Exame:</strong> {{ exame.descricao }}</h3>
+        <p><strong>Paciente:</strong> {{ exame.nomePaciente }}</p>
+      </div>
+    }
+
+    <p class="secao-formulario">{{ exame ? 'Laudo' : 'Laudo (se já disponível)' }}</p>
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        <ion-col size="12">
+          <ion-item class="form-item">
+            <ion-select label="Médico solicitante / laudador" labelPlacement="floating" formControlName="idMedico"
+                        placeholder="Selecione o médico (opcional)" cancelText="Cancelar" okText="Confirmar">
+              <ion-select-option [value]="null">Nenhum / não informado</ion-select-option>
+              @for (m of medicos; track m.id) {
+                <ion-select-option [value]="m.id">{{ m.nome }} (CRM: {{ m.crm }})</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+        </ion-col>
 
         <ion-col size="12">
           <ion-item class="form-item">
-            <ion-textarea label="Resultado do Exame / Laudo Médico"
+            <ion-textarea label="Resultado do exame / laudo médico"
                           labelPlacement="floating"
                           formControlName="resultado"
+                          [autoGrow]="true"
                           rows="5"
                           placeholder="Insira o laudo, valores de referência ou conclusões do exame...">
             </ion-textarea>
           </ion-item>
+          @if (!exame) {
+            <span class="campo-dica">Deixe em branco se o resultado ainda não saiu — o exame ficará como "Aguardando".</span>
+          }
         </ion-col>
       </ion-row>
     </ion-grid>
 
-    <div class="ion-padding-top">
-      <ion-button expand="block" type="submit" color="primary" [disabled]="form.invalid || salvando">
-        <ion-icon slot="start" [name]="salvando ? 'hourglass-outline' : 'save-outline'"></ion-icon>
-        {{ salvando ? 'Salvando...' : 'Salvar Exame' }}
+    <div class="acoes-formulario">
+      <ion-button class="btn-cancelar" fill="outline" color="medium" type="button" (click)="fechar()">Cancelar</ion-button>
+      <ion-button type="submit" color="primary" [disabled]="bloquearEnvio()">
+        @if (salvando) {
+          <ion-spinner slot="start" name="crescent"></ion-spinner>
+        } @else {
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+        }
+        {{ salvando ? 'Salvando...' : (exame ? 'Salvar laudo' : 'Salvar Exame') }}
       </ion-button>
     </div>
   </form>

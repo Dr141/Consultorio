@@ -38,6 +38,10 @@ const routes: Routes = [
   {
     path: 'exames',
     loadChildren: () => import('./exames/exames.module').then(m => m.ExamesPageModule)
+  },
+  {
+    path: 'prontuario',
+    loadChildren: () => import('./prontuario/prontuario.module').then(m => m.ProntuarioPageModule)
   }
 ];
 

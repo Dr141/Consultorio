@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
 import { Observable, catchError, throwError } from 'rxjs';
-import { Agenda, Consulta, Especialidade, Exame, Medico, Paciente, Pessoa } from '../../types/types';
+import { Agenda, Consulta, Especialidade, Exame, Medico, Paciente, Pessoa, ProntuarioRelatorio } from '../../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -196,12 +196,31 @@ export class ConsultorioApiService {
     return this.observable(this.http.put<Exame>(`/api/exame/${id}`, exame));
   }
 
-  registrarResultadoExame(id: number, resultado: string): Observable<Exame> {
-    return this.observable(this.http.patch<Exame>(`/api/exame/${id}/resultado`, { resultado }));
+  registrarResultadoExame(id: number, resultado: string, idMedico?: number | null): Observable<Exame> {
+    return this.observable(this.http.patch<Exame>(`/api/exame/${id}/resultado`, { resultado, idMedico }));
   }
 
   removerExame(id: number): Observable<void> {
     return this.observable(this.http.delete<void>(`/api/exame/${id}`));
+  }
+
+  // Prontuário do Paciente
+  obterProntuario(
+    idPaciente: number,
+    filtros?: { idMedico?: number | null; dataInicio?: string | null; dataFim?: string | null }
+  ): Observable<ProntuarioRelatorio> {
+    const params: string[] = [];
+    if (filtros?.idMedico) {
+      params.push(`idMedico=${filtros.idMedico}`);
+    }
+    if (filtros?.dataInicio) {
+      params.push(`dataInicio=${encodeURIComponent(filtros.dataInicio)}`);
+    }
+    if (filtros?.dataFim) {
+      params.push(`dataFim=${encodeURIComponent(filtros.dataFim)}`);
+    }
+    const query = params.length > 0 ? `?${params.join('&')}` : '';
+    return this.observable(this.http.get<ProntuarioRelatorio>(`/api/prontuario/paciente/${idPaciente}${query}`));
   }
 
   // Pessoas
@@ -216,9 +235,43 @@ export class ConsultorioApiService {
   private observable<T>(resultado: Observable<T>): Observable<T> {
     return resultado.pipe(
       catchError((error: HttpErrorResponse) => {
-        const mensagem = error?.error?.message || error?.message || 'Erro inesperado na requisição.';
-        return throwError(() => new Error(mensagem));
+        // Mantém o status HTTP no erro para que as telas possam reagir (ex.: 401 → login).
+        const erro = Object.assign(new Error(this.mensagemErro(error)), { status: error?.status ?? 0 });
+        return throwError(() => erro);
       })
     );
+  }
+
+  /** Traduz falhas HTTP em mensagens claras para o usuário final. */
+  private mensagemErro(error: HttpErrorResponse): string {
+    if (!error || error.status === 0) {
+      return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
+    }
+
+    const corpo = error.error;
+    if (corpo && typeof corpo === 'object') {
+      if (typeof corpo.message === 'string' && corpo.message.trim()) return corpo.message;
+      if (corpo.errors && typeof corpo.errors === 'object') {
+        const primeira = Object.values(corpo.errors as Record<string, unknown>)
+          .flatMap(v => (Array.isArray(v) ? v : [v]))
+          .find(v => typeof v === 'string' && v.trim());
+        if (primeira) return String(primeira);
+      }
+    }
+    if (typeof corpo === 'string' && corpo.trim() && corpo.length <= 300 && !corpo.trim().startsWith('<')) {
+      return corpo;
+    }
+
+    switch (error.status) {
+      case 400: return 'Os dados enviados são inválidos. Revise os campos e tente novamente.';
+      case 401: return 'Sua sessão expirou. Faça login novamente.';
+      case 403: return 'Você não tem permissão para realizar esta ação.';
+      case 404: return 'Registro não encontrado. Ele pode ter sido removido.';
+      case 409: return 'Não foi possível salvar porque o registro conflita com dados existentes.';
+      default:
+        return error.status >= 500
+          ? 'O servidor encontrou um problema. Tente novamente em instantes.'
+          : 'Não foi possível concluir a requisição. Tente novamente.';
+    }
   }
 }

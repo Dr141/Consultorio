@@ -73,3 +73,34 @@ ion-col {
     margin: 0;
   }
 }
+
+.consulta-card .observacao-box {
+  .observacao-texto.recolhido {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .ver-mais {
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ion-color-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.consulta-card .header-row ion-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consulta-card .header-row ion-badge {
+  flex-shrink: 0;
+}

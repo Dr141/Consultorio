@@ -93,7 +93,7 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
 
     // Filtrar por termo inexistente
     cy.get('ion-searchbar input').clear({ force: true }).type('TermoInexistente999', { force: true });
-    cy.contains('.empty-state', 'Nenhuma consulta registrada').should('be.visible');
+    cy.contains('.empty-state', 'Nenhuma consulta encontrada').should('be.visible');
 
     // Limpar filtro e recuperar lista
     cy.get('ion-searchbar input').clear({ force: true });

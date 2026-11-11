@@ -106,3 +106,62 @@ ion-col {
 .menu-item-logout {
   margin-top: 24px;
 }
+
+.resumo-dia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0 8px clamp(16px, 3vh, 24px);
+
+  .resumo-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    align-items: center;
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: var(--app-card-border);
+    background: var(--app-surface);
+    box-shadow: var(--app-card-shadow);
+    color: var(--app-text);
+    font: inherit;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      }
+    }
+
+    ion-icon {
+      grid-row: 1 / span 2;
+      font-size: 26px;
+      padding: 10px;
+      border-radius: 12px;
+      color: var(--ion-color-primary);
+      background: rgba(var(--ion-color-primary-rgb), 0.12);
+    }
+
+    .resumo-valor {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+
+      ion-skeleton-text {
+        width: 40px;
+        height: 22px;
+        margin: 0;
+      }
+    }
+
+    .resumo-rotulo {
+      font-size: 13px;
+      color: var(--app-text-muted);
+    }
+  }
+}

@@ -1,8 +1,11 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ModalController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Paciente } from '../types/types';
+import { formatarCpf, formatarTelefone, hojeInputData, paraInputData, somenteDigitos } from '../shared/utils/formatadores';
+import { cpfValidator, dataNaoFuturaValidator, mensagemErro, possuiObrigatoriosPendentes, telefoneValidator } from '../shared/utils/validadores';
 
 @Component({
   selector: 'app-paciente-modal',
@@ -14,37 +17,60 @@ export class PacienteModalComponent implements OnInit {
 
   public form!: FormGroup;
   public salvando = false;
+  public readonly hoje = hojeInputData();
 
   constructor(
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
-    private toastCtrl: ToastController
+    private feedback: FeedbackService
   ) {}
 
   ngOnInit() {
-    const dataFormatada = this.paciente?.dtNasc
-      ? new Date(this.paciente.dtNasc).toISOString().split('T')[0]
-      : '';
-
     this.form = new FormGroup({
-      nome: new FormControl(this.paciente?.nome || '', [Validators.required, Validators.minLength(2)]),
-      cpf: new FormControl(this.paciente?.cpf || '', [Validators.required]),
-      dtNasc: new FormControl(dataFormatada, [Validators.required]),
-      telefone: new FormControl(this.paciente?.telefone || '', [Validators.required]),
-      observacao: new FormControl(this.paciente?.observacao || '')
+      nome: new FormControl(this.paciente?.nome || '', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]),
+      cpf: new FormControl(formatarCpf(this.paciente?.cpf), [Validators.required, cpfValidator()]),
+      dtNasc: new FormControl(paraInputData(this.paciente?.dtNasc), [Validators.required, dataNaoFuturaValidator()]),
+      telefone: new FormControl(formatarTelefone(this.paciente?.telefone), [Validators.required, telefoneValidator()]),
+      observacao: new FormControl(this.paciente?.observacao || '', [Validators.maxLength(500)])
     });
   }
 
-  fechar() {
+  erro(campo: string): string {
+    return mensagemErro(this.form.get(campo));
+  }
+
+  bloquearEnvio(): boolean {
+    return this.salvando || possuiObrigatoriosPendentes(this.form);
+  }
+
+  async fechar() {
+    if (this.form.dirty && !this.salvando) {
+      const descartar = await this.feedback.confirmar({
+        titulo: 'Descartar alterações?',
+        mensagem: 'Os dados preenchidos ainda não foram salvos.',
+        textoConfirmar: 'Descartar',
+        textoCancelar: 'Continuar editando',
+        destrutivo: true
+      });
+      if (!descartar) return;
+    }
     this.modalCtrl.dismiss(false);
   }
 
   salvar() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.feedback.aviso('Revise os campos destacados antes de salvar.');
+      return;
+    }
 
     this.salvando = true;
+    const valores = this.form.value;
     const dados = {
-      ...this.form.value,
+      ...valores,
+      nome: valores.nome?.trim(),
+      cpf: somenteDigitos(valores.cpf),
+      telefone: somenteDigitos(valores.telefone),
       idPessoa: this.paciente?.idPessoa
     };
 
@@ -57,14 +83,9 @@ export class PacienteModalComponent implements OnInit {
         this.salvando = false;
         this.modalCtrl.dismiss(true);
       },
-      error: async (err) => {
+      error: (err) => {
         this.salvando = false;
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao salvar paciente.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
+        this.feedback.erro(err, 'Erro ao salvar paciente.');
       }
     });
   }

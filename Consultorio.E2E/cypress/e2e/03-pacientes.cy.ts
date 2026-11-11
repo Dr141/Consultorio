@@ -30,8 +30,15 @@ describe('03 - Gestão de Pacientes (CRUD Completo)', () => {
     cy.get('ion-modal ion-input[formControlName="telefone"] input').type('11999998888', { force: true });
 
     cy.get('ion-modal ion-button[type="submit"]').click();
+    // CPF inválido é barrado no próprio formulário, com aviso e mensagem no campo
     cy.get('ion-toast', { timeout: 8000 }).should('exist');
-    cy.contains('ion-button', 'Fechar').click();
+    cy.contains('ion-modal', 'CPF inválido').should('exist');
+
+    // Fechar com dados preenchidos pede confirmação para descartar
+    cy.contains('ion-modal ion-button', 'Fechar').click();
+    cy.get('ion-alert').should('be.visible');
+    cy.get('ion-alert button.alert-button-role-destructive').click();
+    cy.get('ion-modal').should('not.exist');
   });
 
   it('Deve cadastrar, buscar, editar e excluir um paciente pela interface', () => {

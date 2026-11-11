@@ -98,3 +98,24 @@ ion-col {
     margin: 0;
   }
 }
+
+.exame-card {
+  border-left: 4px solid var(--ion-color-success);
+
+  &.exame-pendente {
+    border-left-color: var(--ion-color-warning);
+  }
+
+  ion-card-subtitle + ion-card-subtitle {
+    margin-top: 2px;
+  }
+
+  .header-row ion-card-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-row ion-badge {
+    flex-shrink: 0;
+  }
+}

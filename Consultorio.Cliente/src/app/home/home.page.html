@@ -56,15 +56,44 @@
 <ion-content [fullscreen]="true" id="main-content">
   <div class="page-container">
     <div class="welcome-banner">
-      <h2>Painel de Gestão Clínica</h2>
-      <p>Selecione um dos módulos para iniciar o atendimento ou gerenciamento</p>
+      <h2>{{ saudacao }}</h2>
+      <p>{{ hojeExtenso }} · Selecione um módulo para iniciar o atendimento ou o gerenciamento.</p>
+    </div>
+
+    <div class="resumo-dia" aria-label="Resumo do dia">
+      <button type="button" class="resumo-item" (click)="agenda()">
+        <ion-icon name="today-outline" aria-hidden="true"></ion-icon>
+        <span class="resumo-valor">
+          @if (resumo) { {{ resumo.ocupadosHoje }} } @else { <ion-skeleton-text [animated]="true"></ion-skeleton-text> }
+        </span>
+        <span class="resumo-rotulo">
+          agendamentos hoje
+          @if (resumo && resumo.livresHoje > 0) { · {{ resumo.livresHoje }} {{ resumo.livresHoje === 1 ? 'horário livre' : 'horários livres' }} }
+        </span>
+      </button>
+
+      <button type="button" class="resumo-item" (click)="exame()">
+        <ion-icon name="hourglass-outline" aria-hidden="true"></ion-icon>
+        <span class="resumo-valor">
+          @if (resumo) { {{ resumo.examesPendentes }} } @else { <ion-skeleton-text [animated]="true"></ion-skeleton-text> }
+        </span>
+        <span class="resumo-rotulo">exames aguardando laudo</span>
+      </button>
+
+      <button type="button" class="resumo-item" (click)="paciente()">
+        <ion-icon name="people-outline" aria-hidden="true"></ion-icon>
+        <span class="resumo-valor">
+          @if (resumo) { {{ resumo.pacientes }} } @else { <ion-skeleton-text [animated]="true"></ion-skeleton-text> }
+        </span>
+        <span class="resumo-rotulo">pacientes cadastrados</span>
+      </button>
     </div>
 
     <ion-grid class="ion-no-padding">
       <ion-row class="ion-justify-content-center">
         <!-- Pacientes -->
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="paciente()" [routerLink]="['/pacientes']">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="paciente()">
             <div class="card-img-wrapper">
               <img alt="Gestão de Pacientes" src="../../assets/paciente.webp" />
             </div>
@@ -79,8 +108,8 @@
         </ion-col>
 
         <!-- Agenda -->
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="agenda()" [routerLink]="['/agenda']">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="agenda()">
             <div class="card-img-wrapper">
               <img alt="Agenda de Consultas" src="../../assets/agenda.webp" />
             </div>
@@ -95,8 +124,8 @@
         </ion-col>
 
         <!-- Consultas -->
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="consulta()" [routerLink]="['/consultas']">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="consulta()">
             <div class="card-img-wrapper">
               <img alt="Consultas Médicas" src="../../assets/consulta.webp" />
             </div>
@@ -111,8 +140,8 @@
         </ion-col>
 
         <!-- Exames -->
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="exame()" [routerLink]="['/exames']">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="exame()">
             <div class="card-img-wrapper">
               <img alt="Exames e Laudos" src="../../assets/exames.webp" />
             </div>
@@ -127,8 +156,8 @@
         </ion-col>
 
         <!-- Médicos -->
-        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2.4">
-          <ion-card class="cardHome" button="true" (click)="medico()" [routerLink]="['/medicos']">
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="medico()">
             <div class="card-img-wrapper">
               <img alt="Corpo Clínico" src="../../assets/medico.webp" />
             </div>
@@ -138,6 +167,22 @@
             </ion-card-header>
             <ion-card-content>
               Cadastro de profissionais, CRM e especialidades médicas.
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+
+        <!-- Prontuário Oficial -->
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="prontuarioNav()">
+            <div class="card-img-wrapper">
+              <img alt="Prontuário Médico" src="../../assets/consulta.webp" />
+            </div>
+            <ion-card-header>
+              <ion-card-title>Prontuário</ion-card-title>
+              <ion-card-subtitle>Relatório em Ofício</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              Histórico consolidado com consultas, exames e laudos por médico ou período.
             </ion-card-content>
           </ion-card>
         </ion-col>

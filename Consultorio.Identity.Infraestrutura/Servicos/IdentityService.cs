@@ -209,13 +209,13 @@ public class IdentityService : IIdentityService
             return await GerarCredenciais(usuarioLogin.Email);
                
         if (result.IsLockedOut)
-            throw new UnauthorizedAccessException("Essa conta está bloqueada");
+            throw new UnauthorizedAccessException("Conta bloqueada temporariamente após várias tentativas sem sucesso. Aguarde alguns minutos e tente novamente.");
         else if (result.IsNotAllowed)
             throw new UnauthorizedAccessException("Essa conta não tem permissão para fazer login");
         else if (result.RequiresTwoFactor)
             throw new UnauthorizedAccessException("É necessário confirmar o login no seu segundo fator de autenticação");
         else
-            throw new ArgumentException("Usuário ou senha estão incorretos");
+            throw new ArgumentException("E-mail ou senha incorretos. Verifique os dados e tente novamente.");
     }
 
     /// <summary>

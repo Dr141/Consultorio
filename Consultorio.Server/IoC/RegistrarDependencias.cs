@@ -76,6 +76,7 @@ public static class RegistrarDependencias
         services.AddScoped<IAgendaAppService, AgendaAppService>();
         services.AddScoped<IConsultaAppService, ConsultaAppService>();
         services.AddScoped<IExameAppService, ExameAppService>();
+        services.AddScoped<IProntuarioAppService, ProntuarioAppService>();
     }
 
     /// <summary>
@@ -103,6 +104,7 @@ public static class RegistrarDependencias
                 ALTER TABLE "Consulta" ALTER COLUMN "IdAgenda" DROP NOT NULL;
                 ALTER TABLE "Exame" ALTER COLUMN "IdAgenda" DROP NOT NULL;
                 ALTER TABLE "Exame" ALTER COLUMN "Resultado" DROP NOT NULL;
+                ALTER TABLE "Exame" ADD COLUMN IF NOT EXISTS "IdMedico" integer NULL REFERENCES "Medico"("Id") ON DELETE SET NULL;
             """);
         }
         catch (Exception ex)

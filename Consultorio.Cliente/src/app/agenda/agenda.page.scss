@@ -80,3 +80,40 @@ ion-col {
     margin: 0;
   }
 }
+
+.agenda-card {
+  border-left: 4px solid var(--ion-color-warning);
+
+  &.agenda-livre {
+    border-left-color: var(--ion-color-success);
+  }
+
+  &.agenda-passada {
+    opacity: 0.6;
+  }
+
+  .hora-destaque {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--ion-color-primary-rgb), 0.12);
+
+    ion-icon {
+      font-size: 22px;
+      color: var(--ion-color-primary);
+    }
+  }
+
+  ion-card-title {
+    font-size: 20px !important;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.lista-resumo ion-chip {
+  margin: 0;
+}

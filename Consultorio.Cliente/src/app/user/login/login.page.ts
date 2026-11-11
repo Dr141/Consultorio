@@ -14,6 +14,7 @@ import { ThemeService } from '../../services/theme/theme.service';
 export class LoginPage implements OnInit {
   public autenticacao: FormGroup | any;
   public erro: string = '';
+  public entrando = false;
 
   constructor(
     private modalController: ModalController,
@@ -25,6 +26,7 @@ export class LoginPage implements OnInit {
 
   ionViewWillEnter() {
     this.erro = '';
+    this.entrando = false;
     this.cdr.markForCheck();
   }
 
@@ -36,17 +38,28 @@ export class LoginPage implements OnInit {
   }
 
   onSubmit() {
-    if (this.autenticacao.valid) {
+    if (this.autenticacao.valid && !this.entrando) {
       this.erro = '';
-      this.api.login(this.autenticacao.get('email')?.value, this.autenticacao.get('senha')?.value).subscribe({
+      this.entrando = true;
+      const email = (this.autenticacao.get('email')?.value ?? '').trim();
+      this.api.login(email, this.autenticacao.get('senha')?.value).subscribe({
         next: () => {
-          this.navCtrl.navigateForward('home');
+          this.entrando = false;
+          this.navCtrl.navigateRoot('home');
         },
         error: (error) => {
+          this.entrando = false;
           this.erro = error?.message || 'E-mail ou senha inválidos.';
           this.cdr.detectChanges();
         }
       });
+    }
+  }
+
+  limparErro() {
+    if (this.erro) {
+      this.erro = '';
+      this.cdr.markForCheck();
     }
   }
 

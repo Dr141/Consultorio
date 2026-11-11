@@ -66,7 +66,7 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
 
     // 3. Filtrar pelo termo de busca
     cy.get('ion-searchbar input').clear({ force: true }).type('InexistenteXYZ', { force: true });
-    cy.contains('.empty-state', 'Nenhum horário na agenda').should('be.visible');
+    cy.contains('.empty-state', 'Nenhum horário encontrado').should('be.visible');
 
     cy.get('ion-searchbar input').clear({ force: true });
     cy.contains('ion-card.agenda-card', horaOriginal).should('be.visible');
@@ -111,10 +111,10 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
       cy.contains('ion-button', 'Agendar').click();
     });
 
-    cy.get('ion-alert').should('be.visible');
-    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
-    cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
-    cy.get('ion-alert').should('not.exist');
+    // Seleção de paciente com busca
+    cy.get('app-selecionar-paciente').should('be.visible');
+    cy.get('app-selecionar-paciente .seletor-item').should('have.length.at.least', 1).first().click();
+    cy.get('app-selecionar-paciente').should('not.exist');
     cy.aguardarCarregamento();
 
     // Verificar alteração de status para Ocupado
@@ -151,13 +151,12 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
     cy.get('ion-alert').should('not.exist');
 
-    // Selecionar Paciente
-    cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
-    cy.get('ion-alert').should('be.visible');
-    // Aguarda opções carregarem: opção 0 é "Nenhum", opção 1 é o primeiro paciente
-    cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 2).eq(1).click();
-    cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
-    cy.get('ion-alert').should('not.exist');
+    // Selecionar Paciente pelo seletor com busca
+    cy.contains('ion-modal ion-button', 'Escolher').should('not.have.attr', 'disabled');
+    cy.contains('ion-modal ion-button', 'Escolher').click();
+    cy.get('app-selecionar-paciente').should('be.visible');
+    cy.get('app-selecionar-paciente .seletor-item').should('have.length.at.least', 1).first().click();
+    cy.get('app-selecionar-paciente').should('not.exist');
 
     cy.get('ion-modal ion-button[type="submit"]').click();
     cy.get('ion-modal').should('not.exist');

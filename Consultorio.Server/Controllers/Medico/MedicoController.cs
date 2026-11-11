@@ -27,7 +27,7 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
     public ActionResult<List<object>> ObterEspecialidades()
     {
         var especialidades = Enum.GetValues<Especialidade>()
-            .Select(e => new { Id = (int)e, Nome = e.ToString() })
+            .Select(e => new { Id = (int)e, Nome = e.ObterNome() })
             .ToList();
 
         return Ok(especialidades);

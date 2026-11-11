@@ -11,32 +11,45 @@ public class Exame : Entidade
     public int? IdAgenda { get; private set; }
     public Agenda? Agenda { get; private set; }
 
+    public int? IdMedico { get; private set; }
+    public Medico? Medico { get; private set; }
+
     public string Descricao { get; private set; } = string.Empty;
     public string? Resultado { get; private set; }
 
     protected Exame() { }
 
-    public Exame(int idPaciente, string descricao, string? resultado = null, int? idAgenda = null)
+    public Exame(int idPaciente, string descricao, string? resultado = null, int? idAgenda = null, int? idMedico = null)
     {
-        Validar(idPaciente, descricao);
+        Validar(idPaciente, descricao, idMedico);
 
         IdPaciente = idPaciente;
         Descricao = descricao.Trim();
         Resultado = resultado?.Trim();
         IdAgenda = idAgenda;
+        IdMedico = idMedico;
     }
 
-    public void RegistrarResultado(string resultado)
+    public void RegistrarResultado(string resultado, int? idMedico = null)
     {
         DomainException.When(string.IsNullOrWhiteSpace(resultado), "O resultado do exame não pode ser vazio.");
+        if (idMedico.HasValue)
+        {
+            DomainException.When(idMedico.Value <= 0, "Médico inválido.");
+            IdMedico = idMedico.Value;
+        }
         Resultado = resultado.Trim();
     }
 
-    public void Atualizar(string descricao, string? resultado = null)
+    public void Atualizar(string descricao, string? resultado = null, int? idMedico = null)
     {
-        Validar(IdPaciente, descricao);
+        Validar(IdPaciente, descricao, idMedico);
         Descricao = descricao.Trim();
         Resultado = resultado?.Trim();
+        if (idMedico.HasValue)
+        {
+            IdMedico = idMedico.Value;
+        }
     }
 
     public void VincularAgenda(int idAgenda)
@@ -45,9 +58,16 @@ public class Exame : Entidade
         IdAgenda = idAgenda;
     }
 
-    private static void Validar(int idPaciente, string descricao)
+    public void VincularMedico(int idMedico)
+    {
+        DomainException.When(idMedico <= 0, "Id do médico inválido.");
+        IdMedico = idMedico;
+    }
+
+    private static void Validar(int idPaciente, string descricao, int? idMedico = null)
     {
         DomainException.When(idPaciente <= 0, "Paciente inválido.");
+        DomainException.When(idMedico.HasValue && idMedico.Value <= 0, "Médico inválido.");
         DomainException.When(string.IsNullOrWhiteSpace(descricao), "Descrição do exame é obrigatória.");
         DomainException.When(descricao.Trim().Length < 2 || descricao.Trim().Length > 200, "Descrição deve ter entre 2 e 200 caracteres.");
     }

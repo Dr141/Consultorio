@@ -8,5 +8,8 @@ public record ExameResponse(
     string? Resultado,
     int? IdAgenda,
     DateTime? DataHora,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    int? IdMedico = null,
+    string? NomeMedico = null,
+    string? CrmMedico = null
 );

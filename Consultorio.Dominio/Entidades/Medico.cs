@@ -21,6 +21,9 @@ public class Medico : Entidade
     private readonly List<Consulta> _consultas = [];
     public IReadOnlyCollection<Consulta> Consultas => _consultas.AsReadOnly();
 
+    private readonly List<Exame> _exames = [];
+    public IReadOnlyCollection<Exame> Exames => _exames.AsReadOnly();
+
     private readonly List<Agenda> _agendas = [];
     public IReadOnlyCollection<Agenda> Agendas => _agendas.AsReadOnly();
 

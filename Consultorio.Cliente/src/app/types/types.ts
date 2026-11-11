@@ -85,5 +85,57 @@ export type Exame = {
   resultado?: string;
   idAgenda?: number;
   dataHora?: string;
+  idMedico?: number;
+  nomeMedico?: string;
+  crmMedico?: string;
   dtCriacao?: string;
+};
+
+export type MedicoResumoProntuario = {
+  id: number;
+  nome: string;
+  crm: string;
+  especialidades: string[];
+};
+
+export type ConsultaProntuarioItem = {
+  id: number;
+  idMedico: number;
+  nomeMedico: string;
+  crmMedico: string;
+  especialidadesMedico: string[];
+  observacao: string;
+  dataAtendimento: string;
+  dtCriacao: string;
+};
+
+export type ExameProntuarioItem = {
+  id: number;
+  descricao: string;
+  resultado?: string;
+  possuiLaudo: boolean;
+  idMedico?: number;
+  nomeMedico?: string;
+  crmMedico?: string;
+  dataExame: string;
+  dtCriacao: string;
+};
+
+export type ProntuarioResumo = {
+  totalConsultas: number;
+  totalExames: number;
+  totalLaudosEmitidos: number;
+  totalExamesPendentes: number;
+};
+
+export type ProntuarioRelatorio = {
+  numeroOficio: string;
+  dataEmissao: string;
+  paciente: Paciente;
+  medicoFiltro?: MedicoResumoProntuario;
+  dataInicio?: string;
+  dataFim?: string;
+  resumo: ProntuarioResumo;
+  consultas: ConsultaProntuarioItem[];
+  exames: ExameProntuarioItem[];
 };

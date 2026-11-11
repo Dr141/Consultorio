@@ -11,7 +11,7 @@
   <div class="login-wrapper">
     <ion-card id="cardLogin">
       @if(erro.length > 0){
-        <ion-card-content id="contentErro">
+        <ion-card-content id="contentErro" role="alert" aria-live="assertive">
           <ion-icon name="alert-circle-outline" style="font-size: 20px; vertical-align: middle; margin-right: 6px;"></ion-icon>
           <ion-label>{{erro}}</ion-label>
         </ion-card-content>
@@ -30,23 +30,30 @@
           <ion-list lines="none">
             <ion-item class="input-item">
               <ion-input type="email" label="E-mail" labelPlacement="floating" placeholder="seu@email.com" formControlName="email"
+                         autocomplete="email" inputmode="email" [autofocus]="true" (ionInput)="limparErro()"
                          helperText="E-mail de acesso cadastrado"
-                         error-text="Informe um e-mail válido">
+                         errorText="Informe um e-mail válido">
               </ion-input>
             </ion-item>
 
             <ion-item class="input-item">
               <ion-input type="password" label="Senha" labelPlacement="floating" placeholder="Sua senha" formControlName="senha"
+                         autocomplete="current-password" (ionInput)="limparErro()"
                          helperText="Mínimo de 6 caracteres"
-                         error-text="Senha inválida">
+                         errorText="A senha deve ter pelo menos 6 caracteres">
                 <ion-input-password-toggle slot="end" color="medium"></ion-input-password-toggle>
               </ion-input>
             </ion-item>
 
             <div class="submit-container">
-              <ion-button type="submit" expand="block" color="primary" [disabled]="!autenticacao.valid">
-                <ion-icon slot="start" name="log-in-outline"></ion-icon>
-                Entrar
+              <ion-button type="submit" expand="block" color="primary" [disabled]="!autenticacao.valid || entrando">
+                @if (entrando) {
+                  <ion-spinner slot="start" name="crescent"></ion-spinner>
+                  Entrando...
+                } @else {
+                  <ion-icon slot="start" name="log-in-outline"></ion-icon>
+                  Entrar
+                }
               </ion-button>
             </div>
           </ion-list>

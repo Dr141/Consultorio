@@ -43,17 +43,21 @@ describe('01 - Autenticação e Proteção de Rotas', () => {
     cy.get('ion-button[type="submit"]').click();
 
     cy.url({ timeout: 10000 }).should('include', '/home');
-    cy.contains('h2', 'Painel de Gestão Clínica').should('be.visible');
-    cy.get('.cardHome').should('have.length', 5);
+    cy.get('.welcome-banner h2').should('be.visible');
+    cy.get('.cardHome').should('have.length', 6);
   });
 
   it('Deve encerrar a sessão (Logout) através do menu lateral e retornar ao /login', () => {
     cy.loginApi();
     cy.visit('/home');
-    cy.contains('h2', 'Painel de Gestão Clínica').should('be.visible');
+    cy.get('.welcome-banner h2').should('be.visible');
 
     cy.get('ion-menu-button').click();
     cy.get('.menu-item-logout').should('be.visible').click({ force: true });
+
+    // Confirmação de saída
+    cy.get('ion-alert').should('be.visible');
+    cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
 
     cy.url({ timeout: 10000 }).should('include', '/login');
     cy.get('#cardLogin').should('be.visible');

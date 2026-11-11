@@ -1,8 +1,11 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { ModalController } from '@ionic/angular';
+import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Especialidade, Medico } from '../types/types';
+import { correspondeBusca } from '../shared/utils/formatadores';
+import { NOMES_ESPECIALIDADES } from '../shared/utils/especialidades';
 import { MedicoModalComponent } from './medico-modal.component';
 
 @Component({
@@ -11,100 +14,70 @@ import { MedicoModalComponent } from './medico-modal.component';
   styleUrls: ['./medicos.page.scss'],
   standalone: false
 })
-export class MedicosPage implements OnInit {
+export class MedicosPage {
   public medicos: Medico[] = [];
   public medicosFiltrados: Medico[] = [];
   public termoBusca = '';
   public carregando = false;
 
-  private mapaEspecialidades: Record<number, string> = {
-    1: 'Clínico Geral',
-    2: 'Cardiologista',
-    3: 'Urologista',
-    4: 'Ginecologista',
-    5: 'Ortopedista',
-    6: 'Pediatra',
-    7: 'Dermatologista',
-    8: 'Neurologista',
-    9: 'Oftalmologista'
-  };
-
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef,
-    private router: Router
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit() {
-    this.carregarMedicos();
-  }
 
   ionViewWillEnter() {
     this.carregarMedicos();
   }
 
-  carregarMedicos() {
+  atualizar(evento: Event) {
+    this.carregarMedicos(() => (evento.target as HTMLIonRefresherElement | null)?.complete());
+  }
+
+  carregarMedicos(aoConcluir?: () => void) {
     this.carregando = true;
     this.cdr.markForCheck();
-    this.api.obterMedicos().subscribe({
-      next: (lista) => {
-        this.medicos = lista || [];
-        this.filtrar();
+    this.api.obterMedicos()
+      .pipe(finalize(() => {
         this.carregando = false;
+        aoConcluir?.();
         this.cdr.detectChanges();
-      },
-      error: async (err) => {
-        this.carregando = false;
-        this.cdr.detectChanges();
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.router.navigate(['/login']);
-          return;
-        }
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao carregar médicos.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
-    });
+      }))
+      .subscribe({
+        next: (lista) => {
+          this.medicos = [...(lista || [])].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'));
+          this.filtrar();
+        },
+        error: (err) => this.feedback.erro(err, 'Erro ao carregar médicos.')
+      });
   }
 
   formatarEspecialidades(especialidades: Especialidade[]): string[] {
     if (!especialidades) return [];
-    return especialidades.map(e => this.mapaEspecialidades[e] || e.toString());
+    return especialidades.map(e => NOMES_ESPECIALIDADES[e] || e.toString());
   }
 
   filtrar() {
-    const termo = this.termoBusca.toLowerCase().trim();
-    if (!termo) {
-      this.medicosFiltrados = [...this.medicos];
-      return;
-    }
-
     this.medicosFiltrados = this.medicos.filter(m =>
-      m.nome?.toLowerCase().includes(termo) ||
-      m.crm?.toLowerCase().includes(termo) ||
-      m.especialidades?.some(e => (this.mapaEspecialidades[e] || '').toLowerCase().includes(termo))
+      correspondeBusca(this.termoBusca, m.nome, m.crm, ...this.formatarEspecialidades(m.especialidades))
     );
   }
 
-  async adicionar() {
-    const modal = await this.modalCtrl.create({
-      component: MedicoModalComponent
-    });
+  limparBusca() {
+    this.termoBusca = '';
+    this.filtrar();
+  }
 
-    await modal.present();
-    const { data } = await modal.onDidDismiss();
-    if (data) {
-      this.carregarMedicos();
-    }
+  async adicionar() {
+    await this.abrirModal();
   }
 
   async editar(medico: Medico) {
+    await this.abrirModal(medico);
+  }
+
+  private async abrirModal(medico?: Medico) {
     const modal = await this.modalCtrl.create({
       component: MedicoModalComponent,
       componentProps: { medico }
@@ -113,38 +86,26 @@ export class MedicosPage implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss();
     if (data) {
+      this.feedback.sucesso(medico ? 'Dados do médico atualizados.' : 'Médico cadastrado com sucesso.');
       this.carregarMedicos();
     }
   }
 
   async remover(medico: Medico) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar Exclusão',
-      message: `Deseja realmente remover o médico ${medico.nome}?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.api.removerMedico(medico.id).subscribe({
-              next: () => {
-                this.carregarMedicos();
-              },
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao excluir médico.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Excluir médico?',
+      mensagem: `O cadastro de ${medico.nome} será removido. Esta ação não pode ser desfeita.`,
+      textoConfirmar: 'Excluir',
+      destrutivo: true
     });
+    if (!confirmado) return;
 
-    await alert.present();
+    this.api.removerMedico(medico.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Médico excluído.');
+        this.carregarMedicos();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao excluir médico.')
+    });
   }
 }

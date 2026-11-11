@@ -1,8 +1,11 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
+import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
+import { FeedbackService } from '../services/feedback/feedback.service';
 import { Paciente } from '../types/types';
+import { correspondeBusca } from '../shared/utils/formatadores';
 import { PacienteModalComponent } from './paciente-modal.component';
 
 @Component({
@@ -11,7 +14,7 @@ import { PacienteModalComponent } from './paciente-modal.component';
   styleUrls: ['./pacientes.page.scss'],
   standalone: false
 })
-export class PacientesPage implements OnInit {
+export class PacientesPage {
   public pacientes: Paciente[] = [];
   public pacientesFiltrados: Paciente[] = [];
   public termoBusca = '';
@@ -20,73 +23,64 @@ export class PacientesPage implements OnInit {
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController,
+    private feedback: FeedbackService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
 
-  ngOnInit() {
-    this.carregarPacientes();
-  }
-
+  // O Ionic dispara ionViewWillEnter também na primeira entrada, então não é preciso carregar no ngOnInit.
   ionViewWillEnter() {
     this.carregarPacientes();
   }
 
-  carregarPacientes() {
+  atualizar(evento: Event) {
+    this.carregarPacientes(() => (evento.target as HTMLIonRefresherElement | null)?.complete());
+  }
+
+  carregarPacientes(aoConcluir?: () => void) {
     this.carregando = true;
     this.cdr.markForCheck();
-    this.api.obterPacientes().subscribe({
-      next: (lista) => {
-        this.pacientes = lista || [];
-        this.filtrar();
+    this.api.obterPacientes()
+      .pipe(finalize(() => {
         this.carregando = false;
+        aoConcluir?.();
         this.cdr.detectChanges();
-      },
-      error: async (err) => {
-        this.carregando = false;
-        this.cdr.detectChanges();
-        if (err?.status === 401 || err?.message?.includes('401')) {
-          this.router.navigate(['/login']);
-          return;
-        }
-        const toast = await this.toastCtrl.create({
-          message: err.message || 'Erro ao carregar pacientes.',
-          duration: 3000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
-    });
+      }))
+      .subscribe({
+        next: (lista) => {
+          this.pacientes = [...(lista || [])].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'));
+          this.filtrar();
+        },
+        error: (err) => this.feedback.erro(err, 'Erro ao carregar pacientes.')
+      });
   }
 
   filtrar() {
-    const termo = this.termoBusca.toLowerCase().trim();
-    if (!termo) {
-      this.pacientesFiltrados = [...this.pacientes];
-      return;
-    }
-
     this.pacientesFiltrados = this.pacientes.filter(p =>
-      p.nome?.toLowerCase().includes(termo) ||
-      p.cpf?.includes(termo)
+      correspondeBusca(this.termoBusca, p.nome, p.cpf, p.telefone)
     );
   }
 
-  async adicionar() {
-    const modal = await this.modalCtrl.create({
-      component: PacienteModalComponent
-    });
+  limparBusca() {
+    this.termoBusca = '';
+    this.filtrar();
+  }
 
-    await modal.present();
-    const { data } = await modal.onDidDismiss();
-    if (data) {
-      this.carregarPacientes();
-    }
+  iniciais(nome: string | undefined): string {
+    const partes = (nome ?? '').trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return '?';
+    return ((partes[0][0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+  }
+
+  async adicionar() {
+    await this.abrirModal();
   }
 
   async editar(paciente: Paciente) {
+    await this.abrirModal(paciente);
+  }
+
+  private async abrirModal(paciente?: Paciente) {
     const modal = await this.modalCtrl.create({
       component: PacienteModalComponent,
       componentProps: { paciente }
@@ -95,38 +89,30 @@ export class PacientesPage implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss();
     if (data) {
+      this.feedback.sucesso(paciente ? 'Dados do paciente atualizados.' : 'Paciente cadastrado com sucesso.');
       this.carregarPacientes();
     }
   }
 
-  async remover(paciente: Paciente) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar Exclusão',
-      message: `Deseja realmente remover o paciente ${paciente.nome}?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.api.removerPaciente(paciente.id).subscribe({
-              next: () => {
-                this.carregarPacientes();
-              },
-              error: async (err) => {
-                const toast = await this.toastCtrl.create({
-                  message: err.message || 'Erro ao excluir paciente.',
-                  duration: 3000,
-                  color: 'danger'
-                });
-                await toast.present();
-              }
-            });
-          }
-        }
-      ]
-    });
+  abrirProntuario(paciente: Paciente) {
+    this.router.navigate(['/prontuario'], { queryParams: { idPaciente: paciente.id } });
+  }
 
-    await alert.present();
+  async remover(paciente: Paciente) {
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Excluir paciente?',
+      mensagem: `O cadastro de ${paciente.nome} será removido. Esta ação não pode ser desfeita.`,
+      textoConfirmar: 'Excluir',
+      destrutivo: true
+    });
+    if (!confirmado) return;
+
+    this.api.removerPaciente(paciente.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Paciente excluído.');
+        this.carregarPacientes();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao excluir paciente.')
+    });
   }
 }

@@ -3,107 +3,164 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
     </ion-buttons>
-    <ion-title>Agenda de Consultas e Exames</ion-title>
+    <ion-title>Agenda</ion-title>
     <ion-buttons slot="end">
       <app-theme-toggle></app-theme-toggle>
-      <ion-button (click)="adicionar()" aria-label="Adicionar horário na agenda" title="Adicionar horário na agenda">
-        <ion-icon slot="icon-only" name="calendar-number"></ion-icon>
+      <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Adicionar horário na agenda" title="Adicionar horário na agenda">
+        <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+        <span class="ion-hide-md-down">Novo horário</span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
     <div class="searchbar-container">
-      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" placeholder="Buscar por médico ou paciente"></ion-searchbar>
+      <ion-searchbar [(ngModel)]="termoBusca" (ionInput)="filtrar()" [debounce]="150" placeholder="Buscar por médico ou paciente"></ion-searchbar>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="page-container">
-    @if (carregando) {
-      <div class="ion-text-center ion-padding loading-state">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>Carregando agenda...</p>
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container com-fab">
+    @if (carregando && agendas.length === 0) {
+      <div class="loading-state" aria-busy="true" aria-label="Carregando agenda">
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            @for (i of [1, 2, 3]; track i) {
+              <ion-col size="12" size-md="6" size-xl="4">
+                <ion-card class="skeleton-card">
+                  <ion-skeleton-text [animated]="true" style="width: 35%; height: 20px"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 75%"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 55%"></ion-skeleton-text>
+                </ion-card>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
       </div>
-    } @else if (agendasFiltradas.length === 0) {
+    } @else if (agendas.length === 0) {
       <div class="ion-text-center ion-padding empty-state">
         <ion-icon name="calendar-outline"></ion-icon>
         <h3>Nenhum horário na agenda</h3>
-        <p>Clique no botão + para disponibilizar um novo horário.</p>
+        <p>Disponibilize horários dos médicos para começar a agendar pacientes.</p>
+        <ion-button (click)="adicionar()">
+          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+          Criar horário
+        </ion-button>
       </div>
     } @else {
-      <ion-grid class="ion-no-padding">
-        <ion-row>
-          @for (a of agendasFiltradas; track a.id) {
-            <ion-col size="12" size-md="6" size-xl="4">
-              <ion-card class="registro-card agenda-card">
-                <ion-card-header>
-                  <div class="card-header-flex">
-                    <ion-icon [name]="a.disponivel ? 'checkmark-circle-outline' : 'time-outline'"
-                              [color]="a.disponivel ? 'success' : 'warning'"
-                              class="agenda-icon">
-                    </ion-icon>
-                    <div class="header-titles">
-                      <ion-card-title>
-                        {{ formatarData(a.data) }} às {{ a.hora.substring(0, 5) }}
-                      </ion-card-title>
-                      <ion-badge [color]="a.disponivel ? 'success' : 'warning'" class="status-badge">
-                        {{ a.disponivel ? 'Disponível' : 'Ocupado' }}
-                      </ion-badge>
-                    </div>
-                  </div>
-                </ion-card-header>
+      <div class="lista-resumo">
+        <ion-segment [value]="filtroStatus" (ionChange)="mudarFiltroStatus($any($event).detail.value)" aria-label="Filtrar horários por situação">
+          <ion-segment-button value="todos">
+            <ion-label>Todos ({{ totais.todos }})</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="disponiveis">
+            <ion-label>Livres ({{ totais.disponiveis }})</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="ocupados">
+            <ion-label>Ocupados ({{ totais.ocupados }})</ion-label>
+          </ion-segment-button>
+        </ion-segment>
 
-                <ion-card-content>
-                  <div class="info-row">
-                    <ion-icon name="medkit-outline"></ion-icon>
-                    <span><strong>Médico:</strong> {{ a.nomeMedico || 'Não informado' }}</span>
-                  </div>
+        <ion-chip [outline]="!incluirAnteriores" [color]="incluirAnteriores ? 'primary' : 'medium'" (click)="alternarAnteriores()"
+                  role="switch" [attr.aria-checked]="incluirAnteriores">
+          <ion-icon [name]="incluirAnteriores ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+          <ion-label>{{ incluirAnteriores ? 'Exibindo dias anteriores' : 'Mostrar dias anteriores' }}</ion-label>
+        </ion-chip>
+      </div>
 
-                  @if (!a.disponivel && a.nomePaciente) {
-                    <div class="info-row paciente-row">
-                      <ion-icon name="person-outline"></ion-icon>
-                      <span><strong>Paciente:</strong> {{ a.nomePaciente }}</span>
-                    </div>
-                  } @else {
-                    <div class="info-row disponivel-text">
-                      <ion-icon name="information-circle-outline"></ion-icon>
-                      <span>Horário vago para agendamento</span>
-                    </div>
-                  }
+      @if (grupos.length === 0) {
+        <div class="ion-text-center ion-padding empty-state">
+          <ion-icon name="search-outline"></ion-icon>
+          <h3>Nenhum horário encontrado</h3>
+          <p>Nenhum horário corresponde aos filtros atuais.</p>
+          <ion-button fill="outline" (click)="limparFiltros()">
+            <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+            Limpar filtros
+          </ion-button>
+        </div>
+      }
 
-                  <div class="card-actions">
-                    @if (a.disponivel) {
-                      <ion-button fill="solid" color="success" size="small" (click)="agendarPaciente(a)">
-                        <ion-icon slot="start" name="person-add-outline"></ion-icon>
-                        Agendar
-                      </ion-button>
+      @for (g of grupos; track g.chave) {
+        <h2 class="grupo-titulo" [class.grupo-hoje]="g.hoje">
+          <ion-icon [name]="g.hoje ? 'today-outline' : 'calendar-clear-outline'" aria-hidden="true"></ion-icon>
+          {{ g.rotulo }}
+          <span class="grupo-contagem">· {{ g.itens.length }} {{ g.itens.length === 1 ? 'horário' : 'horários' }}</span>
+        </h2>
+
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            @for (a of g.itens; track a.id) {
+              <ion-col size="12" size-md="6" size-xl="4">
+                <ion-card class="registro-card agenda-card" [class.agenda-livre]="a.disponivel" [class.agenda-passada]="ehPassado(a)">
+                  <ion-card-header>
+                    <div class="card-header-flex">
+                      <div class="hora-destaque" aria-hidden="true">
+                        <ion-icon name="time-outline"></ion-icon>
+                      </div>
+                      <div class="header-titles">
+                        <ion-card-title>{{ a.hora.substring(0, 5) }}</ion-card-title>
+                        <ion-badge [color]="a.disponivel ? 'success' : 'warning'" class="status-badge">
+                          {{ a.disponivel ? 'Disponível' : 'Ocupado' }}
+                        </ion-badge>
+                      </div>
+                    </div>
+                  </ion-card-header>
+
+                  <ion-card-content>
+                    <div class="info-row">
+                      <ion-icon name="medkit-outline" aria-hidden="true"></ion-icon>
+                      <span><strong>Médico:</strong> {{ a.nomeMedico || 'Não informado' }}</span>
+                    </div>
+
+                    @if (!a.disponivel && a.nomePaciente) {
+                      <div class="info-row paciente-row">
+                        <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
+                        <span><strong>Paciente:</strong> {{ a.nomePaciente }}</span>
+                      </div>
                     } @else {
-                      <ion-button fill="outline" color="warning" size="small" (click)="liberarHorario(a)">
-                        <ion-icon slot="start" name="refresh-outline"></ion-icon>
-                        Liberar
-                      </ion-button>
+                      <div class="info-row disponivel-text">
+                        <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+                        <span>Horário vago para agendamento</span>
+                      </div>
                     }
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(a)">
-                      <ion-icon slot="start" name="create-outline"></ion-icon>
-                      Editar
-                    </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(a)">
-                      <ion-icon slot="start" name="trash-outline"></ion-icon>
-                      Excluir
-                    </ion-button>
-                  </div>
-                </ion-card-content>
-              </ion-card>
-            </ion-col>
-          }
-        </ion-row>
-      </ion-grid>
+
+                    <div class="card-actions">
+                      @if (a.disponivel) {
+                        <ion-button fill="solid" color="success" size="small" (click)="agendarPaciente(a)">
+                          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+                          Agendar
+                        </ion-button>
+                      } @else {
+                        <ion-button fill="outline" color="warning" size="small" (click)="liberarHorario(a)">
+                          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                          Liberar
+                        </ion-button>
+                      }
+                      <ion-button fill="outline" color="primary" size="small" (click)="editar(a)">
+                        <ion-icon slot="start" name="create-outline"></ion-icon>
+                        Editar
+                      </ion-button>
+                      <ion-button fill="clear" color="danger" size="small" (click)="remover(a)">
+                        <ion-icon slot="start" name="trash-outline"></ion-icon>
+                        Excluir
+                      </ion-button>
+                    </div>
+                  </ion-card-content>
+                </ion-card>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
+      }
     }
   </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button color="primary" (click)="adicionar()">
+    <ion-fab-button color="primary" (click)="adicionar()" aria-label="Adicionar horário na agenda">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>

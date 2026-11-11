@@ -1,0 +1,277 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Prontuário do Paciente</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      <ion-button (click)="imprimir()" [disabled]="!prontuario || carregando" title="Imprimir ou Salvar como PDF">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        <span class="ion-hide-sm-down">Imprimir / PDF</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+
+    <!-- Card de Filtros (Ocultado na Impressão) -->
+    <ion-card class="filtros-card no-print">
+      <ion-card-header>
+        <ion-card-title>Parâmetros do Ofício / Prontuário</ion-card-title>
+        <ion-card-subtitle>Selecione o paciente e defina os filtros de médico e período para emitir o relatório</ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            <!-- Paciente -->
+            <ion-col size="12" size-md="4">
+              <ion-item class="form-item">
+                <ion-select label="Paciente *" labelPlacement="floating" [(ngModel)]="idPacienteSelecionado" (ionChange)="aoMudarPaciente()" placeholder="Selecione o paciente">
+                  @for (p of pacientes; track p.id) {
+                    <ion-select-option [value]="p.id">{{ p.nome }} (CPF: {{ p.cpf | cpf }})</ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+            </ion-col>
+
+            <!-- Médico -->
+            <ion-col size="12" size-md="4">
+              <ion-item class="form-item">
+                <ion-select label="Médico Responsável" labelPlacement="floating" [(ngModel)]="idMedicoSelecionado" placeholder="Todos os médicos">
+                  <ion-select-option [value]="null">Todos os médicos</ion-select-option>
+                  @for (m of medicos; track m.id) {
+                    <ion-select-option [value]="m.id">{{ m.nome }} - CRM: {{ m.crm }}</ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+            </ion-col>
+
+            <!-- Período: Data Inicial -->
+            <ion-col size="12" size-sm="6" size-md="2">
+              <ion-item class="form-item">
+                <ion-input label="Data Inicial" labelPlacement="floating" type="date" [(ngModel)]="dataInicio"></ion-input>
+              </ion-item>
+            </ion-col>
+
+            <!-- Período: Data Final -->
+            <ion-col size="12" size-sm="6" size-md="2">
+              <ion-item class="form-item">
+                <ion-input label="Data Final" labelPlacement="floating" type="date" [(ngModel)]="dataFim"></ion-input>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <!-- Chips de Período Rápido -->
+        <div class="periodo-chips">
+          <span class="chip-label">Período rápido:</span>
+          <ion-chip (click)="definirPeriodo(30)" outline="true" color="primary">Últimos 30 dias</ion-chip>
+          <ion-chip (click)="definirPeriodo(90)" outline="true" color="primary">Últimos 3 meses</ion-chip>
+          <ion-chip (click)="definirPeriodoEsteAno()" outline="true" color="primary">Este Ano</ion-chip>
+          <ion-chip (click)="limparDatas()" outline="true" color="medium">Todo o Histórico</ion-chip>
+        </div>
+
+        <!-- Ações do Filtro -->
+        <div class="filtros-acoes">
+          <ion-button color="primary" (click)="gerarProntuario()" [disabled]="!idPacienteSelecionado || carregando">
+            <ion-icon slot="start" [name]="carregando ? 'hourglass-outline' : 'document-text-outline'"></ion-icon>
+            {{ carregando ? 'Gerando Ofício...' : 'Gerar Prontuário' }}
+          </ion-button>
+
+          <ion-button fill="outline" color="medium" (click)="limparFiltros()" [disabled]="carregando">
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+            Limpar
+          </ion-button>
+
+          @if (prontuario) {
+            <ion-button color="secondary" (click)="imprimir()">
+              <ion-icon slot="start" name="print-outline"></ion-icon>
+              Imprimir / PDF
+            </ion-button>
+          }
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Estado de Carregamento -->
+    @if (carregando) {
+      <div class="ion-text-center ion-padding loading-state no-print">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando histórico do prontuário...</p>
+      </div>
+    }
+
+    <!-- Estado Inicial Sem Seleção -->
+    @if (!carregando && !prontuario) {
+      <div class="ion-text-center ion-padding empty-state no-print">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <h3>Nenhum prontuário carregado</h3>
+        <p>Selecione um paciente acima e clique em <strong>Gerar Prontuário</strong> para emitir o relatório no formato de ofício.</p>
+      </div>
+    }
+
+    <!-- Visualização do Ofício Clínico -->
+    @if (!carregando && prontuario) {
+      <div class="oficio-container">
+        <div class="oficio-sheet" id="area-oficio">
+          
+          <!-- Cabeçalho do Ofício -->
+          <div class="oficio-header">
+            <div class="timbre">
+              <ion-icon name="medkit" class="timbre-icon"></ion-icon>
+              <div class="timbre-text">
+                <h1>Consultório de Gestão Clínica</h1>
+                <p>Relatório de Prontuário Médico &bullet; Documento Oficial de Atendimentos</p>
+              </div>
+            </div>
+
+            <div class="oficio-meta">
+              <span class="oficio-num">{{ prontuario.numeroOficio }}</span>
+              <span class="oficio-data">Emitido em: {{ formatarDataHora(prontuario.dataEmissao) }}</span>
+            </div>
+          </div>
+
+          <!-- Texto de Abertura / Declaração Formal -->
+          <div class="oficio-declaracao">
+            Declara-se, para os devidos fins de direito e comprovação médica, que o presente <strong>Ofício de Prontuário Clínico</strong> consolida o histórico de atendimentos, consultas, prescrições, solicitações diagnósticas e laudos laboratoriais do paciente abaixo especificado, arquivados no prontuário eletrônico deste estabelecimento.
+            @if (prontuario.medicoFiltro) {
+              <span> Relatório com recorte restrito aos atendimentos do(a) <strong>{{ prontuario.medicoFiltro.nome }} (CRM: {{ prontuario.medicoFiltro.crm }})</strong>.</span>
+            }
+            @if (prontuario.dataInicio || prontuario.dataFim) {
+              <span> Período avaliado: <strong>{{ formatarData(prontuario.dataInicio) || 'Início do prontuário' }}</strong> até <strong>{{ formatarData(prontuario.dataFim) || 'Data presente' }}</strong>.</span>
+            }
+          </div>
+
+          <!-- 1. Identificação do Paciente -->
+          <div class="secao-titulo">1. Identificação do Paciente</div>
+          <table class="tabela-info">
+            <tbody>
+              <tr>
+                <td class="campo-rotulo">Nome Completo:</td>
+                <td class="campo-valor" colspan="3"><strong>{{ prontuario.paciente.nome }}</strong></td>
+              </tr>
+              <tr>
+                <td class="campo-rotulo">CPF:</td>
+                <td class="campo-valor">{{ prontuario.paciente.cpf | cpf }}</td>
+                <td class="campo-rotulo">Data de Nascimento:</td>
+                <td class="campo-valor">{{ prontuario.paciente.dtNasc | dataBr }} ({{ prontuario.paciente.dtNasc | idade }})</td>
+              </tr>
+              <tr>
+                <td class="campo-rotulo">Telefone de Contato:</td>
+                <td class="campo-valor">{{ (prontuario.paciente.telefone | telefone) || 'Não informado' }}</td>
+                <td class="campo-rotulo">Registro / ID:</td>
+                <td class="campo-valor">#{{ prontuario.paciente.id }}</td>
+              </tr>
+              @if (prontuario.paciente.observacao) {
+                <tr>
+                  <td class="campo-rotulo">Observações Clínicas:</td>
+                  <td class="campo-valor" colspan="3"><em>{{ prontuario.paciente.observacao }}</em></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- 2. Síntese de Atendimentos -->
+          <div class="secao-titulo">2. Síntese de Atendimentos no Período</div>
+          <div class="sintese-grid">
+            <div class="sintese-card">
+              <span class="sintese-numero">{{ prontuario.resumo.totalConsultas }}</span>
+              <span class="sintese-descricao">Consultas</span>
+            </div>
+            <div class="sintese-card">
+              <span class="sintese-numero">{{ prontuario.resumo.totalExames }}</span>
+              <span class="sintese-descricao">Exames Solicitados</span>
+            </div>
+            <div class="sintese-card">
+              <span class="sintese-numero">{{ prontuario.resumo.totalLaudosEmitidos }}</span>
+              <span class="sintese-descricao">Laudos Concluídos</span>
+            </div>
+            <div class="sintese-card">
+              <span class="sintese-numero">{{ prontuario.resumo.totalExamesPendentes }}</span>
+              <span class="sintese-descricao">Aguardando Laudo</span>
+            </div>
+          </div>
+
+          <!-- 3. Consultas e Evoluções Médicas -->
+          <div class="secao-titulo">3. Histórico de Consultas e Evoluções Clínicas</div>
+          @if (prontuario.consultas.length === 0) {
+            <p class="sem-registros">Nenhuma consulta médica registrada para os critérios informados.</p>
+          } @else {
+            @for (c of prontuario.consultas; track c.id) {
+              <div class="registro-oficio-item">
+                <div class="registro-header">
+                  <span class="registro-titulo">Consulta Clínica #{{ c.id }}</span>
+                  <span class="registro-data">{{ formatarDataHora(c.dataAtendimento) }}</span>
+                </div>
+                <div class="registro-medico">
+                  <strong>Profissional:</strong> {{ c.nomeMedico }} &bullet; <strong>CRM:</strong> {{ c.crmMedico }}
+                  @if (c.especialidadesMedico.length > 0) {
+                    <span> &bullet; ({{ c.especialidadesMedico.join(', ') }})</span>
+                  }
+                </div>
+                <div class="registro-conteudo">
+                  <strong>Evolução / Prescrição:</strong><br />
+                  {{ c.observacao }}
+                </div>
+              </div>
+            }
+          }
+
+          <!-- 4. Exames e Laudos Técnicos -->
+          <div class="secao-titulo">4. Solicitações de Exames e Laudos Técnicos</div>
+          @if (prontuario.exames.length === 0) {
+            <p class="sem-registros">Nenhum exame registrado para os critérios informados.</p>
+          } @else {
+            @for (e of prontuario.exames; track e.id) {
+              <div class="registro-oficio-item">
+                <div class="registro-header">
+                  <span class="registro-titulo">{{ e.descricao }} (Exame #{{ e.id }})</span>
+                  <span class="registro-data">{{ formatarDataHora(e.dataExame) }}</span>
+                </div>
+                @if (e.nomeMedico) {
+                  <div class="registro-medico">
+                    <strong>Médico Solicitante / Laudador:</strong> {{ e.nomeMedico }} (CRM: {{ e.crmMedico || 'Não informado' }})
+                  </div>
+                }
+                @if (e.possuiLaudo) {
+                  <div class="laudo-bloco">
+                    <div class="laudo-titulo">Laudo Técnico Emitido</div>
+                    <div class="laudo-texto">{{ e.resultado }}</div>
+                  </div>
+                } @else {
+                  <div class="aguardando-bloco">
+                    <span>* Exame solicitado &mdash; laudo técnico pendente de emissão pelo laboratório/profissional.</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Fecho do Ofício -->
+          <div class="oficio-fecho">
+            <div class="fecho-local-data">
+              São Paulo, {{ dataHojeExtenso }}.
+            </div>
+            <div class="assinatura-area">
+              <div class="assinatura-box">
+                <div class="linha-assinatura"></div>
+                <div class="nome-medico-assinante">
+                  {{ prontuario.medicoFiltro?.nome || 'Diretoria Técnica Médica' }}
+                </div>
+                <div class="crm-medico-assinante">
+                  {{ prontuario.medicoFiltro ? 'CRM: ' + prontuario.medicoFiltro.crm : 'Responsável Técnico / Corpo Clínico' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
+  </div>
+</ion-content>

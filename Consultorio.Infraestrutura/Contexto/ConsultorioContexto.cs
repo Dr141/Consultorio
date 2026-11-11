@@ -134,6 +134,11 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .WithOne(a => a.Exame)
                 .HasForeignKey<Exame>(e => e.IdAgenda)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(e => e.Medico)
+                .WithMany(m => m.Exames)
+                .HasForeignKey(e => e.IdMedico)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

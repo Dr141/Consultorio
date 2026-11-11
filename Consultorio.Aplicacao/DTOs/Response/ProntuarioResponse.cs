@@ -1,0 +1,50 @@
+namespace Consultorio.Aplicacao.DTOs.Response;
+
+public record MedicoResumoProntuarioResponse(
+    int Id,
+    string Nome,
+    string Crm,
+    List<string> Especialidades
+);
+
+public record ConsultaProntuarioResponse(
+    int Id,
+    int IdMedico,
+    string NomeMedico,
+    string CrmMedico,
+    List<string> EspecialidadesMedico,
+    string Observacao,
+    DateTime DataAtendimento,
+    DateTime DtCriacao
+);
+
+public record ExameProntuarioResponse(
+    int Id,
+    string Descricao,
+    string? Resultado,
+    bool PossuiLaudo,
+    int? IdMedico,
+    string? NomeMedico,
+    string? CrmMedico,
+    DateTime DataExame,
+    DateTime DtCriacao
+);
+
+public record ProntuarioResumoResponse(
+    int TotalConsultas,
+    int TotalExames,
+    int TotalLaudosEmitidos,
+    int TotalExamesPendentes
+);
+
+public record ProntuarioResponse(
+    string NumeroOficio,
+    DateTime DataEmissao,
+    PacienteResponse Paciente,
+    MedicoResumoProntuarioResponse? MedicoFiltro,
+    DateTime? DataInicio,
+    DateTime? DataFim,
+    ProntuarioResumoResponse Resumo,
+    List<ConsultaProntuarioResponse> Consultas,
+    List<ExameProntuarioResponse> Exames
+);

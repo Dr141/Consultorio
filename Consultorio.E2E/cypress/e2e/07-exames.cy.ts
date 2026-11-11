@@ -151,7 +151,7 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
 
     // Busca sem correspondência
     cy.get('ion-searchbar input').clear({ force: true }).type('ExameInexistente999', { force: true });
-    cy.contains('.empty-state', 'Nenhum exame solicitado').should('be.visible');
+    cy.contains('.empty-state', 'Nenhum exame encontrado').should('be.visible');
 
     // Limpa busca
     cy.get('ion-searchbar input').clear({ force: true });

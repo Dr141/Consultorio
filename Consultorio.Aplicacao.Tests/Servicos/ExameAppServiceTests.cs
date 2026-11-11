@@ -14,11 +14,12 @@ public class ExameAppServiceTests
     private readonly IExameRepositorio _exameRepositorio = Substitute.For<IExameRepositorio>();
     private readonly IPacienteRepositorio _pacienteRepositorio = Substitute.For<IPacienteRepositorio>();
     private readonly IAgendaRepositorio _agendaRepositorio = Substitute.For<IAgendaRepositorio>();
+    private readonly IMedicoRepositorio _medicoRepositorio = Substitute.For<IMedicoRepositorio>();
     private readonly ExameAppService _sut;
 
     public ExameAppServiceTests()
     {
-        _sut = new ExameAppService(_exameRepositorio, _pacienteRepositorio, _agendaRepositorio);
+        _sut = new ExameAppService(_exameRepositorio, _pacienteRepositorio, _agendaRepositorio, _medicoRepositorio);
     }
 
     [Fact]
@@ -43,5 +44,18 @@ public class ExameAppServiceTests
         var response = await _sut.RegistrarResultadoAsync(5, "Ritmo sinusal normal.");
 
         exame.Resultado.Should().Be("Ritmo sinusal normal.");
+    }
+
+    [Fact]
+    public async Task AdicionarAsync_ComMedicoInexistente_DeveLancarDomainException()
+    {
+        var request = new ExameRequest(IdPaciente: 1, Descricao: "Eletrocardiograma", Resultado: null, IdAgenda: null, IdMedico: 99);
+        _pacienteRepositorio.ObterId(1).Returns(new Paciente(1));
+        _medicoRepositorio.ObterId(99).Returns((Medico?)null);
+
+        var act = () => _sut.AdicionarAsync(request);
+
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*Médico com id 99 não encontrado*");
     }
 }
