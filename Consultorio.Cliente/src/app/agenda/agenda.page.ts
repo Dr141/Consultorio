@@ -3,7 +3,10 @@ import { ModalController } from '@ionic/angular';
 import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
-import { Agenda, Paciente } from '../types/types';
+import { Agenda, BloqueioAgenda, Paciente, StatusAgendamento } from '../types/types';
+import { RoleService } from '../services/role/role.service';
+import { GradeModalComponent } from './grade-modal.component';
+import { BloqueiosModalComponent } from './bloqueios-modal.component';
 import { combinarDataHora, correspondeBusca, mesmoDia, paraDataLocal, paraInputData, rotuloDia } from '../shared/utils/formatadores';
 import { SelecionarPacienteComponent } from '../shared/selecionar-paciente/selecionar-paciente.component';
 import { AgendaModalComponent } from './agenda-modal.component';
@@ -15,6 +18,7 @@ interface GrupoAgenda {
   rotulo: string;
   hoje: boolean;
   itens: Agenda[];
+  bloqueio?: BloqueioAgenda;
 }
 
 @Component({
@@ -33,17 +37,70 @@ export class AgendaPage {
   /** Por padrão a agenda mostra de hoje em diante, que é o que a recepção consulta no dia a dia. */
   public incluirAnteriores = false;
   public totais = { todos: 0, disponiveis: 0, ocupados: 0 };
+  public bloqueios: BloqueioAgenda[] = [];
+  public podeGerenciar = false;
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
     private feedback: FeedbackService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private role: RoleService
   ) {}
 
   ionViewWillEnter() {
+    this.podeGerenciar = this.role.ehGestao();
     this.carregarAgenda();
     this.carregarPacientes();
+    this.carregarBloqueios();
+  }
+
+  carregarBloqueios() {
+    this.api.obterBloqueiosAgenda().subscribe({
+      next: (lista) => {
+        this.bloqueios = lista ?? [];
+        this.filtrar();
+        this.cdr.detectChanges();
+      },
+      error: () => undefined
+    });
+  }
+
+  rotuloStatus(status?: StatusAgendamento | null): string {
+    switch (status) {
+      case 'Confirmado': return 'Confirmado';
+      case 'Aguardando': return 'Aguardando';
+      case 'EmAtendimento': return 'Em atendimento';
+      case 'Atendido': return 'Atendido';
+      case 'Faltou': return 'Faltou';
+      default: return 'Agendado';
+    }
+  }
+
+  corStatus(status?: StatusAgendamento | null): string {
+    switch (status) {
+      case 'Confirmado': return 'success';
+      case 'Aguardando': return 'warning';
+      case 'EmAtendimento': return 'primary';
+      case 'Atendido': return 'medium';
+      case 'Faltou': return 'danger';
+      default: return 'warning';
+    }
+  }
+
+  async abrirGrade() {
+    const modal = await this.modalCtrl.create({ component: GradeModalComponent });
+    await modal.present();
+    const { data } = await modal.onDidDismiss();
+    if (data) this.carregarAgenda();
+  }
+
+  async abrirBloqueios() {
+    const modal = await this.modalCtrl.create({ component: BloqueiosModalComponent });
+    await modal.present();
+    await modal.onDidDismiss();
+    this.carregarAgenda();
+    this.carregarBloqueios();
   }
 
   atualizar(evento: Event) {
@@ -140,7 +197,9 @@ export class AgendaPage {
           chave,
           rotulo: dia ? rotuloDia(dia) : 'Sem data',
           hoje: !!dia && mesmoDia(dia, hoje),
-          itens: []
+          itens: [],
+          bloqueio: this.bloqueios.find(b =>
+            paraInputData(b.dataInicio) <= chave && paraInputData(b.dataFim) >= chave && (!b.idMedico || b.idMedico === a.idMedico))
         });
       }
       mapa.get(chave)!.itens.push(a);

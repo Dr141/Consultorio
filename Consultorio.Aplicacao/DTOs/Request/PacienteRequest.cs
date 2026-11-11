@@ -8,5 +8,8 @@ public record PacienteRequest(
     string? Cpf,
     DateTime? DtNasc,
     string? Telefone,
-    string? Observacao
+    string? Observacao,
+    [EmailAddress(ErrorMessage = "E-mail inválido")]
+    [StringLength(256, ErrorMessage = "E-mail muito longo")]
+    string? Email = null
 );

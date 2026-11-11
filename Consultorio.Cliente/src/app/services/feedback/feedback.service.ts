@@ -62,6 +62,57 @@ export class FeedbackService {
     return role === 'destructive' || role === 'confirm';
   }
 
+  /**
+   * Pede um texto curto ao usuário (ex.: motivo de anulação, adendo).
+   * Retorna o texto informado ou null se o usuário cancelar. Valida o tamanho mínimo antes de fechar.
+   */
+  async solicitarTexto(opcoes: {
+    titulo: string;
+    mensagem?: string;
+    placeholder?: string;
+    textoConfirmar?: string;
+    minimo?: number;
+    maximo?: number;
+    destrutivo?: boolean;
+  }): Promise<string | null> {
+    const minimo = opcoes.minimo ?? 5;
+    const maximo = opcoes.maximo ?? 500;
+    let erroAtual = '';
+
+    const alerta = await this.alertCtrl.create({
+      header: opcoes.titulo,
+      message: opcoes.mensagem,
+      cssClass: opcoes.destrutivo ? 'alerta-destrutivo alerta-texto' : 'alerta-texto',
+      inputs: [{
+        name: 'texto',
+        type: 'textarea',
+        placeholder: opcoes.placeholder ?? '',
+        attributes: { maxlength: maximo, rows: 4 }
+      }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: opcoes.textoConfirmar ?? 'Confirmar',
+          role: opcoes.destrutivo ? 'destructive' : 'confirm',
+          handler: (valores: { texto?: string }) => {
+            const texto = (valores?.texto ?? '').trim();
+            if (texto.length < minimo) {
+              erroAtual = `Escreva pelo menos ${minimo} caracteres.`;
+              alerta.message = `${opcoes.mensagem ? opcoes.mensagem + ' ' : ''}⚠ ${erroAtual}`;
+              return false; // mantém o diálogo aberto
+            }
+            return { values: { texto } };
+          }
+        }
+      ]
+    });
+
+    await alerta.present();
+    const { role, data } = await alerta.onDidDismiss<{ values?: { texto?: string } }>();
+    if (role !== 'confirm' && role !== 'destructive') return null;
+    return (data?.values?.texto ?? '').trim() || null;
+  }
+
   private async exibir(message: string, color: string, icon: string, duration: number): Promise<void> {
     // Evita empilhar vários toasts: o mais recente substitui o anterior.
     await this.toastAtual?.dismiss().catch(() => undefined);

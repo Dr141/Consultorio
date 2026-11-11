@@ -119,3 +119,12 @@ ion-col {
     flex-shrink: 0;
   }
 }
+
+.exame-card.exame-cancelado {
+  border-left-color: var(--ion-color-medium);
+  opacity: 0.75;
+
+  ion-card-title {
+    text-decoration: line-through;
+  }
+}

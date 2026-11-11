@@ -2,22 +2,25 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Paciente;
 
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Recepcao)]
+[Auditar("Paciente")]
 [ApiController]
 public class PacienteController(IPacienteAppService pacienteAppService) : ControllerBase
 {
     [HttpGet]
     [EndpointSummary("Obter todos os pacientes")]
     [ProducesResponseType(typeof(List<PacienteResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<PacienteResponse>>> ObterTodos()
+    public async Task<ActionResult<List<PacienteResponse>>> ObterTodos([FromQuery] bool incluirInativos = false)
     {
-        return Ok(await pacienteAppService.ObterTodosAsync());
+        return Ok(await pacienteAppService.ObterTodosAsync(incluirInativos));
     }
 
     [HttpGet("{id:int}")]
@@ -66,7 +69,8 @@ public class PacienteController(IPacienteAppService pacienteAppService) : Contro
     }
 
     [HttpDelete("{id:int}")]
-    [EndpointSummary("Excluir paciente")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
+    [EndpointSummary("Inativar paciente (o cadastro e o prontuário são preservados)")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Remover(int id)
@@ -75,6 +79,23 @@ public class PacienteController(IPacienteAppService pacienteAppService) : Contro
         {
             await pacienteAppService.RemoverAsync(id);
             return NoContent();
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/reativar")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
+    [EndpointSummary("Reativar paciente inativo")]
+    [ProducesResponseType(typeof(PacienteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PacienteResponse>> Reativar(int id)
+    {
+        try
+        {
+            return Ok(await pacienteAppService.ReativarAsync(id));
         }
         catch (DomainException ex)
         {

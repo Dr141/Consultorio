@@ -6,6 +6,16 @@
     <ion-title>Agenda</ion-title>
     <ion-buttons slot="end">
       <app-theme-toggle></app-theme-toggle>
+      @if (podeGerenciar) {
+        <ion-button (click)="abrirBloqueios()" title="Bloquear agenda (férias, feriados, congressos)" aria-label="Bloqueios de agenda">
+          <ion-icon slot="start" name="ban-outline"></ion-icon>
+          <span class="ion-hide-lg-down">Bloqueios</span>
+        </ion-button>
+        <ion-button (click)="abrirGrade()" title="Gerar horários em lote" aria-label="Gerar horários em lote">
+          <ion-icon slot="start" name="grid-outline"></ion-icon>
+          <span class="ion-hide-lg-down">Gerar horários</span>
+        </ion-button>
+      }
       <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Adicionar horário na agenda" title="Adicionar horário na agenda">
         <ion-icon slot="start" name="add-circle-outline"></ion-icon>
         <span class="ion-hide-md-down">Novo horário</span>
@@ -46,9 +56,15 @@
         <ion-icon name="calendar-outline"></ion-icon>
         <h3>Nenhum horário na agenda</h3>
         <p>Disponibilize horários dos médicos para começar a agendar pacientes.</p>
-        <ion-button (click)="adicionar()">
+        @if (podeGerenciar) {
+          <ion-button (click)="abrirGrade()">
+            <ion-icon slot="start" name="grid-outline"></ion-icon>
+            Gerar horários da semana
+          </ion-button>
+        }
+        <ion-button fill="outline" (click)="adicionar()">
           <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-          Criar horário
+          Criar um horário
         </ion-button>
       </div>
     } @else {
@@ -89,6 +105,9 @@
           <ion-icon [name]="g.hoje ? 'today-outline' : 'calendar-clear-outline'" aria-hidden="true"></ion-icon>
           {{ g.rotulo }}
           <span class="grupo-contagem">· {{ g.itens.length }} {{ g.itens.length === 1 ? 'horário' : 'horários' }}</span>
+          @if (g.bloqueio) {
+            <ion-badge color="danger" class="badge-bloqueio" [title]="g.bloqueio.motivo">Bloqueado: {{ g.bloqueio.motivo }}</ion-badge>
+          }
         </h2>
 
         <ion-grid class="ion-no-padding">
@@ -103,9 +122,14 @@
                       </div>
                       <div class="header-titles">
                         <ion-card-title>{{ a.hora.substring(0, 5) }}</ion-card-title>
-                        <ion-badge [color]="a.disponivel ? 'success' : 'warning'" class="status-badge">
-                          {{ a.disponivel ? 'Disponível' : 'Ocupado' }}
-                        </ion-badge>
+                        <div class="badges-linha">
+                          <ion-badge [color]="a.disponivel ? 'success' : corStatus(a.status)" class="status-badge">
+                            {{ a.disponivel ? 'Disponível' : rotuloStatus(a.status) }}
+                          </ion-badge>
+                          @if (a.tipo && a.tipo !== 'Consulta') {
+                            <ion-badge color="secondary" class="status-badge">{{ a.tipo }}</ion-badge>
+                          }
+                        </div>
                       </div>
                     </div>
                   </ion-card-header>
@@ -134,7 +158,7 @@
                           <ion-icon slot="start" name="person-add-outline"></ion-icon>
                           Agendar
                         </ion-button>
-                      } @else {
+                      } @else if (a.status === 'Agendado' || a.status === 'Confirmado' || a.status === 'Faltou') {
                         <ion-button fill="outline" color="warning" size="small" (click)="liberarHorario(a)">
                           <ion-icon slot="start" name="refresh-outline"></ion-icon>
                           Liberar

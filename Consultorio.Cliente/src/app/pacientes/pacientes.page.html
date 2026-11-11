@@ -74,19 +74,27 @@
           {{ pacientesFiltrados.length === 1 ? 'paciente' : 'pacientes' }}
           @if (termoBusca) { de {{ pacientes.length }} }
         </span>
+        <ion-chip [outline]="!mostrarInativos" [color]="mostrarInativos ? 'primary' : 'medium'" (click)="alternarInativos()"
+                  role="switch" [attr.aria-checked]="mostrarInativos">
+          <ion-icon [name]="mostrarInativos ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+          <ion-label>{{ mostrarInativos ? 'Exibindo inativos' : 'Mostrar inativos' }}</ion-label>
+        </ion-chip>
       </div>
 
       <ion-grid class="ion-no-padding">
         <ion-row>
           @for (p of pacientesFiltrados; track p.id) {
             <ion-col size="12" size-md="6" size-xl="4">
-              <ion-card class="registro-card">
+              <ion-card class="registro-card" [class.registro-inativo]="p.ativo === false">
                 <ion-card-header>
                   <div class="card-header-flex">
                     <div class="avatar-iniciais" aria-hidden="true">{{ iniciais(p.nome) }}</div>
                     <div class="header-titles">
                       <ion-card-title [title]="p.nome">{{ p.nome }}</ion-card-title>
                       <ion-card-subtitle>CPF: {{ p.cpf | cpf }}</ion-card-subtitle>
+                      @if (p.ativo === false) {
+                        <ion-badge color="medium" class="badge-inativo">Inativo desde {{ p.dtInativacao | dataBr:'dataHora' }}</ion-badge>
+                      }
                     </div>
                   </div>
                 </ion-card-header>
@@ -101,6 +109,13 @@
                     }
                   </div>
 
+                  @if (p.email) {
+                    <div class="info-row">
+                      <ion-icon name="mail-outline" aria-hidden="true"></ion-icon>
+                      <a class="link-telefone" [href]="'mailto:' + p.email">{{ p.email }}</a>
+                    </div>
+                  }
+
                   @if (p.dtNasc) {
                     <div class="info-row">
                       <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
@@ -113,18 +128,30 @@
                   }
 
                   <div class="card-actions">
-                    <ion-button fill="solid" color="secondary" size="small" (click)="abrirProntuario(p)" title="Ver e imprimir prontuário em formato de ofício">
-                      <ion-icon slot="start" name="document-text-outline"></ion-icon>
-                      Prontuário
-                    </ion-button>
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(p)" [attr.aria-label]="'Editar ' + p.nome">
-                      <ion-icon slot="start" name="create-outline"></ion-icon>
-                      Editar
-                    </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(p)" [attr.aria-label]="'Excluir ' + p.nome">
-                      <ion-icon slot="start" name="trash-outline"></ion-icon>
-                      Excluir
-                    </ion-button>
+                    @if (podeVerProntuario) {
+                      <ion-button fill="solid" color="secondary" size="small" (click)="abrirProntuario(p)" title="Ver e imprimir prontuário em formato de ofício">
+                        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+                        Prontuário
+                      </ion-button>
+                    }
+                    @if (p.ativo !== false) {
+                      <ion-button fill="outline" color="primary" size="small" (click)="editar(p)" [attr.aria-label]="'Editar ' + p.nome">
+                        <ion-icon slot="start" name="create-outline"></ion-icon>
+                        Editar
+                      </ion-button>
+                      @if (podeGerenciar) {
+                        <ion-button fill="clear" color="danger" size="small" (click)="remover(p)" [attr.aria-label]="'Inativar ' + p.nome"
+                                    title="O cadastro e o prontuário são preservados">
+                          <ion-icon slot="start" name="archive-outline"></ion-icon>
+                          Inativar
+                        </ion-button>
+                      }
+                    } @else if (podeGerenciar) {
+                      <ion-button fill="outline" color="success" size="small" (click)="reativar(p)" [attr.aria-label]="'Reativar ' + p.nome">
+                        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                        Reativar
+                      </ion-button>
+                    }
                   </div>
                 </ion-card-content>
               </ion-card>

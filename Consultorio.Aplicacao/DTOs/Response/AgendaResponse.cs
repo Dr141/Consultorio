@@ -11,5 +11,15 @@ public record AgendaResponse(
     bool Disponivel,
     int? IdConsulta,
     int? IdExame,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    string? Status = null,
+    string Tipo = "Consulta",
+    int DuracaoMinutos = 30,
+    DateTime? DtConfirmacao = null,
+    DateTime? DtChegada = null,
+    DateTime? DtInicioAtendimento = null,
+    DateTime? DtFimAtendimento = null,
+    DateTime? LembreteEnviadoEm = null,
+    string? TelefonePaciente = null,
+    string? EmailPaciente = null
 );

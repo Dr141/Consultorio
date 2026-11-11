@@ -1,0 +1,92 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Bloqueios de agenda</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <p class="secao-formulario">Novo bloqueio</p>
+  <ion-item class="form-item">
+    <ion-select label="Agenda de" labelPlacement="floating" [(ngModel)]="idMedico" cancelText="Cancelar" okText="Confirmar">
+      <ion-select-option [value]="null">Toda a clínica (feriado, recesso)</ion-select-option>
+      @for (m of medicos; track m.id) {
+        <ion-select-option [value]="m.id">{{ m.nome }}</ion-select-option>
+      }
+    </ion-select>
+  </ion-item>
+  <ion-grid class="ion-no-padding">
+    <ion-row>
+      <ion-col size="6">
+        <ion-item class="form-item">
+          <ion-input type="date" label="De" labelPlacement="floating" [(ngModel)]="dataInicio"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="6">
+        <ion-item class="form-item">
+          <ion-input type="date" label="Até" labelPlacement="floating" [(ngModel)]="dataFim" [min]="dataInicio"></ion-input>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  <ion-item class="form-item">
+    <ion-input label="Motivo *" labelPlacement="floating" [(ngModel)]="motivo" [maxlength]="200"
+               placeholder="Ex.: Férias, Feriado de Carnaval, Congresso de Cardiologia"></ion-input>
+  </ion-item>
+  <ion-button expand="block" color="danger" (click)="salvar()" [disabled]="!podeSalvar" class="btn-bloquear">
+    @if (salvando) { <ion-spinner slot="start" name="crescent"></ion-spinner> } @else { <ion-icon slot="start" name="ban-outline"></ion-icon> }
+    Bloquear período
+  </ion-button>
+
+  @if (conflitos.length > 0) {
+    <div class="conflitos" role="alert">
+      <h3><ion-icon name="warning-outline"></ion-icon> Pacientes para remarcar ({{ conflitos.length }})</h3>
+      <p>Estes agendamentos continuam na agenda dentro do período bloqueado. Entre em contato e remarque.</p>
+      <ion-list lines="full">
+        @for (c of conflitos; track c.id) {
+          <ion-item>
+            <ion-label>
+              <h3>{{ c.nomePaciente }}</h3>
+              <p>{{ c.data | dataBr }} às {{ c.hora.substring(0, 5) }} · {{ c.nomeMedico }}</p>
+            </ion-label>
+            @if (c.telefonePaciente) {
+              <ion-button slot="end" fill="clear" [href]="'tel:' + c.telefonePaciente" aria-label="Ligar para o paciente">
+                <ion-icon slot="icon-only" name="call-outline"></ion-icon>
+              </ion-button>
+            }
+          </ion-item>
+        }
+      </ion-list>
+    </div>
+  }
+
+  <p class="secao-formulario">Bloqueios vigentes e futuros</p>
+  @if (carregando) {
+    <div class="ion-text-center ion-padding"><ion-spinner name="crescent"></ion-spinner></div>
+  } @else if (bloqueios.length === 0) {
+    <p class="campo-dica">Nenhum bloqueio cadastrado.</p>
+  } @else {
+    <ion-list lines="full">
+      @for (b of bloqueios; track b.id) {
+        <ion-item>
+          <ion-icon slot="start" name="ban-outline" color="danger"></ion-icon>
+          <ion-label>
+            <h3>{{ b.motivo }}</h3>
+            <p>
+              {{ b.dataInicio | dataBr }}@if (b.dataFim !== b.dataInicio) { a {{ b.dataFim | dataBr }} }
+              · {{ b.nomeMedico || 'Toda a clínica' }}
+            </p>
+          </ion-label>
+          <ion-button slot="end" fill="clear" color="medium" (click)="remover(b)" aria-label="Remover bloqueio">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  }
+</ion-content>

@@ -15,7 +15,10 @@ public record ConsultaProntuarioResponse(
     List<string> EspecialidadesMedico,
     string Observacao,
     DateTime DataAtendimento,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    string Status = "Aberta",
+    string? MotivoAnulacao = null,
+    List<ConsultaAdendoResponse>? Adendos = null
 );
 
 public record ExameProntuarioResponse(
@@ -27,7 +30,9 @@ public record ExameProntuarioResponse(
     string? NomeMedico,
     string? CrmMedico,
     DateTime DataExame,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    bool Cancelado = false,
+    string? MotivoCancelamento = null
 );
 
 public record ProntuarioResumoResponse(

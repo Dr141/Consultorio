@@ -31,7 +31,8 @@ export class PacienteModalComponent implements OnInit {
       cpf: new FormControl(formatarCpf(this.paciente?.cpf), [Validators.required, cpfValidator()]),
       dtNasc: new FormControl(paraInputData(this.paciente?.dtNasc), [Validators.required, dataNaoFuturaValidator()]),
       telefone: new FormControl(formatarTelefone(this.paciente?.telefone), [Validators.required, telefoneValidator()]),
-      observacao: new FormControl(this.paciente?.observacao || '', [Validators.maxLength(500)])
+      observacao: new FormControl(this.paciente?.observacao || '', [Validators.maxLength(500)]),
+      email: new FormControl(this.paciente?.email || '', [Validators.email, Validators.maxLength(256)])
     });
   }
 
@@ -71,6 +72,7 @@ export class PacienteModalComponent implements OnInit {
       nome: valores.nome?.trim(),
       cpf: somenteDigitos(valores.cpf),
       telefone: somenteDigitos(valores.telefone),
+      email: valores.email?.trim() || null,
       idPessoa: this.paciente?.idPessoa
     };
 

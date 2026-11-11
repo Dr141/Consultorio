@@ -2,13 +2,16 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Prontuario;
 
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Clinico)]
+[Auditar("Prontuario")]
 [ApiController]
 public class ProntuarioController(IProntuarioAppService prontuarioAppService) : ControllerBase
 {

@@ -9,15 +9,25 @@ import { mensagemErro, possuiObrigatoriosPendentes } from '../shared/utils/valid
 @Component({
   selector: 'app-consulta-modal',
   templateUrl: './consulta-modal.component.html',
+  styles: [`
+    .toggle-rotulo { display: block; font-weight: 600; }
+    .toggle-dica { display: block; font-size: 12px; color: var(--app-text-muted); }
+  `],
   standalone: false
 })
 export class ConsultaModalComponent implements OnInit {
   @Input() consulta?: Consulta;
+  /** Quando aberto pela fila do dia: horário, paciente e médico do atendimento. */
+  @Input() idAgenda?: number;
+  @Input() idPacienteInicial?: number;
+  @Input() idMedicoInicial?: number;
+  @Input() descricaoAtendimento?: string;
 
   public form!: FormGroup;
   public salvando = false;
   public medicos: Medico[] = [];
   public pacientes: Paciente[] = [];
+  public finalizarAoSalvar = false;
 
   constructor(
     private modalCtrl: ModalController,
@@ -26,13 +36,13 @@ export class ConsultaModalComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.carregarDados();
-
     this.form = new FormGroup({
-      idPaciente: new FormControl(this.consulta?.idPaciente || null, this.consulta ? [] : [Validators.required]),
-      idMedico: new FormControl(this.consulta?.idMedico || null, this.consulta ? [] : [Validators.required]),
+      idPaciente: new FormControl(this.consulta?.idPaciente || this.idPacienteInicial || null, this.consulta ? [] : [Validators.required]),
+      idMedico: new FormControl(this.consulta?.idMedico || this.idMedicoInicial || null, this.consulta ? [] : [Validators.required]),
       observacao: new FormControl(this.consulta?.observacao || '', [Validators.required, Validators.minLength(2), Validators.maxLength(2000)])
     });
+
+    this.carregarDados();
   }
 
   carregarDados() {
@@ -43,6 +53,17 @@ export class ConsultaModalComponent implements OnInit {
     this.api.obterMedicos().subscribe({
       next: (m) => this.medicos = porNome(m),
       error: (err) => this.feedback.erro(err, 'Não foi possível carregar os médicos.')
+    });
+
+    // Quando quem está logado é médico, ele já vem selecionado como responsável.
+    this.api.obterMeuMedico().subscribe({
+      next: (meu) => {
+        const campo = this.form.get('idMedico');
+        if (meu && meu.ativo !== false && campo && !campo.value) {
+          campo.setValue(meu.id);
+        }
+      },
+      error: () => undefined
     });
 
     this.api.obterPacientes().subscribe({
@@ -88,13 +109,29 @@ export class ConsultaModalComponent implements OnInit {
       : this.api.criarConsulta({
           idPaciente: this.form.value.idPaciente,
           idMedico: this.form.value.idMedico,
-          observacao
+          observacao,
+          idAgenda: this.idAgenda ?? null
         });
 
     operacao.subscribe({
-      next: () => {
-        this.salvando = false;
-        this.modalCtrl.dismiss(true);
+      next: (salva) => {
+        if (!this.finalizarAoSalvar) {
+          this.salvando = false;
+          this.modalCtrl.dismiss(true);
+          return;
+        }
+        this.api.finalizarConsulta(salva.id).subscribe({
+          next: () => {
+            this.salvando = false;
+            this.modalCtrl.dismiss(true);
+          },
+          error: (err) => {
+            // A consulta foi salva; só a finalização falhou. Fecha e avisa.
+            this.salvando = false;
+            this.feedback.erro(err, 'A consulta foi salva, mas não foi possível finalizá-la.');
+            this.modalCtrl.dismiss(true);
+          }
+        });
       },
       error: (err) => {
         this.salvando = false;

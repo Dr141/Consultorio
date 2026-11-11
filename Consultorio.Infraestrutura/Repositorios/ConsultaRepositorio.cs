@@ -14,6 +14,7 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
             .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
             .Include(c => c.Agenda)
+            .Include(c => c.Adendos)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 
@@ -23,6 +24,7 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
             .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
             .Include(c => c.Agenda)
+            .Include(c => c.Adendos)
             .OrderByDescending(c => c.DtCriacao)
             .AsNoTracking()
             .ToListAsync();
@@ -34,6 +36,7 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
             .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
             .Include(c => c.Agenda)
+            .Include(c => c.Adendos)
             .Where(c => c.IdPaciente == idPaciente)
             .OrderByDescending(c => c.DtCriacao)
             .AsNoTracking()
@@ -46,6 +49,7 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
             .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
             .Include(c => c.Agenda)
+            .Include(c => c.Adendos)
             .Where(c => c.IdMedico == idMedico)
             .OrderByDescending(c => c.DtCriacao)
             .AsNoTracking()
@@ -62,6 +66,7 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
             .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
             .Include(c => c.Agenda)
+            .Include(c => c.Adendos)
             .Where(c => c.IdPaciente == idPaciente);
 
         if (idMedico.HasValue && idMedico.Value > 0)

@@ -4,6 +4,7 @@ import { ModalController } from '@ionic/angular';
 import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
+import { RoleService } from '../services/role/role.service';
 import { Paciente } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { PacienteModalComponent } from './paciente-modal.component';
@@ -19,17 +20,28 @@ export class PacientesPage {
   public pacientesFiltrados: Paciente[] = [];
   public termoBusca = '';
   public carregando = false;
+  public mostrarInativos = false;
+  public podeVerProntuario = false;
+  public podeGerenciar = false;
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
     private feedback: FeedbackService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private role: RoleService
   ) {}
 
   // O Ionic dispara ionViewWillEnter também na primeira entrada, então não é preciso carregar no ngOnInit.
   ionViewWillEnter() {
+    this.podeVerProntuario = this.role.ehClinico();
+    this.podeGerenciar = this.role.ehGestao();
+    this.carregarPacientes();
+  }
+
+  alternarInativos() {
+    this.mostrarInativos = !this.mostrarInativos;
     this.carregarPacientes();
   }
 
@@ -40,7 +52,7 @@ export class PacientesPage {
   carregarPacientes(aoConcluir?: () => void) {
     this.carregando = true;
     this.cdr.markForCheck();
-    this.api.obterPacientes()
+    this.api.obterPacientes(this.mostrarInativos)
       .pipe(finalize(() => {
         this.carregando = false;
         aoConcluir?.();
@@ -100,19 +112,29 @@ export class PacientesPage {
 
   async remover(paciente: Paciente) {
     const confirmado = await this.feedback.confirmar({
-      titulo: 'Excluir paciente?',
-      mensagem: `O cadastro de ${paciente.nome} será removido. Esta ação não pode ser desfeita.`,
-      textoConfirmar: 'Excluir',
+      titulo: 'Inativar paciente?',
+      mensagem: `${paciente.nome} deixará de aparecer nas listas e não poderá ser agendado. O cadastro e o prontuário são preservados e podem ser reativados a qualquer momento.`,
+      textoConfirmar: 'Inativar',
       destrutivo: true
     });
     if (!confirmado) return;
 
     this.api.removerPaciente(paciente.id).subscribe({
       next: () => {
-        this.feedback.sucesso('Paciente excluído.');
+        this.feedback.sucesso('Paciente inativado.');
         this.carregarPacientes();
       },
-      error: (err) => this.feedback.erro(err, 'Erro ao excluir paciente.')
+      error: (err) => this.feedback.erro(err, 'Erro ao inativar paciente.')
+    });
+  }
+
+  reativar(paciente: Paciente) {
+    this.api.reativarPaciente(paciente.id).subscribe({
+      next: () => {
+        this.feedback.sucesso(`${paciente.nome} foi reativado(a).`);
+        this.carregarPacientes();
+      },
+      error: (err) => this.feedback.erro(err, 'Erro ao reativar paciente.')
     });
   }
 }

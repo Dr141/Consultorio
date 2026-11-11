@@ -2,13 +2,20 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Consulta;
 
+/// <summary>
+/// Registros de consulta compõem o prontuário: só perfis clínicos acessam, todo acesso é auditado
+/// e nenhum registro é apagado (consultas são finalizadas, complementadas por adendo ou anuladas).
+/// </summary>
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Clinico)]
+[Auditar("Consulta")]
 [ApiController]
 public class ConsultaController(IConsultaAppService consultaAppService) : ControllerBase
 {
@@ -65,15 +72,62 @@ public class ConsultaController(IConsultaAppService consultaAppService) : Contro
     }
 
     [HttpPut("{id:int}/observacao")]
-    [EndpointSummary("Atualizar observações/evolução da consulta")]
+    [EndpointSummary("Atualizar a evolução de uma consulta ainda aberta")]
     [ProducesResponseType(typeof(ConsultaResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ConsultaResponse>> AtualizarObservacao(int id, [FromBody] string observacao)
     {
         try
         {
-            var atualizada = await consultaAppService.AtualizarObservacaoAsync(id, observacao);
-            return Ok(atualizada);
+            return Ok(await consultaAppService.AtualizarObservacaoAsync(id, observacao, User.ObterUsuarioAtual()));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/finalizar")]
+    [EndpointSummary("Finalizar a consulta (a evolução passa a ser imutável)")]
+    [ProducesResponseType(typeof(ConsultaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ConsultaResponse>> Finalizar(int id)
+    {
+        try
+        {
+            return Ok(await consultaAppService.FinalizarAsync(id, User.ObterUsuarioAtual()));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/anular")]
+    [EndpointSummary("Anular consulta registrada por engano (o registro permanece no histórico)")]
+    [ProducesResponseType(typeof(ConsultaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ConsultaResponse>> Anular(int id, [FromBody] MotivoRequest request)
+    {
+        try
+        {
+            return Ok(await consultaAppService.AnularAsync(id, request.Motivo, User.ObterUsuarioAtual()));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:int}/adendos")]
+    [EndpointSummary("Adicionar adendo a uma consulta finalizada")]
+    [ProducesResponseType(typeof(ConsultaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ConsultaResponse>> AdicionarAdendo(int id, [FromBody] AdendoRequest request)
+    {
+        try
+        {
+            return Ok(await consultaAppService.AdicionarAdendoAsync(id, request.Texto, User.ObterUsuarioAtual()));
         }
         catch (DomainException ex)
         {
@@ -82,8 +136,7 @@ public class ConsultaController(IConsultaAppService consultaAppService) : Contro
     }
 
     [HttpDelete("{id:int}")]
-    [EndpointSummary("Excluir consulta")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [EndpointSummary("Exclusão não permitida: use anular")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Remover(int id)
     {

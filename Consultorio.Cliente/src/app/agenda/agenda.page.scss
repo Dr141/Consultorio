@@ -117,3 +117,19 @@ ion-col {
 .lista-resumo ion-chip {
   margin: 0;
 }
+
+.badges-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.grupo-titulo .badge-bloqueio {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

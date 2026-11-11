@@ -63,18 +63,35 @@
       </div>
     } @else {
       <div class="lista-resumo">
-        <span class="lista-total">
-          <strong>{{ consultasFiltradas.length }}</strong>
-          {{ consultasFiltradas.length === 1 ? 'consulta' : 'consultas' }}
-          @if (termoBusca) { de {{ consultas.length }} } · mais recentes primeiro
-        </span>
+        <ion-segment [value]="filtroStatus" (ionChange)="mudarFiltroStatus($any($event).detail.value)" aria-label="Filtrar consultas por situação">
+          <ion-segment-button value="todas">
+            <ion-label>Todas ({{ totais.todas }})</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="Aberta">
+            <ion-label>Em aberto ({{ totais.abertas }})</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="Finalizada">
+            <ion-label>Finalizadas ({{ totais.finalizadas }})</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="Anulada">
+            <ion-label>Anuladas ({{ totais.anuladas }})</ion-label>
+          </ion-segment-button>
+        </ion-segment>
       </div>
+
+      @if (consultasVisiveis.length === 0) {
+        <div class="ion-text-center ion-padding empty-state">
+          <ion-icon name="filter-outline"></ion-icon>
+          <h3>Nenhuma consulta nesta situação</h3>
+          <p>Altere o filtro acima para ver as demais consultas.</p>
+        </div>
+      }
 
       <ion-grid class="ion-no-padding">
         <ion-row>
-          @for (c of consultasFiltradas; track c.id) {
+          @for (c of consultasVisiveis; track c.id) {
             <ion-col size="12" size-md="6" size-xl="4">
-              <ion-card class="registro-card consulta-card">
+              <ion-card class="registro-card consulta-card" [class.consulta-anulada]="c.status === 'Anulada'">
                 <ion-card-header>
                   <div class="header-row">
                     <ion-card-title [title]="c.nomePaciente">{{ c.nomePaciente }}</ion-card-title>
@@ -86,6 +103,12 @@
                     <ion-icon name="medkit-outline" aria-hidden="true"></ion-icon>
                     Médico: {{ c.nomeMedico }}
                   </ion-card-subtitle>
+                  <div class="status-linha">
+                    <ion-badge [color]="corStatus(c.status)" class="status-consulta">{{ rotuloStatus(c.status) }}</ion-badge>
+                    @if (c.status === 'Finalizada' && c.dtFinalizacao) {
+                      <span class="status-detalhe">em {{ c.dtFinalizacao | dataBr:'dataHora' }}</span>
+                    }
+                  </div>
                 </ion-card-header>
 
                 <ion-card-content>
@@ -98,19 +121,52 @@
                     }
                   </div>
 
+                  @if (c.status === 'Anulada') {
+                    <div class="aviso-anulacao">
+                      <ion-icon name="ban-outline" aria-hidden="true"></ion-icon>
+                      <span><strong>Anulada</strong> em {{ c.dtAnulacao | dataBr:'dataHora' }}: {{ c.motivoAnulacao }}</span>
+                    </div>
+                  }
+
+                  @if (c.adendos?.length) {
+                    <div class="adendos">
+                      <p class="adendos-titulo">Adendos ({{ c.adendos!.length }})</p>
+                      @for (a of c.adendos; track a.id) {
+                        <div class="adendo">
+                          <p class="adendo-texto">{{ a.texto }}</p>
+                          <span class="adendo-autor">{{ a.autor }} · {{ a.dtCriacao | dataBr:'dataHora' }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+
                   <div class="card-actions">
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(c)">
-                      <ion-icon slot="start" name="create-outline"></ion-icon>
-                      Editar Observação
-                    </ion-button>
+                    @if (c.status === 'Aberta' || !c.status) {
+                      <ion-button fill="outline" color="primary" size="small" (click)="editar(c)">
+                        <ion-icon slot="start" name="create-outline"></ion-icon>
+                        Editar Observação
+                      </ion-button>
+                      <ion-button fill="solid" color="success" size="small" (click)="finalizar(c)" title="Encerra o atendimento; depois disso só é possível incluir adendos">
+                        <ion-icon slot="start" name="lock-closed-outline"></ion-icon>
+                        Finalizar
+                      </ion-button>
+                    }
+                    @if (c.status === 'Finalizada') {
+                      <ion-button fill="outline" color="primary" size="small" (click)="adicionarAdendo(c)">
+                        <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                        Adendo
+                      </ion-button>
+                    }
                     <ion-button fill="clear" color="secondary" size="small" (click)="abrirProntuario(c)" title="Abrir prontuário do paciente">
                       <ion-icon slot="start" name="document-text-outline"></ion-icon>
                       Prontuário
                     </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(c)">
-                      <ion-icon slot="start" name="trash-outline"></ion-icon>
-                      Excluir
-                    </ion-button>
+                    @if (c.status !== 'Anulada') {
+                      <ion-button fill="clear" color="danger" size="small" (click)="anular(c)" title="Para registros feitos por engano; o registro continua no histórico">
+                        <ion-icon slot="start" name="ban-outline"></ion-icon>
+                        Anular
+                      </ion-button>
+                    }
                   </div>
                 </ion-card-content>
               </ion-card>

@@ -9,5 +9,10 @@ public record ConsultaResponse(
     string Observacao,
     int? IdAgenda,
     DateTime? DataHora,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    string Status = "Aberta",
+    DateTime? DtFinalizacao = null,
+    DateTime? DtAnulacao = null,
+    string? MotivoAnulacao = null,
+    List<ConsultaAdendoResponse>? Adendos = null
 );

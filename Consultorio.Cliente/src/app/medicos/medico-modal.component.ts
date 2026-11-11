@@ -38,7 +38,8 @@ export class MedicoModalComponent implements OnInit {
       dtNasc: new FormControl(paraInputData(this.medico?.dtNasc), [Validators.required, dataNaoFuturaValidator()]),
       telefone: new FormControl(formatarTelefone(this.medico?.telefone), [Validators.required, telefoneValidator()]),
       especialidades: new FormControl(this.medico?.especialidades || [], [Validators.required]),
-      observacao: new FormControl(this.medico?.observacao || '', [Validators.maxLength(500)])
+      observacao: new FormControl(this.medico?.observacao || '', [Validators.maxLength(500)]),
+      emailUsuario: new FormControl(this.medico?.emailUsuario || '', [Validators.email, Validators.maxLength(256)])
     });
   }
 
@@ -88,6 +89,7 @@ export class MedicoModalComponent implements OnInit {
       ...valores,
       nome: valores.nome?.trim(),
       crm: valores.crm?.trim().toUpperCase(),
+      emailUsuario: valores.emailUsuario?.trim() || null,
       cpf: somenteDigitos(valores.cpf),
       telefone: somenteDigitos(valores.telefone),
       idPessoa: this.medico?.idPessoa

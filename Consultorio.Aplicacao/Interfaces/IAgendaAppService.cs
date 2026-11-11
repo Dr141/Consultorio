@@ -14,4 +14,22 @@ public interface IAgendaAppService
     Task<AgendaResponse> AgendarPacienteAsync(int id, int idPaciente);
     Task<AgendaResponse> LiberarHorarioAsync(int id);
     Task RemoverAsync(int id);
+
+    /// <summary>Agendamentos (horários com paciente) de um dia, para a fila da recepção.</summary>
+    Task<List<AgendaResponse>> ObterDoDiaAsync(DateTime data, int? idMedico = null);
+    Task<AgendaResponse> ConfirmarAsync(int id);
+    Task<AgendaResponse> RegistrarChegadaAsync(int id);
+    Task<AgendaResponse> IniciarAtendimentoAsync(int id);
+    Task<AgendaResponse> ConcluirAtendimentoAsync(int id);
+    Task<AgendaResponse> RegistrarFaltaAsync(int id);
+
+    Task<GradeResponse> GerarGradeAsync(GradeRequest request);
+    Task<List<BloqueioResponse>> ObterBloqueiosAsync();
+    Task<BloqueioCriadoResponse> CriarBloqueioAsync(BloqueioRequest request);
+    Task RemoverBloqueioAsync(int id);
+
+    Task<AgendaResponse?> ObterPorTokenAsync(Guid token);
+
+    /// <summary>Resposta do paciente pelo link do lembrete (sem login).</summary>
+    Task<ConfirmacaoPacienteResponse> ResponderConfirmacaoAsync(Guid token, bool confirmar);
 }

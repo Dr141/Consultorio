@@ -2,13 +2,15 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Pessoa;
 
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Recepcao)]
 [ApiController]
 public class PessoaController(IPessoaAppService pessoaAppService) : ControllerBase
 {
@@ -66,6 +68,7 @@ public class PessoaController(IPessoaAppService pessoaAppService) : ControllerBa
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
     [EndpointSummary("Excluir pessoa")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

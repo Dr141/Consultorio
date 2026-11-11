@@ -1,0 +1,94 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Auditoria de Acessos</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="page-container">
+    <ion-card class="filtros-card">
+      <ion-card-header>
+        <ion-card-title>Quem acessou o quê</ion-card-title>
+        <ion-card-subtitle>Leituras e alterações de pacientes, consultas, exames e prontuários</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            <ion-col size="6" size-md="2">
+              <ion-item class="form-item">
+                <ion-input type="date" label="De" labelPlacement="floating" [(ngModel)]="dataInicio"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-md="2">
+              <ion-item class="form-item">
+                <ion-input type="date" label="Até" labelPlacement="floating" [(ngModel)]="dataFim"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="12" size-md="3">
+              <ion-item class="form-item">
+                <ion-input label="Usuário (e-mail)" labelPlacement="floating" [(ngModel)]="usuario" placeholder="parte do e-mail" (keyup.enter)="buscar()"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="7" size-md="3">
+              <ion-item class="form-item">
+                <ion-select label="Recurso" labelPlacement="floating" [(ngModel)]="recurso" placeholder="Todos" cancelText="Cancelar" okText="Confirmar">
+                  <ion-select-option [value]="null">Todos</ion-select-option>
+                  @for (r of recursos; track r) {
+                    <ion-select-option [value]="r">{{ r }}</ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+            </ion-col>
+            <ion-col size="5" size-md="2">
+              <ion-item class="form-item">
+                <ion-input label="Id do registro" labelPlacement="floating" [(ngModel)]="idRecurso" (keyup.enter)="buscar()"></ion-input>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+        <div class="filtros-acoes">
+          <ion-button (click)="buscar()" [disabled]="carregando">
+            <ion-icon slot="start" name="search-outline"></ion-icon>
+            Consultar
+          </ion-button>
+          <ion-button fill="clear" color="medium" (click)="limpar()">Limpar filtros</ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    @if (carregando && registros.length === 0) {
+      <div class="loading-state ion-text-center ion-padding">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Consultando registros...</p>
+      </div>
+    } @else if (registros.length === 0) {
+      <div class="empty-state ion-text-center ion-padding">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <h3>Nenhum registro no período</h3>
+        <p>Amplie o período ou remova filtros.</p>
+      </div>
+    } @else {
+      <div class="lista-resumo">
+        <span class="lista-total"><strong>{{ registros.length }}</strong> registros (mais recentes primeiro, até 500)</span>
+      </div>
+      <ion-list class="lista-auditoria">
+        @for (r of registros; track r.id) {
+          <ion-item lines="full">
+            <ion-badge slot="start" [color]="corAcao(r)" class="badge-acao">{{ rotuloAcao(r.acao) }}</ion-badge>
+            <ion-label class="ion-text-wrap">
+              <h3>{{ r.usuario }} · {{ r.recurso }}@if (r.idRecurso) { #{{ r.idRecurso }} }</h3>
+              <p>{{ r.dtOcorrencia | dataBr:'dataHora' }} · {{ r.metodo }} {{ r.caminho }}</p>
+              <p>Resultado: {{ r.statusCode }}@if (r.ip) { · IP {{ r.ip }} }</p>
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    }
+  </div>
+</ion-content>

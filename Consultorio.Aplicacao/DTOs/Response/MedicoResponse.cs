@@ -12,5 +12,7 @@ public record MedicoResponse(
     string Crm,
     List<Especialidade> Especialidades,
     DateTime DtCriacao,
-    string? Observacao = null
+    string? Observacao = null,
+    bool Ativo = true,
+    string? EmailUsuario = null
 );

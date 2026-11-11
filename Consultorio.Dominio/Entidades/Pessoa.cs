@@ -12,6 +12,9 @@ public class Pessoa : Entidade
     public Telefone Telefone { get; private set; } = null!;
     public string? Observacao { get; private set; }
 
+    /// <summary>E-mail de contato (opcional). Usado para lembretes e confirmação de consultas.</summary>
+    public string? Email { get; private set; }
+
     // Propriedades de navegação EF Core
     public Medico? Medico { get; private set; }
     public Paciente? Paciente { get; private set; }
@@ -39,6 +42,20 @@ public class Pessoa : Entidade
         DtNasc = DateTime.SpecifyKind(dtNasc, DateTimeKind.Utc);
         Telefone = telefone;
         Observacao = observacao?.Trim();
+    }
+
+    public void DefinirEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            Email = null;
+            return;
+        }
+
+        var normalizado = email.Trim().ToLowerInvariant();
+        DomainException.When(normalizado.Length > 256, "E-mail muito longo.");
+        DomainException.When(!System.Text.RegularExpressions.Regex.IsMatch(normalizado, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"), "E-mail inválido.");
+        Email = normalizado;
     }
 
     private static void Validar(string nome, Cpf cpf, DateTime dtNasc, Telefone telefone, string? observacao)

@@ -8,5 +8,8 @@ public record PacienteResponse(
     DateTime DtNasc,
     string Telefone,
     string? Observacao,
-    DateTime DtCriacao
+    DateTime DtCriacao,
+    bool Ativo = true,
+    DateTime? DtInativacao = null,
+    string? Email = null
 );

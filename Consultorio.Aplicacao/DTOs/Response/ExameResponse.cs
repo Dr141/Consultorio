@@ -11,5 +11,8 @@ public record ExameResponse(
     DateTime DtCriacao,
     int? IdMedico = null,
     string? NomeMedico = null,
-    string? CrmMedico = null
+    string? CrmMedico = null,
+    bool Cancelado = false,
+    DateTime? DtCancelamento = null,
+    string? MotivoCancelamento = null
 );

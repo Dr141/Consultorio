@@ -3,11 +3,12 @@ import { ModalController } from '@ionic/angular';
 import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
+import { RoleService } from '../services/role/role.service';
 import { Exame } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { ExameModalComponent } from './exame-modal.component';
 
-type FiltroExame = 'todos' | 'pendentes' | 'laudados';
+type FiltroExame = 'todos' | 'pendentes' | 'laudados' | 'cancelados';
 
 @Component({
   selector: 'app-exames',
@@ -21,16 +22,19 @@ export class ExamesPage {
   public termoBusca = '';
   public carregando = false;
   public filtroStatus: FiltroExame = 'todos';
-  public totais = { todos: 0, pendentes: 0, laudados: 0 };
+  public totais = { todos: 0, pendentes: 0, laudados: 0, cancelados: 0 };
+  public podeLaudar = false;
 
   constructor(
     private api: ConsultorioApiService,
     private modalCtrl: ModalController,
     private feedback: FeedbackService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private role: RoleService
   ) {}
 
   ionViewWillEnter() {
+    this.podeLaudar = this.role.ehClinico();
     this.carregarExames();
   }
 
@@ -73,15 +77,21 @@ export class ExamesPage {
       correspondeBusca(this.termoBusca, e.descricao, e.nomePaciente, e.nomeMedico, e.resultado)
     );
 
+    const ativos = encontrados.filter(e => !e.cancelado);
     this.totais = {
-      todos: encontrados.length,
-      pendentes: encontrados.filter(e => !e.resultado).length,
-      laudados: encontrados.filter(e => !!e.resultado).length
+      todos: ativos.length,
+      pendentes: ativos.filter(e => !e.resultado).length,
+      laudados: ativos.filter(e => !!e.resultado).length,
+      cancelados: encontrados.length - ativos.length
     };
 
-    this.examesFiltrados = encontrados.filter(e =>
-      this.filtroStatus === 'todos' || (this.filtroStatus === 'pendentes' ? !e.resultado : !!e.resultado)
-    );
+    // "Todos" mostra os exames válidos; os cancelados ficam em uma aba própria.
+    switch (this.filtroStatus) {
+      case 'pendentes': this.examesFiltrados = ativos.filter(e => !e.resultado); break;
+      case 'laudados': this.examesFiltrados = ativos.filter(e => !!e.resultado); break;
+      case 'cancelados': this.examesFiltrados = encontrados.filter(e => e.cancelado); break;
+      default: this.examesFiltrados = ativos;
+    }
   }
 
   async adicionar() {
@@ -106,21 +116,22 @@ export class ExamesPage {
     }
   }
 
-  async remover(exame: Exame) {
-    const confirmado = await this.feedback.confirmar({
-      titulo: 'Excluir exame?',
-      mensagem: `O exame "${exame.descricao}" de ${exame.nomePaciente ?? 'paciente'} será removido${exame.resultado ? ', incluindo o laudo' : ''}. Esta ação não pode ser desfeita.`,
-      textoConfirmar: 'Excluir',
+  async cancelar(exame: Exame) {
+    const motivo = await this.feedback.solicitarTexto({
+      titulo: 'Cancelar exame?',
+      mensagem: `"${exame.descricao}" de ${exame.nomePaciente ?? 'paciente'} ficará registrado como cancelado, com o motivo informado.`,
+      placeholder: 'Motivo do cancelamento (ex.: paciente desistiu, pedido duplicado)',
+      textoConfirmar: 'Cancelar exame',
       destrutivo: true
     });
-    if (!confirmado) return;
+    if (!motivo) return;
 
-    this.api.removerExame(exame.id).subscribe({
+    this.api.cancelarExame(exame.id, motivo).subscribe({
       next: () => {
-        this.feedback.sucesso('Exame excluído.');
+        this.feedback.sucesso('Exame cancelado.');
         this.carregarExames();
       },
-      error: (err) => this.feedback.erro(err, 'Erro ao excluir exame.')
+      error: (err) => this.feedback.erro(err, 'Erro ao cancelar exame.')
     });
   }
 }

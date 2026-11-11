@@ -63,6 +63,9 @@
           <ion-segment-button value="laudados">
             <ion-label>Com laudo ({{ totais.laudados }})</ion-label>
           </ion-segment-button>
+          <ion-segment-button value="cancelados">
+            <ion-label>Cancelados ({{ totais.cancelados }})</ion-label>
+          </ion-segment-button>
         </ion-segment>
       </div>
 
@@ -81,13 +84,17 @@
           <ion-row>
             @for (e of examesFiltrados; track e.id) {
               <ion-col size="12" size-md="6" size-xl="4">
-                <ion-card class="registro-card exame-card" [class.exame-pendente]="!e.resultado">
+                <ion-card class="registro-card exame-card" [class.exame-pendente]="!e.resultado && !e.cancelado" [class.exame-cancelado]="e.cancelado">
                   <ion-card-header>
                     <div class="header-row">
                       <ion-card-title [title]="e.descricao">{{ e.descricao }}</ion-card-title>
-                      <ion-badge [color]="e.resultado ? 'success' : 'warning'">
-                        {{ e.resultado ? 'Laudo Pronto' : 'Aguardando' }}
-                      </ion-badge>
+                      @if (e.cancelado) {
+                        <ion-badge color="medium">Cancelado</ion-badge>
+                      } @else {
+                        <ion-badge [color]="e.resultado ? 'success' : 'warning'">
+                          {{ e.resultado ? 'Laudo Pronto' : 'Aguardando' }}
+                        </ion-badge>
+                      }
                     </div>
                     <ion-card-subtitle>
                       <ion-icon name="person-outline" aria-hidden="true"></ion-icon>
@@ -108,7 +115,12 @@
                   </ion-card-header>
 
                   <ion-card-content>
-                    @if (e.resultado) {
+                    @if (e.cancelado) {
+                      <div class="sem-resultado-box">
+                        <ion-icon name="ban-outline" aria-hidden="true"></ion-icon>
+                        <span>Cancelado em {{ e.dtCancelamento | dataBr:'dataHora' }}: {{ e.motivoCancelamento }}</span>
+                      </div>
+                    } @else if (e.resultado) {
                       <div class="resultado-box">
                         <strong class="resultado-titulo">Resultado / Laudo:</strong>
                         <p class="resultado-texto">{{ e.resultado }}</p>
@@ -120,16 +132,22 @@
                       </div>
                     }
 
-                    <div class="card-actions">
-                      <ion-button [fill]="e.resultado ? 'outline' : 'solid'" color="primary" size="small" (click)="editar(e)">
-                        <ion-icon slot="start" name="clipboard-outline"></ion-icon>
-                        {{ e.resultado ? 'Editar Laudo' : 'Lançar Laudo' }}
-                      </ion-button>
-                      <ion-button fill="clear" color="danger" size="small" (click)="remover(e)">
-                        <ion-icon slot="start" name="trash-outline"></ion-icon>
-                        Excluir
-                      </ion-button>
-                    </div>
+                    @if (!e.cancelado) {
+                      <div class="card-actions">
+                        @if (podeLaudar) {
+                          <ion-button [fill]="e.resultado ? 'outline' : 'solid'" color="primary" size="small" (click)="editar(e)">
+                            <ion-icon slot="start" name="clipboard-outline"></ion-icon>
+                            {{ e.resultado ? 'Editar Laudo' : 'Lançar Laudo' }}
+                          </ion-button>
+                        }
+                        @if (!e.resultado) {
+                          <ion-button fill="clear" color="danger" size="small" (click)="cancelar(e)" title="O registro continua no histórico com o motivo">
+                            <ion-icon slot="start" name="ban-outline"></ion-icon>
+                            Cancelar
+                          </ion-button>
+                        }
+                      </div>
+                    }
                   </ion-card-content>
                 </ion-card>
               </ion-col>

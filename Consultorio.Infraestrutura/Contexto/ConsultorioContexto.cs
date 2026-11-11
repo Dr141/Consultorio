@@ -13,6 +13,9 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
     public DbSet<Agenda> Agenda { get; set; } = null!;
     public DbSet<Consulta> Consulta { get; set; } = null!;
     public DbSet<Exame> Exame { get; set; } = null!;
+    public DbSet<ConsultaAdendo> ConsultaAdendo { get; set; } = null!;
+    public DbSet<RegistroAuditoria> RegistroAuditoria { get; set; } = null!;
+    public DbSet<BloqueioAgenda> BloqueioAgenda { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +37,7 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .IsRequired();
             builder.Property(p => p.Observacao).HasMaxLength(500);
             builder.Property(p => p.DtNasc).IsRequired();
+            builder.Property(p => p.Email).HasMaxLength(256);
         });
 
         // Configuração de Paciente
@@ -45,6 +49,9 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .HasForeignKey<Paciente>(p => p.IdPessoa)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+
+            builder.Property(p => p.Ativo).IsRequired();
+            builder.Property(p => p.DtInativacao);
         });
 
         // Configuração de Medico
@@ -72,6 +79,11 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .HasForeignKey<Medico>(m => m.IdPessoa)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
+
+            builder.Property(m => m.Ativo).IsRequired();
+            builder.Property(m => m.DtInativacao);
+            builder.Property(m => m.EmailUsuario).HasMaxLength(256);
+            builder.HasIndex(m => m.EmailUsuario);
         });
 
         // Configuração de Agenda
@@ -81,6 +93,13 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(a => a.Data).IsRequired();
             builder.Property(a => a.Hora).IsRequired();
             builder.Ignore(a => a.Disponivel);
+            builder.Ignore(a => a.InicioLocal);
+            builder.Property(a => a.Tipo).HasConversion<int>().IsRequired();
+            builder.Property(a => a.DuracaoMinutos).IsRequired();
+            builder.Property(a => a.Status).HasConversion<int?>();
+            builder.Property(a => a.TokenConfirmacao);
+            builder.HasIndex(a => a.TokenConfirmacao).IsUnique();
+            builder.HasIndex(a => new { a.Data, a.IdMedico });
 
             builder.HasOne(a => a.Medico)
                 .WithMany(m => m.Agendas)
@@ -98,6 +117,16 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
         {
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Observacao).HasMaxLength(2000).IsRequired();
+            builder.Property(c => c.Status).HasConversion<int>().IsRequired();
+            builder.Property(c => c.DtFinalizacao);
+            builder.Property(c => c.DtAnulacao);
+            builder.Property(c => c.MotivoAnulacao).HasMaxLength(500);
+
+            builder.HasMany(c => c.Adendos)
+                .WithOne()
+                .HasForeignKey(a => a.IdConsulta)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(c => c.Adendos).UsePropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasOne(c => c.Paciente)
                 .WithMany(p => p.Consultas)
@@ -123,6 +152,9 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Descricao).HasMaxLength(200).IsRequired();
             builder.Property(e => e.Resultado);
+            builder.Property(e => e.Cancelado).IsRequired();
+            builder.Property(e => e.DtCancelamento);
+            builder.Property(e => e.MotivoCancelamento).HasMaxLength(500);
 
             builder.HasOne(e => e.Paciente)
                 .WithMany(p => p.Exames)
@@ -139,6 +171,45 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .WithMany(m => m.Exames)
                 .HasForeignKey(e => e.IdMedico)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+        // Adendos de consulta (complementos após finalização)
+        modelBuilder.Entity<ConsultaAdendo>(builder =>
+        {
+            builder.ToTable("ConsultaAdendo");
+            builder.HasKey(a => a.Id);
+            builder.Property(a => a.Texto).HasMaxLength(ConsultaAdendo.TamanhoMaximoTexto).IsRequired();
+            builder.Property(a => a.Autor).HasMaxLength(256).IsRequired();
+            builder.HasIndex(a => a.IdConsulta);
+        });
+
+        // Trilha de auditoria (LGPD)
+        modelBuilder.Entity<RegistroAuditoria>(builder =>
+        {
+            builder.ToTable("RegistroAuditoria");
+            builder.HasKey(r => r.Id);
+            builder.Property(r => r.Usuario).HasMaxLength(256).IsRequired();
+            builder.Property(r => r.Acao).HasMaxLength(30).IsRequired();
+            builder.Property(r => r.Recurso).HasMaxLength(60).IsRequired();
+            builder.Property(r => r.IdRecurso).HasMaxLength(60);
+            builder.Property(r => r.Metodo).HasMaxLength(10).IsRequired();
+            builder.Property(r => r.Caminho).HasMaxLength(400).IsRequired();
+            builder.Property(r => r.Ip).HasMaxLength(64);
+            builder.HasIndex(r => r.DtCriacao);
+            builder.HasIndex(r => new { r.Recurso, r.IdRecurso });
+        });
+        // Bloqueios de agenda (férias, feriados, congressos)
+        modelBuilder.Entity<BloqueioAgenda>(builder =>
+        {
+            builder.ToTable("BloqueioAgenda");
+            builder.HasKey(b => b.Id);
+            builder.Property(b => b.DataInicio).IsRequired();
+            builder.Property(b => b.DataFim).IsRequired();
+            builder.Property(b => b.Motivo).HasMaxLength(200).IsRequired();
+            builder.HasOne(b => b.Medico)
+                .WithMany()
+                .HasForeignKey(b => b.IdMedico)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(b => new { b.DataInicio, b.DataFim });
         });
     }
 }

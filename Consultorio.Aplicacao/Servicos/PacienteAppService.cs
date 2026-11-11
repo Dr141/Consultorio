@@ -16,24 +16,26 @@ public class PacienteAppService(
 {
     private const string CacheKeyTodos = "pacientes:todos";
 
-    public async Task<List<PacienteResponse>> ObterTodosAsync()
+    public async Task<List<PacienteResponse>> ObterTodosAsync(bool incluirInativos = false)
     {
+        List<PacienteResponse>? response = null;
         if (cacheService is not null)
         {
-            var emCache = await cacheService.ObterAsync<List<PacienteResponse>>(CacheKeyTodos);
-            if (emCache is not null)
-                return emCache;
+            response = await cacheService.ObterAsync<List<PacienteResponse>>(CacheKeyTodos);
         }
 
-        var pacientes = await pacienteRepositorio.ObterTodosDetalhado();
-        var response = pacientes.Select(MapearResponse).ToList();
-
-        if (cacheService is not null)
+        if (response is null)
         {
-            await cacheService.DefinirAsync(CacheKeyTodos, response);
+            var pacientes = await pacienteRepositorio.ObterTodosDetalhado();
+            response = pacientes.Select(MapearResponse).ToList();
+
+            if (cacheService is not null)
+            {
+                await cacheService.DefinirAsync(CacheKeyTodos, response);
+            }
         }
 
-        return response;
+        return incluirInativos ? response : response.Where(p => p.Ativo).ToList();
     }
 
     public async Task<PacienteResponse?> ObterPorIdAsync(int id)
@@ -86,7 +88,12 @@ public class PacienteAppService(
             if (await pessoaRepositorio.ExisteCpf(cpfVo.Valor))
             {
                 var pessoaExistente = await pessoaRepositorio.ObterPorCpf(cpfVo.Valor);
-                if (pessoaExistente is null || await pacienteRepositorio.ObterPorIdPessoa(pessoaExistente.Id) is not null)
+                var cadastroExistente = pessoaExistente is null ? null : await pacienteRepositorio.ObterPorIdPessoa(pessoaExistente.Id);
+                if (cadastroExistente is not null && !cadastroExistente.Ativo)
+                {
+                    throw new DomainException($"Já existe um paciente inativo com o CPF {cpfVo.Formatado()} ({pessoaExistente!.Nome}). Reative o cadastro em vez de criar outro.");
+                }
+                if (pessoaExistente is null || cadastroExistente is not null)
                 {
                     throw new DomainException($"Já existe uma pessoa cadastrada com o CPF {cpfVo.Formatado()}.");
                 }
@@ -99,6 +106,12 @@ public class PacienteAppService(
                 pessoa = new Pessoa(request.Nome!, cpfVo, request.DtNasc!.Value, telVo, request.Observacao);
                 pessoa = await pessoaRepositorio.Adicionar(pessoa);
             }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            pessoa.DefinirEmail(request.Email);
+            pessoa = await pessoaRepositorio.Atualizar(pessoa);
         }
 
         var paciente = new Paciente(pessoa);
@@ -130,6 +143,7 @@ public class PacienteAppService(
             }
 
             paciente.Pessoa.Atualizar(request.Nome, cpf, dtNasc, tel, request.Observacao ?? paciente.Pessoa.Observacao);
+            paciente.Pessoa.DefinirEmail(request.Email);
             await pessoaRepositorio.Atualizar(paciente.Pessoa);
         }
 
@@ -149,8 +163,25 @@ public class PacienteAppService(
         var paciente = await pacienteRepositorio.ObterId(id)
             ?? throw new DomainException($"Paciente com id {id} não encontrado.");
 
-        await pacienteRepositorio.Remover(paciente);
+        // Exclusão lógica: o prontuário deve ser preservado (Lei 13.787/2018, mínimo de 20 anos).
+        paciente.Inativar();
+        await pacienteRepositorio.Atualizar(paciente);
+        await LimparCache(id);
+    }
 
+    public async Task<PacienteResponse> ReativarAsync(int id)
+    {
+        var paciente = await pacienteRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Paciente com id {id} não encontrado.");
+
+        paciente.Reativar();
+        var atualizado = await pacienteRepositorio.Atualizar(paciente);
+        await LimparCache(id);
+        return MapearResponse(atualizado);
+    }
+
+    private async Task LimparCache(int id)
+    {
         if (cacheService is not null)
         {
             await cacheService.RemoverAsync(CacheKeyTodos);
@@ -167,6 +198,9 @@ public class PacienteAppService(
             p.Pessoa?.DtNasc ?? DateTime.MinValue,
             p.Pessoa?.Telefone?.Formatado() ?? string.Empty,
             p.Pessoa?.Observacao,
-            p.DtCriacao
+            p.DtCriacao,
+            p.Ativo,
+            p.DtInativacao,
+            p.Pessoa?.Email
         );
 }

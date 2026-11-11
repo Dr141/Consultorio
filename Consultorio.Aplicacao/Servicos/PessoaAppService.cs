@@ -107,16 +107,11 @@ public class PessoaAppService(
 
     public async Task RemoverAsync(int id)
     {
-        var pessoa = await pessoaRepositorio.ObterId(id)
+        _ = await pessoaRepositorio.ObterId(id)
             ?? throw new DomainException($"Pessoa com id {id} não encontrada.");
 
-        await pessoaRepositorio.Remover(pessoa);
-
-        if (cacheService is not null)
-        {
-            await cacheService.RemoverAsync(CacheKeyTodos);
-            await cacheService.RemoverAsync($"pessoas:{id}");
-        }
+        // Excluir a pessoa apagaria em cascata o paciente/médico e todo o prontuário vinculado.
+        throw new DomainException("Cadastros de pessoas não são excluídos. Inative o paciente ou o médico correspondente.");
     }
 
     public static PessoaResponse MapearResponse(Pessoa p) =>

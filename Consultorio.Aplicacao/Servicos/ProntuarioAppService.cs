@@ -64,7 +64,13 @@ public class ProntuarioAppService(
                 especialidades,
                 c.Observacao,
                 dataAtendimento,
-                c.DtCriacao
+                c.DtCriacao,
+                c.Status.ToString(),
+                c.MotivoAnulacao,
+                c.Adendos
+                    .OrderBy(a => a.DtCriacao)
+                    .Select(a => new ConsultaAdendoResponse(a.Id, a.Texto, a.Autor, a.DtCriacao))
+                    .ToList()
             );
         }).ToList();
 
@@ -94,13 +100,16 @@ public class ProntuarioAppService(
                 medico?.Pessoa?.Nome,
                 medico?.Crm?.Valor,
                 dataExame,
-                e.DtCriacao
+                e.DtCriacao,
+                e.Cancelado,
+                e.MotivoCancelamento
             );
         }).ToList();
 
-        int totalConsultas = consultasMapeadas.Count;
-        int totalExames = examesMapeados.Count;
-        int totalLaudosEmitidos = examesMapeados.Count(e => e.PossuiLaudo);
+        // Registros anulados/cancelados continuam no documento, mas não entram nos totais.
+        int totalConsultas = consultasMapeadas.Count(c => c.Status != "Anulada");
+        int totalExames = examesMapeados.Count(e => !e.Cancelado);
+        int totalLaudosEmitidos = examesMapeados.Count(e => e.PossuiLaudo && !e.Cancelado);
         int totalExamesPendentes = totalExames - totalLaudosEmitidos;
 
         var resumo = new ProntuarioResumoResponse(

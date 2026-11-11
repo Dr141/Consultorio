@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
 import { Observable, catchError, throwError } from 'rxjs';
-import { Agenda, Consulta, Especialidade, Exame, Medico, Paciente, Pessoa, ProntuarioRelatorio } from '../../types/types';
+import { Agenda, BloqueioAgenda, BloqueioCriado, Consulta, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -61,8 +61,13 @@ export class ConsultorioApiService {
   }
 
   // Pacientes
-  obterPacientes(): Observable<Paciente[]> {
-    return this.observable(this.http.get<Paciente[]>('/api/paciente'));
+  obterPacientes(incluirInativos = false): Observable<Paciente[]> {
+    const query = incluirInativos ? '?incluirInativos=true' : '';
+    return this.observable(this.http.get<Paciente[]>(`/api/paciente${query}`));
+  }
+
+  reativarPaciente(id: number): Observable<Paciente> {
+    return this.observable(this.http.patch<Paciente>(`/api/paciente/${id}/reativar`, {}));
   }
 
   obterPacientePorId(id: number): Observable<Paciente> {
@@ -82,8 +87,18 @@ export class ConsultorioApiService {
   }
 
   // Médicos
-  obterMedicos(): Observable<Medico[]> {
-    return this.observable(this.http.get<Medico[]>('/api/medico'));
+  obterMedicos(incluirInativos = false): Observable<Medico[]> {
+    const query = incluirInativos ? '?incluirInativos=true' : '';
+    return this.observable(this.http.get<Medico[]>(`/api/medico${query}`));
+  }
+
+  /** Médico vinculado ao usuário logado (null quando o usuário não é médico). */
+  obterMeuMedico(): Observable<Medico | null> {
+    return this.observable(this.http.get<Medico | null>('/api/medico/meu'));
+  }
+
+  reativarMedico(id: number): Observable<Medico> {
+    return this.observable(this.http.patch<Medico>(`/api/medico/${id}/reativar`, {}));
   }
 
   obterMedicoPorId(id: number): Observable<Medico> {
@@ -144,6 +159,38 @@ export class ConsultorioApiService {
     return this.observable(this.http.delete<void>(`/api/agenda/${id}`));
   }
 
+  /** Agendamentos de um dia (fila da recepção). Data no formato YYYY-MM-DD. */
+  obterAgendaDoDia(data: string, idMedico?: number | null): Observable<Agenda[]> {
+    const params = [`data=${encodeURIComponent(data)}`];
+    if (idMedico) params.push(`idMedico=${idMedico}`);
+    return this.observable(this.http.get<Agenda[]>(`/api/agenda/dia?${params.join('&')}`));
+  }
+
+  /** Transições da fila do dia: confirmar | chegada | iniciar | concluir | falta. */
+  alterarSituacaoAgenda(id: number, acao: 'confirmar' | 'chegada' | 'iniciar' | 'concluir' | 'falta'): Observable<Agenda> {
+    return this.observable(this.http.patch<Agenda>(`/api/agenda/${id}/${acao}`, {}));
+  }
+
+  enviarLembreteAgenda(id: number): Observable<void> {
+    return this.observable(this.http.post<void>(`/api/agenda/${id}/lembrete`, {}));
+  }
+
+  gerarGradeAgenda(grade: GradeRequest): Observable<GradeResultado> {
+    return this.observable(this.http.post<GradeResultado>('/api/agenda/grade', grade));
+  }
+
+  obterBloqueiosAgenda(): Observable<BloqueioAgenda[]> {
+    return this.observable(this.http.get<BloqueioAgenda[]>('/api/agenda/bloqueios'));
+  }
+
+  criarBloqueioAgenda(bloqueio: { idMedico?: number | null; dataInicio: string; dataFim: string; motivo: string }): Observable<BloqueioCriado> {
+    return this.observable(this.http.post<BloqueioCriado>('/api/agenda/bloqueios', bloqueio));
+  }
+
+  removerBloqueioAgenda(id: number): Observable<void> {
+    return this.observable(this.http.delete<void>(`/api/agenda/bloqueios/${id}`));
+  }
+
   // Consultas
   obterConsultas(): Observable<Consulta[]> {
     return this.observable(this.http.get<Consulta[]>('/api/consulta'));
@@ -171,8 +218,16 @@ export class ConsultorioApiService {
     }));
   }
 
-  removerConsulta(id: number): Observable<void> {
-    return this.observable(this.http.delete<void>(`/api/consulta/${id}`));
+  finalizarConsulta(id: number): Observable<Consulta> {
+    return this.observable(this.http.patch<Consulta>(`/api/consulta/${id}/finalizar`, {}));
+  }
+
+  anularConsulta(id: number, motivo: string): Observable<Consulta> {
+    return this.observable(this.http.patch<Consulta>(`/api/consulta/${id}/anular`, { motivo }));
+  }
+
+  adicionarAdendoConsulta(id: number, texto: string): Observable<Consulta> {
+    return this.observable(this.http.post<Consulta>(`/api/consulta/${id}/adendos`, { texto }));
   }
 
   // Exames
@@ -200,8 +255,17 @@ export class ConsultorioApiService {
     return this.observable(this.http.patch<Exame>(`/api/exame/${id}/resultado`, { resultado, idMedico }));
   }
 
-  removerExame(id: number): Observable<void> {
-    return this.observable(this.http.delete<void>(`/api/exame/${id}`));
+  cancelarExame(id: number, motivo: string): Observable<Exame> {
+    return this.observable(this.http.patch<Exame>(`/api/exame/${id}/cancelar`, { motivo }));
+  }
+
+  // Auditoria (somente administradores)
+  obterAuditoria(filtros?: { inicio?: string | null; fim?: string | null; usuario?: string | null; recurso?: string | null; idRecurso?: string | null }): Observable<RegistroAuditoria[]> {
+    const params = Object.entries(filtros ?? {})
+      .filter(([, v]) => v !== null && v !== undefined && `${v}`.trim() !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`);
+    const query = params.length ? `?${params.join('&')}` : '';
+    return this.observable(this.http.get<RegistroAuditoria[]>(`/api/auditoria${query}`));
   }
 
   // Prontuário do Paciente

@@ -33,6 +33,14 @@
       </ion-item>
 
       @if(ehAdmin()){
+        <ion-item button (click)="auditoriaNav()" class="menu-item">
+          <ion-icon slot="start" name="shield-checkmark-outline" color="primary"></ion-icon>
+          <ion-label>
+            <h3>Auditoria de Acessos</h3>
+            <p>Quem acessou ou alterou prontuários</p>
+          </ion-label>
+        </ion-item>
+
         <ion-item button (click)="users()" class="menu-item">
           <ion-icon slot="start" name="people-outline" color="primary"></ion-icon>
           <ion-label>
@@ -61,7 +69,7 @@
     </div>
 
     <div class="resumo-dia" aria-label="Resumo do dia">
-      <button type="button" class="resumo-item" (click)="agenda()">
+      <button type="button" class="resumo-item" (click)="recepcaoNav()">
         <ion-icon name="today-outline" aria-hidden="true"></ion-icon>
         <span class="resumo-valor">
           @if (resumo) { {{ resumo.ocupadosHoje }} } @else { <ion-skeleton-text [animated]="true"></ion-skeleton-text> }
@@ -123,6 +131,23 @@
           </ion-card>
         </ion-col>
 
+        <!-- Recepção / fila do dia -->
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="recepcaoNav()">
+            <div class="card-img-wrapper card-icone">
+              <ion-icon name="people-circle-outline" aria-hidden="true"></ion-icon>
+            </div>
+            <ion-card-header>
+              <ion-card-title>Recepção</ion-card-title>
+              <ion-card-subtitle>Fila do dia</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              Check-in, sala de espera, atendimentos em curso e faltas.
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+
+        @if (ehClinico()) {
         <!-- Consultas -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
           <ion-card class="cardHome" button="true" role="link" (click)="consulta()">
@@ -138,6 +163,7 @@
             </ion-card-content>
           </ion-card>
         </ion-col>
+        }
 
         <!-- Exames -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
@@ -171,7 +197,8 @@
           </ion-card>
         </ion-col>
 
-        <!-- Prontuário Oficial -->
+        @if (ehClinico()) {
+          <!-- Prontuário Oficial -->
         <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
           <ion-card class="cardHome" button="true" role="link" (click)="prontuarioNav()">
             <div class="card-img-wrapper">
@@ -186,6 +213,7 @@
             </ion-card-content>
           </ion-card>
         </ion-col>
+        }
       </ion-row>
     </ion-grid>
   </div>

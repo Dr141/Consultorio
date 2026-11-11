@@ -43,11 +43,20 @@
     <p class="secao-formulario">Contato e saúde</p>
     <ion-grid class="ion-no-padding">
       <ion-row>
-        <ion-col size="12">
+        <ion-col size="12" size-sm="6">
           <ion-item class="form-item">
             <ion-input type="tel" label="Telefone com DDD *" labelPlacement="floating" formControlName="telefone"
                        appMascara="telefone" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000"
                        [maxlength]="15" [errorText]="erro('telefone')"></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="12" size-sm="6">
+          <ion-item class="form-item">
+            <ion-input type="email" label="E-mail" labelPlacement="floating" formControlName="email"
+                       inputmode="email" autocomplete="email" placeholder="paciente@email.com" [maxlength]="256"
+                       helperText="Para lembretes e confirmação de consultas"
+                       [errorText]="erro('email')"></ion-input>
           </ion-item>
         </ion-col>
 

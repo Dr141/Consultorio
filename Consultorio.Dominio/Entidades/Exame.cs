@@ -17,6 +17,11 @@ public class Exame : Entidade
     public string Descricao { get; private set; } = string.Empty;
     public string? Resultado { get; private set; }
 
+    /// <summary>Exames não são apagados; solicitações feitas por engano são canceladas com motivo.</summary>
+    public bool Cancelado { get; private set; }
+    public DateTime? DtCancelamento { get; private set; }
+    public string? MotivoCancelamento { get; private set; }
+
     protected Exame() { }
 
     public Exame(int idPaciente, string descricao, string? resultado = null, int? idAgenda = null, int? idMedico = null)
@@ -30,8 +35,20 @@ public class Exame : Entidade
         IdMedico = idMedico;
     }
 
+    public void Cancelar(string motivo)
+    {
+        DomainException.When(Cancelado, "O exame já está cancelado.");
+        DomainException.When(!string.IsNullOrWhiteSpace(Resultado), "Exame com laudo emitido não pode ser cancelado.");
+        DomainException.When(string.IsNullOrWhiteSpace(motivo) || motivo.Trim().Length < 5, "Informe o motivo do cancelamento (mínimo de 5 caracteres).");
+        DomainException.When(motivo.Trim().Length > 500, "O motivo do cancelamento não pode ultrapassar 500 caracteres.");
+        Cancelado = true;
+        DtCancelamento = DateTime.UtcNow;
+        MotivoCancelamento = motivo.Trim();
+    }
+
     public void RegistrarResultado(string resultado, int? idMedico = null)
     {
+        DomainException.When(Cancelado, "Exame cancelado não pode receber laudo.");
         DomainException.When(string.IsNullOrWhiteSpace(resultado), "O resultado do exame não pode ser vazio.");
         if (idMedico.HasValue)
         {
@@ -43,6 +60,7 @@ public class Exame : Entidade
 
     public void Atualizar(string descricao, string? resultado = null, int? idMedico = null)
     {
+        DomainException.When(Cancelado, "Exame cancelado não pode ser alterado.");
         Validar(IdPaciente, descricao, idMedico);
         Descricao = descricao.Trim();
         Resultado = resultado?.Trim();

@@ -64,4 +64,39 @@ public class AgendaRepositorio(ConsultorioContexto contexto) : Repositorio<Agend
 
         return await query.AnyAsync();
     }
+
+    public async Task<List<Agenda>> ObterPorPeriodo(DateTime inicio, DateTime fim, int? idMedico = null)
+    {
+        var ini = DateTime.SpecifyKind(inicio.Date, DateTimeKind.Utc);
+        var f = DateTime.SpecifyKind(fim.Date, DateTimeKind.Utc);
+        var query = _contexto.Agenda
+            .Include(a => a.Medico).ThenInclude(m => m!.Pessoa)
+            .Include(a => a.Paciente).ThenInclude(p => p!.Pessoa)
+            .Where(a => a.Data >= ini && a.Data <= f);
+
+        if (idMedico.HasValue && idMedico.Value > 0)
+            query = query.Where(a => a.IdMedico == idMedico.Value);
+
+        return await query.OrderBy(a => a.Data).ThenBy(a => a.Hora).ToListAsync();
+    }
+
+    public async Task<Agenda?> ObterPorToken(Guid token)
+    {
+        return await _contexto.Agenda
+            .Include(a => a.Medico).ThenInclude(m => m!.Pessoa)
+            .Include(a => a.Paciente).ThenInclude(p => p!.Pessoa)
+            .FirstOrDefaultAsync(a => a.TokenConfirmacao == token);
+    }
+
+    public async Task AdicionarVarios(IEnumerable<Agenda> agendas)
+    {
+        await _contexto.Agenda.AddRangeAsync(agendas);
+        await _contexto.SaveChangesAsync();
+    }
+
+    public async Task RemoverVarios(IEnumerable<Agenda> agendas)
+    {
+        _contexto.Agenda.RemoveRange(agendas);
+        await _contexto.SaveChangesAsync();
+    }
 }

@@ -1,0 +1,237 @@
+.toolbar-filtros {
+  --min-height: 56px;
+}
+
+.filtros-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 8px 6px;
+
+  .navegador-dia {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .dia-atual {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 150px;
+      line-height: 1.2;
+
+      strong {
+        text-transform: capitalize;
+      }
+
+      span {
+        font-size: 12px;
+        opacity: 0.85;
+      }
+    }
+
+    .btn-hoje {
+      --color: #fff;
+      --border-color: rgba(255, 255, 255, 0.7);
+      text-transform: none;
+    }
+  }
+
+  .filtro-medico {
+    min-width: 220px;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 0 10px;
+    --placeholder-color: #fff;
+    --placeholder-opacity: 0.9;
+    color: #fff;
+  }
+}
+
+.fila-container {
+  max-width: 1400px;
+}
+
+.resumo-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+
+  .resumo-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--app-surface);
+    border: var(--app-card-border);
+    box-shadow: var(--app-card-shadow);
+    font-size: 13px;
+    color: var(--app-text-muted);
+
+    .valor {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--app-text);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+.colunas-fila {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.coluna {
+  background: var(--app-surface-elevated);
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 120px;
+
+  .coluna-titulo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 4px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--app-text);
+
+    .contagem {
+      margin-left: auto;
+      min-width: 24px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: var(--app-surface);
+      color: var(--app-text-muted);
+    }
+  }
+
+  .coluna-vazia {
+    margin: 12px 6px;
+    font-size: 13px;
+    color: var(--app-text-muted);
+  }
+}
+
+.cartao-fila {
+  margin: 0 0 10px;
+  border-left: 4px solid var(--ion-color-primary);
+
+  &.atrasado {
+    border-left-color: var(--ion-color-warning);
+  }
+
+  &.faltou {
+    border-left-color: var(--ion-color-danger);
+    opacity: 0.8;
+  }
+
+  ion-card-content {
+    padding: 12px;
+  }
+
+  .cartao-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .hora {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--app-text);
+    }
+  }
+
+  .paciente {
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--app-text);
+  }
+
+  .detalhes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--app-text-muted);
+
+    .tipo {
+      padding: 0 6px;
+      border-radius: 6px;
+      background: rgba(var(--ion-color-secondary-rgb), 0.15);
+      color: var(--ion-color-secondary);
+      font-weight: 600;
+    }
+  }
+
+  .espera {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--app-text-muted);
+
+    &.espera-longa {
+      color: var(--ion-color-warning-shade);
+      font-weight: 600;
+    }
+  }
+
+  .contato {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+
+    a {
+      color: var(--ion-color-primary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .lembrete {
+      color: var(--app-text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+  }
+
+  .acoes-cartao {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 10px;
+
+    ion-button {
+      margin: 0;
+      text-transform: none;
+      --border-radius: 8px;
+    }
+  }
+}

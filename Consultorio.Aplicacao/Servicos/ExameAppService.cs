@@ -33,8 +33,9 @@ public class ExameAppService(
 
     public async Task<ExameResponse> AdicionarAsync(ExameRequest request)
     {
-        _ = await pacienteRepositorio.ObterId(request.IdPaciente)
+        var paciente = await pacienteRepositorio.ObterId(request.IdPaciente)
             ?? throw new DomainException($"Paciente com id {request.IdPaciente} não encontrado.");
+        DomainException.When(!paciente.Ativo, "Paciente inativo. Reative o cadastro antes de solicitar exames.");
 
         if (request.IdAgenda.HasValue && request.IdAgenda.Value > 0)
         {
@@ -99,11 +100,14 @@ public class ExameAppService(
         return MapearResponse(detalhado ?? atualizado);
     }
 
-    public async Task RemoverAsync(int id)
+    public async Task<ExameResponse> CancelarAsync(int id, string motivo)
     {
-        var exame = await exameRepositorio.ObterId(id)
+        var exame = await exameRepositorio.ObterDetalhadoPorId(id)
             ?? throw new DomainException($"Exame com id {id} não encontrado.");
 
+        exame.Cancelar(motivo);
+
+        // O horário reservado para o exame volta a ficar disponível.
         if (exame.IdAgenda.HasValue)
         {
             var agenda = await agendaRepositorio.ObterId(exame.IdAgenda.Value);
@@ -114,8 +118,13 @@ public class ExameAppService(
             }
         }
 
-        await exameRepositorio.Remover(exame);
+        var atualizado = await exameRepositorio.Atualizar(exame);
+        var detalhado = await exameRepositorio.ObterDetalhadoPorId(atualizado.Id);
+        return MapearResponse(detalhado ?? atualizado);
     }
+
+    public Task RemoverAsync(int id) =>
+        throw new DomainException("Exames fazem parte do prontuário e não podem ser excluídos. Use \"Cancelar\" informando o motivo.");
 
     public static ExameResponse MapearResponse(Exame e)
     {
@@ -139,7 +148,10 @@ public class ExameAppService(
             e.DtCriacao,
             idMedico,
             medico?.Pessoa?.Nome,
-            medico?.Crm?.Valor
+            medico?.Crm?.Valor,
+            e.Cancelado,
+            e.DtCancelamento,
+            e.MotivoCancelamento
         );
     }
 }

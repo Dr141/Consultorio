@@ -11,6 +11,13 @@ public class Medico : Entidade
     public Pessoa Pessoa { get; private set; } = null!;
     public Crm Crm { get; private set; } = null!;
 
+    /// <summary>Cadastros não são apagados (o prontuário deve ser guardado por no mínimo 20 anos); são inativados.</summary>
+    public bool Ativo { get; private set; } = true;
+    public DateTime? DtInativacao { get; private set; }
+
+    /// <summary>E-mail do usuário de acesso deste médico; liga o login ao cadastro clínico.</summary>
+    public string? EmailUsuario { get; private set; }
+
     private List<Especialidade> _especialidades = [];
     public IReadOnlyCollection<Especialidade> Especialidades
     {
@@ -28,6 +35,36 @@ public class Medico : Entidade
     public IReadOnlyCollection<Agenda> Agendas => _agendas.AsReadOnly();
 
     protected Medico() { }
+
+    public void VincularUsuario(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            EmailUsuario = null;
+            return;
+        }
+
+        var normalizado = email.Trim().ToLowerInvariant();
+        DomainException.When(normalizado.Length > 256 || !normalizado.Contains('@'), "E-mail de acesso do médico inválido.");
+        EmailUsuario = normalizado;
+    }
+
+    public bool PertenceAoUsuario(string? email) =>
+        EmailUsuario is not null && string.Equals(EmailUsuario, email?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    public void Inativar()
+    {
+        DomainException.When(!Ativo, "O cadastro já está inativo.");
+        Ativo = false;
+        DtInativacao = DateTime.UtcNow;
+    }
+
+    public void Reativar()
+    {
+        DomainException.When(Ativo, "O cadastro já está ativo.");
+        Ativo = true;
+        DtInativacao = null;
+    }
 
     public Medico(int idPessoa, Crm crm, IEnumerable<Especialidade> especialidades)
     {

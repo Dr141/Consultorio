@@ -1,19 +1,13 @@
-describe('03 - Gestão de Pacientes (CRUD Completo)', () => {
-  const cpfValido = '11144477735';
-  const cpfFormatado = '111.444.777-35';
-  const nomePaciente = 'Mariana Costa E2E';
+import { formatarCpf, gerarCpfValido, sufixoExecucao } from '../support/dados-teste';
+
+describe('03 - Gestão de Pacientes (cadastro, edição, inativação e reativação)', () => {
+  // Pacientes não são apagados (apenas inativados): cada execução usa um CPF e um nome próprios.
+  const cpfValido = gerarCpfValido();
+  const cpfFormatado = formatarCpf(cpfValido);
+  const nomePaciente = `Mariana Costa E2E ${sufixoExecucao()}`;
 
   beforeEach(() => {
     cy.loginApi();
-    // Limpa paciente de teste anterior caso exista para garantir idempotência
-    cy.request('GET', '/api/paciente').then((res) => {
-      const encontrado = (res.body as any[]).find(
-        (p) => p.cpf === cpfFormatado || p.cpf === cpfValido || p.nome === nomePaciente
-      );
-      if (encontrado) {
-        cy.request('DELETE', `/api/paciente/${encontrado.id}`);
-      }
-    });
   });
 
   it('Deve carregar a tela de pacientes sem travar no spinner e validar CPF inválido no modal', () => {
@@ -83,9 +77,9 @@ describe('03 - Gestão de Pacientes (CRUD Completo)', () => {
 
     cy.contains('.observacao-box', 'Observação atualizada pelo Cypress').should('be.visible');
 
-    // 4. Excluir Paciente
+    // 4. Inativar Paciente (o cadastro e o prontuário são preservados)
     cy.contains('ion-card.registro-card', nomePaciente).within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Inativar').click();
     });
 
     cy.get('ion-alert').should('be.visible');
@@ -93,5 +87,17 @@ describe('03 - Gestão de Pacientes (CRUD Completo)', () => {
     cy.aguardarCarregamento();
 
     cy.contains('ion-card-title', nomePaciente).should('not.exist');
+
+    // 5. Exibir inativos e reativar
+    cy.contains('ion-chip', 'Mostrar inativos').click();
+    cy.aguardarCarregamento();
+    cy.contains('ion-card.registro-card', nomePaciente).within(() => {
+      cy.contains('ion-badge', 'Inativo').should('be.visible');
+      cy.contains('ion-button', 'Reativar').click();
+    });
+    cy.aguardarCarregamento();
+    cy.contains('ion-card.registro-card', nomePaciente).within(() => {
+      cy.contains('ion-button', 'Editar').should('be.visible');
+    });
   });
 });

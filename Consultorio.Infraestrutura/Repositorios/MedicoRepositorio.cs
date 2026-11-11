@@ -53,4 +53,13 @@ public class MedicoRepositorio(ConsultorioContexto contexto) : Repositorio<Medic
             .Include(m => m.Pessoa)
             .FirstOrDefaultAsync(m => m.IdPessoa == idPessoa);
     }
+
+    public async Task<Medico?> ObterPorEmailUsuario(string email)
+    {
+        var normalizado = email.Trim().ToLowerInvariant();
+        return await _contexto.Medico
+            .Include(m => m.Pessoa)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.EmailUsuario == normalizado);
+    }
 }

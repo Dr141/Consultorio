@@ -36,6 +36,9 @@ export type Paciente = {
   telefone: string;
   observacao?: string;
   dtCriacao?: string;
+  ativo?: boolean;
+  dtInativacao?: string | null;
+  email?: string | null;
 };
 
 export type Medico = {
@@ -49,7 +52,19 @@ export type Medico = {
   especialidades: Especialidade[];
   observacao?: string;
   dtCriacao?: string;
+  ativo?: boolean;
+  emailUsuario?: string | null;
 };
+
+export type StatusAgendamento = 'Agendado' | 'Confirmado' | 'Aguardando' | 'EmAtendimento' | 'Atendido' | 'Faltou';
+export type TipoAtendimento = 'Consulta' | 'Retorno' | 'Exame' | 'Procedimento';
+
+export const TIPOS_ATENDIMENTO: { valor: number; nome: TipoAtendimento }[] = [
+  { valor: 1, nome: 'Consulta' },
+  { valor: 2, nome: 'Retorno' },
+  { valor: 3, nome: 'Exame' },
+  { valor: 4, nome: 'Procedimento' }
+];
 
 export type Agenda = {
   id: number;
@@ -63,6 +78,60 @@ export type Agenda = {
   idConsulta?: number;
   idExame?: number;
   dtCriacao?: string;
+  status?: StatusAgendamento | null;
+  tipo?: TipoAtendimento;
+  duracaoMinutos?: number;
+  dtConfirmacao?: string | null;
+  dtChegada?: string | null;
+  dtInicioAtendimento?: string | null;
+  dtFimAtendimento?: string | null;
+  lembreteEnviadoEm?: string | null;
+  telefonePaciente?: string | null;
+  emailPaciente?: string | null;
+};
+
+export type BloqueioAgenda = {
+  id: number;
+  idMedico?: number | null;
+  nomeMedico?: string | null;
+  dataInicio: string;
+  dataFim: string;
+  motivo: string;
+  dtCriacao: string;
+};
+
+export type BloqueioCriado = {
+  bloqueio: BloqueioAgenda;
+  horariosLivresRemovidos: number;
+  conflitos: Agenda[];
+};
+
+export type GradeRequest = {
+  idMedico: number;
+  dataInicio: string;
+  dataFim: string;
+  diasSemana: number[];
+  horaInicio: string;
+  horaFim: string;
+  intervaloMinutos: number;
+  pausaInicio?: string | null;
+  pausaFim?: string | null;
+  tipo?: number | null;
+};
+
+export type GradeResultado = {
+  criados: number;
+  ignoradosExistentes: number;
+  ignoradosBloqueio: number;
+};
+
+export type StatusConsulta = 'Aberta' | 'Finalizada' | 'Anulada';
+
+export type ConsultaAdendo = {
+  id: number;
+  texto: string;
+  autor: string;
+  dtCriacao: string;
 };
 
 export type Consulta = {
@@ -75,6 +144,24 @@ export type Consulta = {
   idAgenda?: number;
   dataHora?: string;
   dtCriacao?: string;
+  status?: StatusConsulta;
+  dtFinalizacao?: string | null;
+  dtAnulacao?: string | null;
+  motivoAnulacao?: string | null;
+  adendos?: ConsultaAdendo[];
+};
+
+export type RegistroAuditoria = {
+  id: number;
+  dtOcorrencia: string;
+  usuario: string;
+  acao: string;
+  recurso: string;
+  idRecurso?: string | null;
+  metodo: string;
+  caminho: string;
+  statusCode: number;
+  ip?: string | null;
 };
 
 export type Exame = {
@@ -89,6 +176,9 @@ export type Exame = {
   nomeMedico?: string;
   crmMedico?: string;
   dtCriacao?: string;
+  cancelado?: boolean;
+  dtCancelamento?: string | null;
+  motivoCancelamento?: string | null;
 };
 
 export type MedicoResumoProntuario = {
@@ -107,6 +197,9 @@ export type ConsultaProntuarioItem = {
   observacao: string;
   dataAtendimento: string;
   dtCriacao: string;
+  status?: StatusConsulta;
+  motivoAnulacao?: string | null;
+  adendos?: ConsultaAdendo[];
 };
 
 export type ExameProntuarioItem = {
@@ -119,6 +212,8 @@ export type ExameProntuarioItem = {
   crmMedico?: string;
   dataExame: string;
   dtCriacao: string;
+  cancelado?: boolean;
+  motivoCancelamento?: string | null;
 };
 
 export type ProntuarioResumo = {

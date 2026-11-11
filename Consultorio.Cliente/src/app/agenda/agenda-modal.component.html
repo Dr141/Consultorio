@@ -46,6 +46,29 @@
       </ion-row>
     </ion-grid>
 
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        <ion-col size="7">
+          <ion-item class="form-item">
+            <ion-select label="Tipo de atendimento" labelPlacement="floating" formControlName="tipo" interface="popover">
+              @for (t of tipos; track t.valor) {
+                <ion-select-option [value]="t.valor">{{ t.nome }}</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+        </ion-col>
+        <ion-col size="5">
+          <ion-item class="form-item">
+            <ion-select label="Duração" labelPlacement="floating" formControlName="duracaoMinutos" interface="popover">
+              @for (min of [10, 15, 20, 30, 40, 45, 60, 90, 120]; track min) {
+                <ion-select-option [value]="min">{{ min }} min</ion-select-option>
+              }
+            </ion-select>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
     <p class="secao-formulario">Paciente (opcional)</p>
     <ion-item class="form-item paciente-escolhido" lines="none">
       <ion-icon slot="start" [name]="pacienteSelecionado ? 'person-circle-outline' : 'person-add-outline'" color="primary"></ion-icon>

@@ -8,6 +8,8 @@ builder.Services.AddControllers().ConfigurarRespostaValidacao();
 builder.Services.AddOpenApi();
 builder.Services.RegisterServices(builder.Configuration);
 builder.Services.ConfigAuthentication(builder.Configuration);
+builder.Services.AdicionarPoliticasAcesso();
+builder.Services.AddHostedService<Consultorio.Server.Rotinas.RotinasAgendaHostedService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,172 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Recepção · Fila do dia</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      <ion-button (click)="carregar()" title="Atualizar agora" aria-label="Atualizar fila">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary" class="toolbar-filtros">
+    <div class="filtros-fila">
+      <div class="navegador-dia">
+        <ion-button fill="clear" (click)="mudarDia(-1)" aria-label="Dia anterior">
+          <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+        </ion-button>
+        <div class="dia-atual">
+          <strong>{{ rotuloData }}</strong>
+          <span>{{ data | dataBr }}</span>
+        </div>
+        <ion-button fill="clear" (click)="mudarDia(1)" aria-label="Próximo dia">
+          <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+        </ion-button>
+        @if (!ehHoje) {
+          <ion-button fill="outline" size="small" class="btn-hoje" (click)="irParaHoje()">Hoje</ion-button>
+        }
+      </div>
+      <ion-select class="filtro-medico" [(ngModel)]="idMedico" (ionChange)="carregar()" interface="popover"
+                  placeholder="Todos os médicos" aria-label="Filtrar por médico">
+        <ion-select-option [value]="null">Todos os médicos</ion-select-option>
+        @for (m of medicos; track m.id) {
+          <ion-select-option [value]="m.id">{{ m.nome }}</ion-select-option>
+        }
+      </ion-select>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container fila-container">
+    <div class="resumo-fila">
+      <div class="resumo-item"><span class="valor">{{ agendamentos.length }}</span><span>agendamentos</span></div>
+      <div class="resumo-item"><span class="valor">{{ colunas[1]?.itens?.length ?? 0 }}</span><span>aguardando</span></div>
+      <div class="resumo-item">
+        <span class="valor">{{ esperaMedia !== null ? esperaMedia + ' min' : '—' }}</span><span>espera média</span>
+      </div>
+      <div class="resumo-item"><span class="valor">{{ totalFaltas }}</span><span>faltas</span></div>
+    </div>
+
+    @if (carregando && agendamentos.length === 0) {
+      <div class="loading-state ion-text-center ion-padding">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Carregando a fila...</p>
+      </div>
+    } @else if (agendamentos.length === 0) {
+      <div class="empty-state ion-text-center ion-padding">
+        <ion-icon name="calendar-clear-outline"></ion-icon>
+        <h3>Nenhum agendamento {{ ehHoje ? 'para hoje' : 'neste dia' }}</h3>
+        <p>Os pacientes agendados na Agenda aparecem aqui para check-in e acompanhamento.</p>
+      </div>
+    } @else {
+      <div class="colunas-fila">
+        @for (col of colunas; track col.chave) {
+          <section class="coluna" [attr.aria-label]="col.titulo">
+            <h2 class="coluna-titulo">
+              <ion-icon [name]="col.icone" aria-hidden="true"></ion-icon>
+              {{ col.titulo }}
+              <span class="contagem">{{ col.itens.length }}</span>
+            </h2>
+
+            @if (col.itens.length === 0) {
+              <p class="coluna-vazia">{{ col.vazio }}</p>
+            }
+
+            @for (a of col.itens; track a.id) {
+              <ion-card class="cartao-fila" [class.atrasado]="atrasado(a)" [class.faltou]="a.status === 'Faltou'">
+                <ion-card-content>
+                  <div class="cartao-topo">
+                    <span class="hora">{{ a.hora.substring(0, 5) }}</span>
+                    <ion-badge [color]="corStatus(a.status)">{{ rotuloStatus(a.status) }}</ion-badge>
+                  </div>
+                  <div class="paciente">{{ a.nomePaciente }}</div>
+                  <div class="detalhes">
+                    @if (a.nomeMedico) { <span>{{ a.nomeMedico }}</span> }
+                    @if (a.tipo && a.tipo !== 'Consulta') { <span class="tipo">{{ a.tipo }}</span> }
+                  </div>
+
+                  @if (a.status === 'Aguardando') {
+                    <div class="espera" [class.espera-longa]="minutosDesde(a.dtChegada) >= 30">
+                      <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+                      Esperando há {{ minutosDesde(a.dtChegada) }} min
+                    </div>
+                  }
+                  @if (a.status === 'EmAtendimento') {
+                    <div class="espera">
+                      <ion-icon name="pulse-outline" aria-hidden="true"></ion-icon>
+                      Em atendimento há {{ minutosDesde(a.dtInicioAtendimento) }} min
+                    </div>
+                  }
+                  @if (atrasado(a)) {
+                    <div class="espera espera-longa">
+                      <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+                      Atrasado
+                    </div>
+                  }
+                  @if ((a.status === 'Agendado' || a.status === 'Confirmado') && a.telefonePaciente) {
+                    <div class="contato">
+                      <a [href]="'tel:' + a.telefonePaciente"><ion-icon name="call-outline"></ion-icon> {{ a.telefonePaciente }}</a>
+                      @if (a.lembreteEnviadoEm) {
+                        <span class="lembrete" title="Lembrete enviado"><ion-icon name="mail-unread-outline"></ion-icon> lembrete enviado</span>
+                      }
+                    </div>
+                  }
+
+                  <div class="acoes-cartao">
+                    @switch (a.status) {
+                      @case ('Agendado') {
+                        <ion-button size="small" (click)="executar(a, 'chegada')" [disabled]="processando.has(a.id)">
+                          <ion-icon slot="start" name="log-in-outline"></ion-icon> Chegou
+                        </ion-button>
+                        <ion-button size="small" fill="outline" (click)="executar(a, 'confirmar')" [disabled]="processando.has(a.id)">Confirmar</ion-button>
+                        @if (a.emailPaciente) {
+                          <ion-button size="small" fill="clear" (click)="enviarLembrete(a)" [disabled]="processando.has(a.id)" title="Enviar lembrete com link de confirmação">
+                            <ion-icon slot="icon-only" name="mail-outline"></ion-icon>
+                          </ion-button>
+                        }
+                        <ion-button size="small" fill="clear" color="danger" (click)="executar(a, 'falta')" [disabled]="processando.has(a.id)">Falta</ion-button>
+                      }
+                      @case ('Confirmado') {
+                        <ion-button size="small" (click)="executar(a, 'chegada')" [disabled]="processando.has(a.id)">
+                          <ion-icon slot="start" name="log-in-outline"></ion-icon> Chegou
+                        </ion-button>
+                        <ion-button size="small" fill="clear" color="danger" (click)="executar(a, 'falta')" [disabled]="processando.has(a.id)">Falta</ion-button>
+                      }
+                      @case ('Aguardando') {
+                        <ion-button size="small" color="primary" (click)="executar(a, 'iniciar')" [disabled]="processando.has(a.id)">
+                          <ion-icon slot="start" name="play-outline"></ion-icon> Iniciar atendimento
+                        </ion-button>
+                      }
+                      @case ('EmAtendimento') {
+                        @if (ehClinico && !a.idConsulta) {
+                          <ion-button size="small" fill="outline" (click)="registrarConsulta(a)">
+                            <ion-icon slot="start" name="document-text-outline"></ion-icon> Registrar consulta
+                          </ion-button>
+                        }
+                        <ion-button size="small" color="success" (click)="executar(a, 'concluir')" [disabled]="processando.has(a.id)">
+                          <ion-icon slot="start" name="checkmark-outline"></ion-icon> Concluir
+                        </ion-button>
+                      }
+                      @case ('Faltou') {
+                        <ion-button size="small" fill="outline" (click)="executar(a, 'chegada')" [disabled]="processando.has(a.id)" title="O paciente chegou atrasado">
+                          Chegou atrasado
+                        </ion-button>
+                      }
+                    }
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            }
+          </section>
+        }
+      </div>
+    }
+  </div>
+</ion-content>

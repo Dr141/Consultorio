@@ -40,7 +40,7 @@ Consultorio/
 │   ├── Entidades/                        # Entidades com invariantes e métodos de negócio
 │   │   ├── Base/Entidade.cs              # Classe base com identificador e data de criação/atualização
 │   │   ├── Pessoa.cs                     # Cadastro base (Nome, CPF, RG, Telefone, Endereço)
-│   │   ├── Paciente.cs                   # Paciente vinculado à Pessoa (Convênio, Histórico, Carteirinha)
+│   │   ├── Paciente.cs                   # Paciente vinculado à Pessoa (ativo/inativo)
 │   │   ├── Medico.cs                     # Médico vinculado à Pessoa (CRM, Especialidade, Atendimento)
 │   │   ├── Agenda.cs                     # Disponibilidade de horários do médico
 │   │   ├── Consulta.cs                   # Agendamento, diagnóstico, prescrição, cancelamento e conclusão
@@ -93,6 +93,57 @@ Consultorio/
 ├── docker-compose.yml                    # Orquestração de containers (PostgreSQL, Redis, App)
 └── .env.example                          # Modelo de variáveis de ambiente do compose
 ```
+
+---
+
+## 🔐 Perfis de Acesso e Preservação do Prontuário
+
+| Perfil | O que pode fazer |
+|---|---|
+| **Administrador** | Tudo, incluindo usuários, perfis e a trilha de auditoria |
+| **Medico** | Consultas, laudos e relatório de prontuário, além de pacientes e agenda |
+| **Administrativo** | Pacientes, agenda, solicitação de exames, cadastro do corpo clínico e inativações |
+| **Auxiliar** | Pacientes, agenda e solicitação de exames |
+
+> Usuários sem perfil atribuído não acessam as telas do sistema. Atribua os perfis em **Gestão de Usuários**.
+
+Regras do prontuário (Lei 13.787/2018 e LGPD):
+
+- **Nada é apagado.** Pacientes e médicos são *inativados* (e podem ser reativados), consultas são *anuladas* com motivo e exames são *cancelados* com motivo. Os registros continuam no histórico e no relatório de prontuário.
+- **Consulta finalizada é imutável.** Correções e complementos são feitos por *adendo*, com data, hora e autor.
+- **Autoria.** Quando o médico tem um e-mail de login vinculado ao cadastro (tela Corpo Clínico), só ele ou um administrador altera, finaliza ou anula as consultas dele.
+- **Auditoria.** Leituras e alterações de pacientes, consultas, exames e prontuários ficam registradas (usuário, ação, registro, data/hora e IP). Administradores consultam em **Menu → Auditoria de Acessos** ou em `GET /api/auditoria`.
+- **Esquema do banco.** As colunas e tabelas novas são criadas automaticamente na inicialização (`Migration:RunMigration=true`) com comandos idempotentes, sem afetar os dados existentes.
+
+---
+
+## 📅 Agenda, Recepção e Lembretes
+
+- **Situação do agendamento:** Agendado → Confirmado → Aguardando (chegou) → Em atendimento → Atendido, ou Faltou. Cada etapa guarda data e hora.
+- **Recepção · Fila do dia** (`/recepcao`): check-in, sala de espera com tempo de espera, atendimentos em curso e encerrados. Atualiza sozinha a cada minuto. Ao iniciar o atendimento, o médico registra a consulta já vinculada ao horário; finalizar a consulta conclui o atendimento.
+- **Gerar horários** (Agenda → Gerar horários): cria a grade de um médico em lote, por exemplo seg a sex, 8h–12h, de 30 em 30 minutos, com pausa opcional. Pula horários que já existem e dias bloqueados.
+- **Bloqueios** (Agenda → Bloqueios): férias, feriados e congressos, para um médico ou para a clínica toda. Remove os horários livres do período e lista os pacientes que precisam ser remarcados.
+
+### Rotinas automáticas
+
+A cada `Rotinas:IntervaloMinutos` (padrão 15), o servidor:
+
+1. **Envia lembretes** aos pacientes com atendimento nas próximas `Clinica:AntecedenciaLembreteHoras` (padrão 24h) que têm e-mail cadastrado. O e-mail traz links para **confirmar** ou **desmarcar**. A página aberta pelo link pede um clique para concluir, para que filtros de e-mail e antivírus não confirmem nada sozinhos.
+2. **Marca faltas** de agendamentos sem check-in depois de `Clinica:ToleranciaFaltaMinutos` (padrão 180) do horário.
+
+Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.env.example`):
+
+```json
+"Clinica": { "Nome": "Clínica Exemplo", "UrlPublica": "https://consultorio.exemplo.com.br", "Telefone": "(62) 3333-0000", "FusoHorario": "America/Sao_Paulo" },
+"Notificacoes": {
+  "SimularEnvio": false,
+  "Email": { "Host": "smtp.seuprovedor.com", "Porta": 587, "UsarSsl": true, "Usuario": "...", "Senha": "...", "Remetente": "agenda@exemplo.com.br" }
+}
+```
+
+- Sem `Notificacoes:Email:Host`, nenhum e-mail é enviado. Em desenvolvimento, `SimularEnvio: true` registra no log o que seria enviado.
+- `Clinica:UrlPublica` precisa ser o endereço acessível pelo paciente, porque os links de confirmação apontam para ele.
+- **WhatsApp/SMS:** implemente `INotificador` (`Consultorio.Dominio.Interfaces.Servicos`) chamando a API do provedor e registre a classe em `RegistrarDependencias`. As rotinas usam o primeiro canal disponível para cada paciente.
 
 ---
 

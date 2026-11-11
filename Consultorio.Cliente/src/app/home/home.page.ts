@@ -67,7 +67,7 @@ export class HomePage implements OnInit {
         pacientes: pacientes?.length ?? 0,
         ocupadosHoje: deHoje.filter(a => !a.disponivel).length,
         livresHoje: deHoje.filter(a => a.disponivel).length,
-        examesPendentes: (exames ?? []).filter(e => !e.resultado).length
+        examesPendentes: (exames ?? []).filter(e => !e.resultado && !e.cancelado).length
       };
     });
   }
@@ -113,11 +113,21 @@ export class HomePage implements OnInit {
   }
 
   public ehAdmin(): boolean {
-    const roles = this.role.getRole();
-    if (roles) {
-      return roles.search('Administrador') >= 0;
-    }
-    return false;
+    return this.role.ehAdmin();
+  }
+
+  public ehClinico(): boolean {
+    return this.role.ehClinico();
+  }
+
+  public recepcaoNav() {
+    (document.activeElement as HTMLElement)?.blur();
+    this.navCtrl.navigateForward('/recepcao');
+  }
+
+  public auditoriaNav() {
+    (document.activeElement as HTMLElement)?.blur();
+    this.navCtrl.navigateForward('/auditoria');
   }
 
   public paciente() {

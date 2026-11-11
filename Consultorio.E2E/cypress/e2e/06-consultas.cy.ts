@@ -1,17 +1,26 @@
+import { sufixoExecucao } from '../support/dados-teste';
+
 describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
-  const textoEvolucaoInicial = 'Paciente relata cefaleia tensional e fadiga crônica E2E';
-  const textoEvolucaoEditada = 'Conduta terapêutica atualizada com receituário e repouso E2E';
+  // Consultas não são apagadas (apenas anuladas): textos únicos por execução.
+  const sufixo = sufixoExecucao();
+  const textoEvolucaoInicial = `Paciente relata cefaleia tensional e fadiga crônica E2E ${sufixo}`;
+  const textoEvolucaoEditada = `Conduta terapêutica atualizada com receituário e repouso E2E ${sufixo}`;
 
   beforeEach(() => {
     cy.loginApi();
     cy.garantirPacienteTeste();
     cy.garantirMedicoTeste();
 
-    // Limpa consultas de teste anteriores para idempotência
+    // Anula consultas de execuções anteriores (o registro permanece no histórico).
     cy.request('GET', '/api/consulta').then((res) => {
       (res.body as any[]).forEach((c) => {
-        if (c.observacao && c.observacao.includes('E2E')) {
-          cy.request('DELETE', `/api/consulta/${c.id}`);
+        if (c.observacao && c.observacao.includes('E2E') && !c.observacao.includes(sufixo) && c.status !== 'Anulada') {
+          cy.request({
+            method: 'PATCH',
+            url: `/api/consulta/${c.id}/anular`,
+            body: { motivo: 'Limpeza automática de teste E2E' },
+            failOnStatusCode: false
+          });
         }
       });
     });
@@ -135,7 +144,7 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
     cy.contains('ion-card.consulta-card', textoEvolucaoEditada).should('be.visible');
   });
 
-  it('Deve cancelar exclusão no diálogo de confirmação e depois excluir a consulta', () => {
+  it('Deve desistir da anulação no diálogo e depois anular a consulta informando o motivo', () => {
     // Cria consulta via API
     cy.request('GET', '/api/paciente').then((resPac) => {
       const pacId = (resPac.body as any[])[0].id;
@@ -152,9 +161,9 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
     cy.visit('/consultas');
     cy.aguardarCarregamento();
 
-    // 1. Tentar excluir e cancelar
+    // 1. Abrir a anulação e desistir
     cy.contains('ion-card.consulta-card', textoEvolucaoInicial).first().within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Anular').click();
     });
 
     cy.get('ion-alert').should('be.visible');
@@ -162,16 +171,21 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
     cy.get('ion-alert').should('not.exist');
     cy.contains('ion-card.consulta-card', textoEvolucaoInicial).should('be.visible');
 
-    // 2. Confirmar exclusão definitiva
+    // 2. Anular informando o motivo
     cy.contains('ion-card.consulta-card', textoEvolucaoInicial).first().within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Anular').click();
     });
 
     cy.get('ion-alert').should('be.visible');
+    cy.get('ion-alert textarea').type('Registrada no paciente errado', { force: true });
     cy.get('ion-alert button.alert-button-role-destructive').click();
     cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
-    cy.contains('ion-card.consulta-card', textoEvolucaoInicial).should('not.exist');
+    // O registro continua no histórico, marcado como anulado e com o motivo
+    cy.contains('ion-card.consulta-card', textoEvolucaoInicial).within(() => {
+      cy.contains('ion-badge', 'Anulada').should('be.visible');
+      cy.contains('.aviso-anulacao', 'Registrada no paciente errado').should('be.visible');
+    });
   });
 });

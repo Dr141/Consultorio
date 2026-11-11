@@ -15,5 +15,9 @@ public record MedicoRequest(
     string Crm,
 
     [Required(ErrorMessage = "Ao menos uma especialidade é obrigatória")]
-    List<Especialidade> Especialidades
+    List<Especialidade> Especialidades,
+
+    [EmailAddress(ErrorMessage = "E-mail de acesso inválido")]
+    [StringLength(256, ErrorMessage = "E-mail de acesso muito longo")]
+    string? EmailUsuario = null
 );

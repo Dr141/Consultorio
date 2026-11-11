@@ -119,7 +119,7 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
 
     // Verificar alteração de status para Ocupado
     cy.contains('ion-card.agenda-card', '14:00').within(() => {
-      cy.contains('ion-badge', 'Ocupado').should('be.visible');
+      cy.contains('ion-badge', 'Agendado').should('be.visible');
       cy.contains('strong', 'Paciente:').should('be.visible');
       cy.contains('ion-button', 'Liberar').click();
     });
@@ -164,7 +164,7 @@ describe('05 - Gestão de Agenda de Consultas e Exames', () => {
 
     // 2. Verificar que já surge Ocupado
     cy.contains('ion-card.agenda-card', horaComPaciente).should('be.visible').within(() => {
-      cy.contains('ion-badge', 'Ocupado').should('be.visible');
+      cy.contains('ion-badge', 'Agendado').should('be.visible');
       cy.contains('ion-button', 'Excluir').click();
     });
 

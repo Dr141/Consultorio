@@ -1,5 +1,9 @@
+import { sufixoExecucao } from '../support/dados-teste';
+
 describe('07 - Gestão e Laudos de Exames Clínicos', () => {
-  const descricaoExame = 'Eletrocardiograma de Repouso E2E';
+  // Exames não são apagados (apenas cancelados): descrições únicas por execução.
+  const sufixo = sufixoExecucao();
+  const descricaoExame = `Eletrocardiograma de Repouso E2E ${sufixo}`;
   const resultadoInicial = 'Traçado eletrocardiográfico dentro dos limites fisiológicos da normalidade E2E';
   const resultadoEditado = 'Laudo revisado: ritmo sinusal preservado sem extrassístoles E2E';
 
@@ -7,11 +11,16 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.loginApi();
     cy.garantirPacienteTeste();
 
-    // Limpa exames de teste anteriores para idempotência
+    // Cancela exames pendentes de execuções anteriores (o registro permanece no histórico).
     cy.request('GET', '/api/exame').then((res) => {
       (res.body as any[]).forEach((e) => {
-        if (e.descricao && e.descricao.includes('E2E')) {
-          cy.request('DELETE', `/api/exame/${e.id}`);
+        if (e.descricao && e.descricao.includes('E2E') && !e.descricao.includes(sufixo) && !e.resultado && !e.cancelado) {
+          cy.request({
+            method: 'PATCH',
+            url: `/api/exame/${e.id}/cancelar`,
+            body: { motivo: 'Limpeza automática de teste E2E' },
+            failOnStatusCode: false
+          });
         }
       });
     });
@@ -158,7 +167,7 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.contains('ion-card.exame-card', descricaoExame).should('be.visible');
   });
 
-  it('Deve cancelar exclusão no diálogo de confirmação e depois remover o exame', () => {
+  it('Deve desistir do cancelamento no diálogo e depois cancelar o exame com motivo', () => {
     cy.request('GET', '/api/paciente').then((resPac) => {
       const pacId = (resPac.body as any[])[0].id;
       cy.request('POST', '/api/exame', {
@@ -170,9 +179,9 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.visit('/exames');
     cy.aguardarCarregamento();
 
-    // 1. Cancelar
+    // 1. Abrir o cancelamento e desistir
     cy.contains('ion-card.exame-card', descricaoExame).first().within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Cancelar').click();
     });
 
     cy.get('ion-alert').should('be.visible');
@@ -180,16 +189,23 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.get('ion-alert').should('not.exist');
     cy.contains('ion-card.exame-card', descricaoExame).should('be.visible');
 
-    // 2. Confirmar exclusão
+    // 2. Cancelar informando o motivo
     cy.contains('ion-card.exame-card', descricaoExame).first().within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Cancelar').click();
     });
 
     cy.get('ion-alert').should('be.visible');
+    cy.get('ion-alert textarea').type('Pedido duplicado', { force: true });
     cy.get('ion-alert button.alert-button-role-destructive').click();
     cy.get('ion-alert').should('not.exist');
     cy.aguardarCarregamento();
 
+    // Sai da lista principal e aparece na aba de cancelados, com o motivo
     cy.contains('ion-card.exame-card', descricaoExame).should('not.exist');
+    cy.contains('ion-segment-button', 'Cancelados').click();
+    cy.contains('ion-card.exame-card', descricaoExame).within(() => {
+      cy.contains('ion-badge', 'Cancelado').should('be.visible');
+      cy.contains('Pedido duplicado').should('be.visible');
+    });
   });
 });

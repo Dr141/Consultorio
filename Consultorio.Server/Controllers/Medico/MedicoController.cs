@@ -3,22 +3,24 @@ using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Enumerados;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Medico;
 
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Recepcao)]
 [ApiController]
 public class MedicoController(IMedicoAppService medicoAppService) : ControllerBase
 {
     [HttpGet]
     [EndpointSummary("Obter todos os médicos")]
     [ProducesResponseType(typeof(List<MedicoResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<MedicoResponse>>> ObterTodos()
+    public async Task<ActionResult<List<MedicoResponse>>> ObterTodos([FromQuery] bool incluirInativos = false)
     {
-        return Ok(await medicoAppService.ObterTodosAsync());
+        return Ok(await medicoAppService.ObterTodosAsync(incluirInativos));
     }
 
     [HttpGet("especialidades")]
@@ -33,6 +35,17 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
         return Ok(especialidades);
     }
 
+    [HttpGet("meu")]
+    [EndpointSummary("Médico vinculado ao usuário logado (204 se o usuário não for médico)")]
+    [ProducesResponseType(typeof(MedicoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult<MedicoResponse>> ObterMeu()
+    {
+        var medico = await medicoAppService.ObterPorUsuarioAsync(User.ObterEmail());
+        if (medico is null) return NoContent();
+        return Ok(medico);
+    }
+
     [HttpGet("{id:int}")]
     [EndpointSummary("Obter médico por id")]
     [ProducesResponseType(typeof(MedicoResponse), StatusCodes.Status200OK)]
@@ -45,6 +58,7 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
     }
 
     [HttpPost]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
     [EndpointSummary("Cadastrar novo médico")]
     [ProducesResponseType(typeof(MedicoResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -62,6 +76,7 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
     [EndpointSummary("Atualizar médico")]
     [ProducesResponseType(typeof(MedicoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -79,7 +94,8 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
     }
 
     [HttpDelete("{id:int}")]
-    [EndpointSummary("Excluir médico")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
+    [EndpointSummary("Inativar médico (o histórico é preservado)")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Remover(int id)
@@ -88,6 +104,23 @@ public class MedicoController(IMedicoAppService medicoAppService) : ControllerBa
         {
             await medicoAppService.RemoverAsync(id);
             return NoContent();
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/reativar")]
+    [Authorize(Policy = PoliticasAcesso.Gestao)]
+    [EndpointSummary("Reativar médico inativo")]
+    [ProducesResponseType(typeof(MedicoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<MedicoResponse>> Reativar(int id)
+    {
+        try
+        {
+            return Ok(await medicoAppService.ReativarAsync(id));
         }
         catch (DomainException ex)
         {

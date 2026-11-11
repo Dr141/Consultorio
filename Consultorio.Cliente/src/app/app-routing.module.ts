@@ -40,6 +40,14 @@ const routes: Routes = [
     loadChildren: () => import('./exames/exames.module').then(m => m.ExamesPageModule)
   },
   {
+    path: 'recepcao',
+    loadChildren: () => import('./recepcao/recepcao.module').then(m => m.RecepcaoPageModule)
+  },
+  {
+    path: 'auditoria',
+    loadChildren: () => import('./auditoria/auditoria.module').then(m => m.AuditoriaPageModule)
+  },
+  {
     path: 'prontuario',
     loadChildren: () => import('./prontuario/prontuario.module').then(m => m.ProntuarioPageModule)
   }

@@ -9,4 +9,5 @@ public interface IMedicoRepositorio : IRepositorio<Medico>
     Task<Medico?> ObterPorCrm(string crm);
     Task<bool> ExisteCrm(string crm, int? excluirId = null);
     Task<Medico?> ObterPorIdPessoa(int idPessoa);
+    Task<Medico?> ObterPorEmailUsuario(string email);
 }

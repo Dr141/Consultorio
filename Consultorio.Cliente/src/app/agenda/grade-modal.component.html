@@ -1,0 +1,119 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Gerar horários</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <p class="secao-formulario">Profissional e período</p>
+  <ion-item class="form-item">
+    <ion-select label="Médico *" labelPlacement="floating" [(ngModel)]="idMedico" placeholder="Selecione" cancelText="Cancelar" okText="Confirmar">
+      @for (m of medicos; track m.id) {
+        <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
+      }
+    </ion-select>
+  </ion-item>
+  <ion-grid class="ion-no-padding">
+    <ion-row>
+      <ion-col size="6">
+        <ion-item class="form-item">
+          <ion-input type="date" label="De" labelPlacement="floating" [(ngModel)]="dataInicio"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="6">
+        <ion-item class="form-item">
+          <ion-input type="date" label="Até" labelPlacement="floating" [(ngModel)]="dataFim" [min]="dataInicio"></ion-input>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <p class="secao-formulario">Dias de atendimento</p>
+  <div class="dias-semana" role="group" aria-label="Dias da semana">
+    @for (d of diasSemana; track d.valor) {
+      <ion-chip [outline]="!dias.has(d.valor)" [color]="dias.has(d.valor) ? 'primary' : 'medium'" (click)="alternarDia(d.valor)"
+                role="checkbox" [attr.aria-checked]="dias.has(d.valor)">
+        {{ d.nome }}
+      </ion-chip>
+    }
+  </div>
+
+  <p class="secao-formulario">Expediente</p>
+  <ion-grid class="ion-no-padding">
+    <ion-row>
+      <ion-col size="4">
+        <ion-item class="form-item">
+          <ion-input type="time" label="Início" labelPlacement="floating" [(ngModel)]="horaInicio" step="300"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="4">
+        <ion-item class="form-item">
+          <ion-input type="time" label="Fim" labelPlacement="floating" [(ngModel)]="horaFim" step="300"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="4">
+        <ion-item class="form-item">
+          <ion-select label="A cada" labelPlacement="floating" [(ngModel)]="intervalo" interface="popover">
+            @for (min of [10, 15, 20, 30, 40, 45, 60]; track min) {
+              <ion-select-option [value]="min">{{ min }} min</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-item class="form-item" lines="none">
+    <ion-toggle [(ngModel)]="usarPausa" justify="space-between">Pausa no expediente (ex.: almoço)</ion-toggle>
+  </ion-item>
+  @if (usarPausa) {
+    <ion-grid class="ion-no-padding">
+      <ion-row>
+        <ion-col size="6">
+          <ion-item class="form-item">
+            <ion-input type="time" label="Pausa de" labelPlacement="floating" [(ngModel)]="pausaInicio" step="300"></ion-input>
+          </ion-item>
+        </ion-col>
+        <ion-col size="6">
+          <ion-item class="form-item">
+            <ion-input type="time" label="até" labelPlacement="floating" [(ngModel)]="pausaFim" step="300"></ion-input>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  }
+
+  <ion-item class="form-item">
+    <ion-select label="Tipo de atendimento" labelPlacement="floating" [(ngModel)]="tipo" interface="popover">
+      @for (t of tipos; track t.valor) {
+        <ion-select-option [value]="t.valor">{{ t.nome }}</ion-select-option>
+      }
+    </ion-select>
+  </ion-item>
+
+  <div class="exame-info-card previa-grade" aria-live="polite">
+    <h3>
+      <ion-icon name="calculator-outline" aria-hidden="true"></ion-icon>
+      Até <strong>{{ previa }}</strong> horários
+    </h3>
+    <p>{{ horariosPorDia }} por dia × {{ diasNoPeriodo }} dia(s). Horários que já existem e dias bloqueados são pulados.</p>
+  </div>
+
+  <div class="acoes-formulario">
+    <ion-button class="btn-cancelar" fill="outline" color="medium" (click)="fechar()">Cancelar</ion-button>
+    <ion-button (click)="gerar()" [disabled]="!podeGerar">
+      @if (gerando) {
+        <ion-spinner slot="start" name="crescent"></ion-spinner>
+      } @else {
+        <ion-icon slot="start" name="grid-outline"></ion-icon>
+      }
+      {{ gerando ? 'Gerando...' : 'Gerar horários' }}
+    </ion-button>
+  </div>
+</ion-content>

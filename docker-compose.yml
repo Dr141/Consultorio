@@ -53,6 +53,15 @@ services:
       - JwtOptions__Issuer=http://localhost
       - JwtOptions__Audience=Audience
       - JwtOptions__SecurityKey=A494384E-8732-434C-AC6A-1D0E3396B981-A494384E-8732-434C-AC6A-1D0E3396B981
+      - Clinica__Nome=${CLINICA_NOME:-Consultório}
+      - Clinica__UrlPublica=${CLINICA_URL_PUBLICA:-http://localhost:8080}
+      - Clinica__Telefone=${CLINICA_TELEFONE:-}
+      - Clinica__Endereco=${CLINICA_ENDERECO:-}
+      - Notificacoes__Email__Host=${SMTP_HOST:-}
+      - Notificacoes__Email__Porta=${SMTP_PORTA:-587}
+      - Notificacoes__Email__Usuario=${SMTP_USUARIO:-}
+      - Notificacoes__Email__Senha=${SMTP_SENHA:-}
+      - Notificacoes__Email__Remetente=${SMTP_REMETENTE:-}
     ports:
       - "${APP_PORT:-8080}:8080"
     depends_on:

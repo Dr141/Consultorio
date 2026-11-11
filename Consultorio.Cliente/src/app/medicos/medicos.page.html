@@ -6,10 +6,12 @@
     <ion-title>Corpo Clínico</ion-title>
     <ion-buttons slot="end">
       <app-theme-toggle></app-theme-toggle>
-      <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Cadastrar novo médico" title="Cadastrar novo médico">
-        <ion-icon slot="start" name="person-add-outline"></ion-icon>
-        <span class="ion-hide-md-down">Novo médico</span>
-      </ion-button>
+      @if (podeGerenciar) {
+        <ion-button class="btn-novo-desk" (click)="adicionar()" aria-label="Cadastrar novo médico" title="Cadastrar novo médico">
+          <ion-icon slot="start" name="person-add-outline"></ion-icon>
+          <span class="ion-hide-md-down">Novo médico</span>
+        </ion-button>
+      }
     </ion-buttons>
   </ion-toolbar>
   <ion-toolbar color="primary">
@@ -52,10 +54,12 @@
         <ion-icon name="medkit-outline"></ion-icon>
         <h3>Nenhum médico encontrado</h3>
         <p>Cadastre os profissionais do corpo clínico para liberar horários na agenda.</p>
-        <ion-button (click)="adicionar()">
-          <ion-icon slot="start" name="person-add-outline"></ion-icon>
-          Cadastrar médico
-        </ion-button>
+        @if (podeGerenciar) {
+          <ion-button (click)="adicionar()">
+            <ion-icon slot="start" name="person-add-outline"></ion-icon>
+            Cadastrar médico
+          </ion-button>
+        }
       </div>
     } @else if (medicosFiltrados.length === 0) {
       <div class="ion-text-center ion-padding empty-state">
@@ -74,13 +78,20 @@
           {{ medicosFiltrados.length === 1 ? 'profissional' : 'profissionais' }}
           @if (termoBusca) { de {{ medicos.length }} }
         </span>
+        @if (podeGerenciar) {
+          <ion-chip [outline]="!mostrarInativos" [color]="mostrarInativos ? 'primary' : 'medium'" (click)="alternarInativos()"
+                    role="switch" [attr.aria-checked]="mostrarInativos">
+            <ion-icon [name]="mostrarInativos ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+            <ion-label>{{ mostrarInativos ? 'Exibindo inativos' : 'Mostrar inativos' }}</ion-label>
+          </ion-chip>
+        }
       </div>
 
       <ion-grid class="ion-no-padding">
         <ion-row>
           @for (m of medicosFiltrados; track m.id) {
             <ion-col size="12" size-md="6" size-xl="4">
-              <ion-card class="registro-card">
+              <ion-card class="registro-card" [class.registro-inativo]="m.ativo === false">
                 <ion-card-header>
                   <div class="card-header-flex">
                     <ion-avatar class="card-avatar" aria-hidden="true">
@@ -89,6 +100,9 @@
                     <div class="header-titles">
                       <ion-card-title [title]="m.nome">{{ m.nome }}</ion-card-title>
                       <ion-card-subtitle>CRM: {{ m.crm }}</ion-card-subtitle>
+                      @if (m.ativo === false) {
+                        <ion-badge color="medium" class="badge-inativo">Inativo</ion-badge>
+                      }
                     </div>
                   </div>
                 </ion-card-header>
@@ -109,20 +123,37 @@
                     }
                   </div>
 
+                  @if (podeGerenciar) {
+                    <div class="info-row" [title]="m.emailUsuario ? 'Login vinculado: só este usuário altera as consultas deste médico' : 'Sem login vinculado'">
+                      <ion-icon [name]="m.emailUsuario ? 'person-circle-outline' : 'unlink-outline'" aria-hidden="true"></ion-icon>
+                      <span>{{ m.emailUsuario || 'Sem login vinculado' }}</span>
+                    </div>
+                  }
+
                   @if (m.observacao) {
                     <p class="observacao-box"><em>{{ m.observacao }}</em></p>
                   }
 
-                  <div class="card-actions">
-                    <ion-button fill="outline" color="primary" size="small" (click)="editar(m)" [attr.aria-label]="'Editar ' + m.nome">
-                      <ion-icon slot="start" name="create-outline"></ion-icon>
-                      Editar
-                    </ion-button>
-                    <ion-button fill="clear" color="danger" size="small" (click)="remover(m)" [attr.aria-label]="'Excluir ' + m.nome">
-                      <ion-icon slot="start" name="trash-outline"></ion-icon>
-                      Excluir
-                    </ion-button>
-                  </div>
+                  @if (podeGerenciar) {
+                    <div class="card-actions">
+                      @if (m.ativo !== false) {
+                        <ion-button fill="outline" color="primary" size="small" (click)="editar(m)" [attr.aria-label]="'Editar ' + m.nome">
+                          <ion-icon slot="start" name="create-outline"></ion-icon>
+                          Editar
+                        </ion-button>
+                        <ion-button fill="clear" color="danger" size="small" (click)="remover(m)" [attr.aria-label]="'Inativar ' + m.nome"
+                                    title="O histórico do médico é preservado">
+                          <ion-icon slot="start" name="archive-outline"></ion-icon>
+                          Inativar
+                        </ion-button>
+                      } @else {
+                        <ion-button fill="outline" color="success" size="small" (click)="reativar(m)" [attr.aria-label]="'Reativar ' + m.nome">
+                          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                          Reativar
+                        </ion-button>
+                      }
+                    </div>
+                  }
                 </ion-card-content>
               </ion-card>
             </ion-col>
@@ -132,9 +163,11 @@
     }
   </div>
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button color="primary" (click)="adicionar()" aria-label="Cadastrar novo médico">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  @if (podeGerenciar) {
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button color="primary" (click)="adicionar()" aria-label="Cadastrar novo médico">
+        <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  }
 </ion-content>

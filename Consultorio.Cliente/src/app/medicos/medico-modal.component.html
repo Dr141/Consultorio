@@ -45,6 +45,14 @@
       </ion-row>
     </ion-grid>
 
+    <p class="secao-formulario">Acesso ao sistema</p>
+    <ion-item class="form-item">
+      <ion-input type="email" label="E-mail de login do médico" labelPlacement="floating" formControlName="emailUsuario"
+                 inputmode="email" autocomplete="off" placeholder="medico@clinica.com" [maxlength]="256"
+                 helperText="Opcional. Quando preenchido, só este usuário pode alterar as consultas deste médico."
+                 [errorText]="erro('emailUsuario')"></ion-input>
+    </ion-item>
+
     <p class="secao-formulario">Dados pessoais e contato</p>
     <ion-grid class="ion-no-padding">
       <ion-row>

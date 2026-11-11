@@ -16,24 +16,33 @@ public class MedicoAppService(
 {
     private const string CacheKeyTodos = "medicos:todos";
 
-    public async Task<List<MedicoResponse>> ObterTodosAsync()
+    public async Task<List<MedicoResponse>> ObterTodosAsync(bool incluirInativos = false)
     {
+        List<MedicoResponse>? response = null;
         if (cacheService is not null)
         {
-            var emCache = await cacheService.ObterAsync<List<MedicoResponse>>(CacheKeyTodos);
-            if (emCache is not null)
-                return emCache;
+            response = await cacheService.ObterAsync<List<MedicoResponse>>(CacheKeyTodos);
         }
 
-        var medicos = await medicoRepositorio.ObterTodosDetalhado();
-        var response = medicos.Select(MapearResponse).ToList();
-
-        if (cacheService is not null)
+        if (response is null)
         {
-            await cacheService.DefinirAsync(CacheKeyTodos, response);
+            var medicos = await medicoRepositorio.ObterTodosDetalhado();
+            response = medicos.Select(MapearResponse).ToList();
+
+            if (cacheService is not null)
+            {
+                await cacheService.DefinirAsync(CacheKeyTodos, response);
+            }
         }
 
-        return response;
+        return incluirInativos ? response : response.Where(m => m.Ativo).ToList();
+    }
+
+    public async Task<MedicoResponse?> ObterPorUsuarioAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var medico = await medicoRepositorio.ObterPorEmailUsuario(email);
+        return medico is null ? null : MapearResponse(medico);
     }
 
     public async Task<MedicoResponse?> ObterPorIdAsync(int id)
@@ -92,7 +101,12 @@ public class MedicoAppService(
             if (await pessoaRepositorio.ExisteCpf(cpfVo.Valor))
             {
                 var pessoaExistente = await pessoaRepositorio.ObterPorCpf(cpfVo.Valor);
-                if (pessoaExistente is null || await medicoRepositorio.ObterPorIdPessoa(pessoaExistente.Id) is not null)
+                var cadastroExistente = pessoaExistente is null ? null : await medicoRepositorio.ObterPorIdPessoa(pessoaExistente.Id);
+                if (cadastroExistente is not null && !cadastroExistente.Ativo)
+                {
+                    throw new DomainException($"Já existe um médico inativo com o CPF {cpfVo.Formatado()} ({pessoaExistente!.Nome}). Reative o cadastro em vez de criar outro.");
+                }
+                if (pessoaExistente is null || cadastroExistente is not null)
                 {
                     throw new DomainException($"Já existe uma pessoa cadastrada com o CPF {cpfVo.Formatado()}.");
                 }
@@ -108,6 +122,7 @@ public class MedicoAppService(
         }
 
         var medico = new Medico(pessoa, crmVo, request.Especialidades);
+        await VincularUsuarioAsync(medico, request.EmailUsuario);
         var salvo = await medicoRepositorio.Adicionar(medico);
 
         if (cacheService is not null)
@@ -146,6 +161,7 @@ public class MedicoAppService(
         }
 
         medico.Atualizar(crmVo, request.Especialidades);
+        await VincularUsuarioAsync(medico, request.EmailUsuario, excluirId: id);
         var atualizado = await medicoRepositorio.Atualizar(medico);
 
         if (cacheService is not null)
@@ -162,8 +178,39 @@ public class MedicoAppService(
         var medico = await medicoRepositorio.ObterId(id)
             ?? throw new DomainException($"Médico com id {id} não encontrado.");
 
-        await medicoRepositorio.Remover(medico);
+        medico.Inativar();
+        await medicoRepositorio.Atualizar(medico);
+        await LimparCache(id);
+    }
 
+    public async Task<MedicoResponse> ReativarAsync(int id)
+    {
+        var medico = await medicoRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Médico com id {id} não encontrado.");
+
+        medico.Reativar();
+        var atualizado = await medicoRepositorio.Atualizar(medico);
+        await LimparCache(id);
+        return MapearResponse(atualizado);
+    }
+
+    /// <summary>Um mesmo login não pode representar dois médicos diferentes.</summary>
+    private async Task VincularUsuarioAsync(Medico medico, string? email, int? excluirId = null)
+    {
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var outro = await medicoRepositorio.ObterPorEmailUsuario(email);
+            if (outro is not null && outro.Id != (excluirId ?? 0))
+            {
+                throw new DomainException($"O e-mail {email.Trim()} já está vinculado a outro médico ({outro.Pessoa?.Nome}).");
+            }
+        }
+
+        medico.VincularUsuario(email);
+    }
+
+    private async Task LimparCache(int id)
+    {
         if (cacheService is not null)
         {
             await cacheService.RemoverAsync(CacheKeyTodos);
@@ -182,6 +229,8 @@ public class MedicoAppService(
             m.Crm?.Valor ?? string.Empty,
             m.Especialidades.ToList(),
             m.DtCriacao,
-            m.Pessoa?.Observacao
+            m.Pessoa?.Observacao,
+            m.Ativo,
+            m.EmailUsuario
         );
 }

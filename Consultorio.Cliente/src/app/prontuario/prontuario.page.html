@@ -204,7 +204,11 @@
             @for (c of prontuario.consultas; track c.id) {
               <div class="registro-oficio-item">
                 <div class="registro-header">
-                  <span class="registro-titulo">Consulta Clínica #{{ c.id }}</span>
+                  <span class="registro-titulo">
+                    Consulta Clínica #{{ c.id }}
+                    @if (c.status === 'Anulada') { <span class="selo-status selo-anulado">ANULADA</span> }
+                    @else if (c.status === 'Aberta') { <span class="selo-status">EM ABERTO</span> }
+                  </span>
                   <span class="registro-data">{{ formatarDataHora(c.dataAtendimento) }}</span>
                 </div>
                 <div class="registro-medico">
@@ -213,10 +217,19 @@
                     <span> &bullet; ({{ c.especialidadesMedico.join(', ') }})</span>
                   }
                 </div>
-                <div class="registro-conteudo">
+                <div class="registro-conteudo" [class.conteudo-anulado]="c.status === 'Anulada'">
                   <strong>Evolução / Prescrição:</strong><br />
                   {{ c.observacao }}
                 </div>
+                @if (c.status === 'Anulada') {
+                  <div class="registro-anulacao"><strong>Registro anulado.</strong> Motivo: {{ c.motivoAnulacao }}</div>
+                }
+                @for (a of c.adendos ?? []; track a.id) {
+                  <div class="registro-adendo">
+                    <strong>Adendo em {{ formatarDataHora(a.dtCriacao) }} por {{ a.autor }}:</strong><br />
+                    {{ a.texto }}
+                  </div>
+                }
               </div>
             }
           }
@@ -237,7 +250,11 @@
                     <strong>Médico Solicitante / Laudador:</strong> {{ e.nomeMedico }} (CRM: {{ e.crmMedico || 'Não informado' }})
                   </div>
                 }
-                @if (e.possuiLaudo) {
+                @if (e.cancelado) {
+                  <div class="aguardando-bloco">
+                    <span><strong>Exame cancelado.</strong> Motivo: {{ e.motivoCancelamento }}</span>
+                  </div>
+                } @else if (e.possuiLaudo) {
                   <div class="laudo-bloco">
                     <div class="laudo-titulo">Laudo Técnico Emitido</div>
                     <div class="laudo-texto">{{ e.resultado }}</div>

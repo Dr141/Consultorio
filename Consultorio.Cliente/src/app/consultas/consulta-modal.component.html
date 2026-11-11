@@ -18,6 +18,12 @@
         <p><strong>Médico:</strong> {{ consulta.nomeMedico }} · {{ (consulta.dataHora || consulta.dtCriacao) | dataBr:'dataHora' }}</p>
       </div>
     } @else {
+      @if (descricaoAtendimento) {
+        <div class="exame-info-card">
+          <h3><strong>Atendimento da agenda</strong></h3>
+          <p>{{ descricaoAtendimento }}</p>
+        </div>
+      }
       <p class="secao-formulario">Atendimento</p>
       <ion-grid class="ion-no-padding">
         <ion-row>
@@ -60,6 +66,13 @@
       </ion-textarea>
     </ion-item>
 
+    <ion-item class="form-item" lines="none">
+      <ion-toggle [checked]="finalizarAoSalvar" (ionChange)="finalizarAoSalvar = $any($event).detail.checked" justify="space-between">
+        <span class="toggle-rotulo">Finalizar ao salvar</span>
+        <span class="toggle-dica">Depois de finalizada, correções só por adendo.</span>
+      </ion-toggle>
+    </ion-item>
+
     <div class="acoes-formulario">
       <ion-button class="btn-cancelar" fill="outline" color="medium" type="button" (click)="fechar()">Cancelar</ion-button>
       <ion-button type="submit" color="primary" [disabled]="bloquearEnvio()">
@@ -68,7 +81,7 @@
         } @else {
           <ion-icon slot="start" name="save-outline"></ion-icon>
         }
-        {{ salvando ? 'Salvando...' : 'Salvar consulta' }}
+        {{ salvando ? 'Salvando...' : (finalizarAoSalvar ? 'Salvar e finalizar' : 'Salvar consulta') }}
       </ion-button>
     </div>
   </form>

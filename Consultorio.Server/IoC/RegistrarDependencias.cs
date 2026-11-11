@@ -6,7 +6,9 @@ using Consultorio.Identity.Infraestrutura.Contexto;
 using Consultorio.Identity.Infraestrutura.Servicos;
 using Consultorio.Identity.Modelo.Interfaces.Servicos;
 using Consultorio.Infraestrutura.Cache;
+using Consultorio.Aplicacao.Configuracao;
 using Consultorio.Infraestrutura.Contexto;
+using Consultorio.Infraestrutura.Notificacoes;
 using Consultorio.Infraestrutura.Repositorios;
 using Consultorio.Infraestrutura.Repositorios.Base;
 using Microsoft.AspNetCore.Identity;
@@ -68,6 +70,9 @@ public static class RegistrarDependencias
         services.AddScoped<IAgendaRepositorio, AgendaRepositorio>();
         services.AddScoped<IConsultaRepositorio, ConsultaRepositorio>();
         services.AddScoped<IExameRepositorio, ExameRepositorio>();
+        services.AddScoped<IConsultaAdendoRepositorio, ConsultaAdendoRepositorio>();
+        services.AddScoped<IAuditoriaRepositorio, AuditoriaRepositorio>();
+        services.AddScoped<IBloqueioAgendaRepositorio, BloqueioAgendaRepositorio>();
 
         // Serviços de Aplicação (DDD)
         services.AddScoped<IPessoaAppService, PessoaAppService>();
@@ -77,6 +82,21 @@ public static class RegistrarDependencias
         services.AddScoped<IConsultaAppService, ConsultaAppService>();
         services.AddScoped<IExameAppService, ExameAppService>();
         services.AddScoped<IProntuarioAppService, ProntuarioAppService>();
+        services.AddScoped<IAuditoriaAppService, AuditoriaAppService>();
+        services.AddScoped<IRotinasAgendaAppService, RotinasAgendaAppService>();
+
+        // Dados da clínica e parâmetros das rotinas (seção "Clinica")
+        services.AddSingleton(configuration.GetSection("Clinica").Get<OpcoesClinica>() ?? new OpcoesClinica());
+        services.AddSingleton(TimeProvider.System);
+
+        // Canais de notificação: e-mail (se configurado) e, opcionalmente, simulação em log.
+        // Para WhatsApp/SMS, implemente INotificador e registre aqui.
+        services.AddSingleton(configuration.GetSection("Notificacoes:Email").Get<OpcoesEmail>() ?? new OpcoesEmail());
+        services.AddSingleton<INotificador, EmailNotificador>();
+        if (configuration.GetValue("Notificacoes:SimularEnvio", false))
+        {
+            services.AddSingleton<INotificador, RegistroLogNotificador>();
+        }
     }
 
     /// <summary>
@@ -106,10 +126,118 @@ public static class RegistrarDependencias
                 ALTER TABLE "Exame" ALTER COLUMN "Resultado" DROP NOT NULL;
                 ALTER TABLE "Exame" ADD COLUMN IF NOT EXISTS "IdMedico" integer NULL REFERENCES "Medico"("Id") ON DELETE SET NULL;
             """);
+
+            AplicarAjustesEsquema(dbAppConsultorio);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[AVISO] Migrações de banco de dados: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Ajustes de esquema idempotentes (podem rodar a cada inicialização sem efeito colateral).
+    /// Mantém bancos existentes compatíveis com o modelo enquanto o histórico de migrations do EF
+    /// não é reconstruído. Cada bloco roda separado para que uma falha não impeça os demais.
+    /// </summary>
+    public static void AplicarAjustesEsquema(ConsultorioContexto contexto)
+    {
+        string[] comandos =
+        [
+            // Fase 1 — exclusão lógica de cadastros
+            """
+            ALTER TABLE "Paciente" ADD COLUMN IF NOT EXISTS "Ativo" boolean NOT NULL DEFAULT true;
+            ALTER TABLE "Paciente" ADD COLUMN IF NOT EXISTS "DtInativacao" timestamp with time zone NULL;
+            ALTER TABLE "Medico" ADD COLUMN IF NOT EXISTS "Ativo" boolean NOT NULL DEFAULT true;
+            ALTER TABLE "Medico" ADD COLUMN IF NOT EXISTS "DtInativacao" timestamp with time zone NULL;
+            ALTER TABLE "Medico" ADD COLUMN IF NOT EXISTS "EmailUsuario" character varying(256) NULL;
+            CREATE INDEX IF NOT EXISTS "IX_Medico_EmailUsuario" ON "Medico" ("EmailUsuario");
+            """,
+            // Fase 1 — ciclo de vida da consulta e cancelamento de exames
+            """
+            ALTER TABLE "Consulta" ADD COLUMN IF NOT EXISTS "Status" integer NOT NULL DEFAULT 1;
+            ALTER TABLE "Consulta" ADD COLUMN IF NOT EXISTS "DtFinalizacao" timestamp with time zone NULL;
+            ALTER TABLE "Consulta" ADD COLUMN IF NOT EXISTS "DtAnulacao" timestamp with time zone NULL;
+            ALTER TABLE "Consulta" ADD COLUMN IF NOT EXISTS "MotivoAnulacao" character varying(500) NULL;
+            ALTER TABLE "Exame" ADD COLUMN IF NOT EXISTS "Cancelado" boolean NOT NULL DEFAULT false;
+            ALTER TABLE "Exame" ADD COLUMN IF NOT EXISTS "DtCancelamento" timestamp with time zone NULL;
+            ALTER TABLE "Exame" ADD COLUMN IF NOT EXISTS "MotivoCancelamento" character varying(500) NULL;
+            """,
+            // Fase 1 — adendos do prontuário
+            """
+            CREATE TABLE IF NOT EXISTS "ConsultaAdendo" (
+                "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                "IdConsulta" integer NOT NULL REFERENCES "Consulta"("Id") ON DELETE CASCADE,
+                "Texto" character varying(2000) NOT NULL,
+                "Autor" character varying(256) NOT NULL,
+                "DtCriacao" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_ConsultaAdendo_IdConsulta" ON "ConsultaAdendo" ("IdConsulta");
+            """,
+            // Fase 1 — trilha de auditoria
+            """
+            CREATE TABLE IF NOT EXISTS "RegistroAuditoria" (
+                "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                "Usuario" character varying(256) NOT NULL,
+                "Acao" character varying(30) NOT NULL,
+                "Recurso" character varying(60) NOT NULL,
+                "IdRecurso" character varying(60) NULL,
+                "Metodo" character varying(10) NOT NULL,
+                "Caminho" character varying(400) NOT NULL,
+                "StatusCode" integer NOT NULL,
+                "Ip" character varying(64) NULL,
+                "DtCriacao" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_RegistroAuditoria_DtCriacao" ON "RegistroAuditoria" ("DtCriacao");
+            CREATE INDEX IF NOT EXISTS "IX_RegistroAuditoria_Recurso_IdRecurso" ON "RegistroAuditoria" ("Recurso", "IdRecurso");
+            """,
+            // Fase 2 — e-mail de contato para lembretes
+            """
+            ALTER TABLE "Pessoa" ADD COLUMN IF NOT EXISTS "Email" character varying(256) NULL;
+            """,
+            // Fase 2 — situação, tipo e duração do agendamento; confirmação pelo paciente
+            """
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "Tipo" integer NOT NULL DEFAULT 1;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "DuracaoMinutos" integer NOT NULL DEFAULT 30;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "Status" integer NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "DtConfirmacao" timestamp with time zone NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "DtChegada" timestamp with time zone NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "DtInicioAtendimento" timestamp with time zone NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "DtFimAtendimento" timestamp with time zone NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "TokenConfirmacao" uuid NULL;
+            ALTER TABLE "Agenda" ADD COLUMN IF NOT EXISTS "LembreteEnviadoEm" timestamp with time zone NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Agenda_TokenConfirmacao" ON "Agenda" ("TokenConfirmacao");
+            CREATE INDEX IF NOT EXISTS "IX_Agenda_Data_IdMedico" ON "Agenda" ("Data", "IdMedico");
+            -- Horários já ocupados antes desta versão passam a ter situação "Agendado" (ou "Atendido" se já têm consulta)
+            UPDATE "Agenda" SET "Status" = CASE WHEN "IdConsulta" IS NOT NULL THEN 5 ELSE 1 END
+             WHERE "Status" IS NULL AND ("IdPaciente" IS NOT NULL OR "IdConsulta" IS NOT NULL OR "IdExame" IS NOT NULL);
+            UPDATE "Agenda" SET "TokenConfirmacao" = gen_random_uuid()
+             WHERE "TokenConfirmacao" IS NULL AND "IdPaciente" IS NOT NULL;
+            """,
+            // Fase 2 — bloqueios de agenda
+            """
+            CREATE TABLE IF NOT EXISTS "BloqueioAgenda" (
+                "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                "IdMedico" integer NULL REFERENCES "Medico"("Id") ON DELETE CASCADE,
+                "DataInicio" timestamp with time zone NOT NULL,
+                "DataFim" timestamp with time zone NOT NULL,
+                "Motivo" character varying(200) NOT NULL,
+                "DtCriacao" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_BloqueioAgenda_DataInicio_DataFim" ON "BloqueioAgenda" ("DataInicio", "DataFim");
+            """
+        ];
+
+        foreach (var comando in comandos)
+        {
+            try
+            {
+                contexto.Database.ExecuteSqlRaw(comando);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AVISO] Ajuste de esquema não aplicado: {ex.Message}");
+            }
         }
     }
 

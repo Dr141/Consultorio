@@ -5,6 +5,8 @@ import { IonicModule } from '../shared/ionic.module';
 import { AgendaPageRoutingModule } from './agenda-routing.module';
 import { AgendaPage } from './agenda.page';
 import { AgendaModalComponent } from './agenda-modal.component';
+import { GradeModalComponent } from './grade-modal.component';
+import { BloqueiosModalComponent } from './bloqueios-modal.component';
 
 @NgModule({
   imports: [
@@ -14,6 +16,6 @@ import { AgendaModalComponent } from './agenda-modal.component';
     IonicModule,
     AgendaPageRoutingModule
   ],
-  declarations: [AgendaPage, AgendaModalComponent]
+  declarations: [AgendaPage, AgendaModalComponent, GradeModalComponent, BloqueiosModalComponent]
 })
 export class AgendaPageModule {}

@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
-import { Agenda, Medico, Paciente } from '../types/types';
+import { Agenda, Medico, Paciente, TIPOS_ATENDIMENTO } from '../types/types';
 import { hojeInputData, paraInputData } from '../shared/utils/formatadores';
 import { mensagemErro, possuiObrigatoriosPendentes } from '../shared/utils/validadores';
 import { SelecionarPacienteComponent } from '../shared/selecionar-paciente/selecionar-paciente.component';
@@ -25,6 +25,7 @@ export class AgendaModalComponent implements OnInit {
   public carregandoListas = true;
   public medicos: Medico[] = [];
   public pacientes: Paciente[] = [];
+  public readonly tipos = TIPOS_ATENDIMENTO;
 
   constructor(
     private modalCtrl: ModalController,
@@ -40,7 +41,9 @@ export class AgendaModalComponent implements OnInit {
       data: new FormControl(this.agenda?.data ? paraInputData(this.agenda.data) : hojeInputData(), [Validators.required]),
       hora: new FormControl(this.agenda?.hora ? this.agenda.hora.substring(0, 5) : '08:00', [Validators.required]),
       idMedico: new FormControl(this.agenda?.idMedico || null, [Validators.required]),
-      idPaciente: new FormControl(this.agenda?.idPaciente || null)
+      idPaciente: new FormControl(this.agenda?.idPaciente || null),
+      tipo: new FormControl(TIPOS_ATENDIMENTO.find(t => t.nome === this.agenda?.tipo)?.valor ?? 1),
+      duracaoMinutos: new FormControl(this.agenda?.duracaoMinutos ?? 30)
     });
   }
 
@@ -130,7 +133,9 @@ export class AgendaModalComponent implements OnInit {
       data: this.form.value.data,
       hora: horaVal,
       idMedico: this.form.value.idMedico,
-      idPaciente: this.form.value.idPaciente || null
+      idPaciente: this.form.value.idPaciente || null,
+      tipo: this.form.value.tipo,
+      duracaoMinutos: this.form.value.duracaoMinutos
     };
 
     const operacao = this.agenda

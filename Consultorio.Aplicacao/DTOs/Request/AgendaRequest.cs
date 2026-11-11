@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Consultorio.Dominio.Enumerados;
 
 namespace Consultorio.Aplicacao.DTOs.Request;
 
@@ -12,5 +13,8 @@ public record AgendaRequest(
     int? IdMedico,
     int? IdPaciente,
     int? IdConsulta,
-    int? IdExame
+    int? IdExame,
+    TipoAtendimento? Tipo = null,
+    [Range(5, 480, ErrorMessage = "A duração deve ficar entre 5 e 480 minutos")]
+    int? DuracaoMinutos = null
 );

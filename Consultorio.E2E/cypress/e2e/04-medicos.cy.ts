@@ -1,18 +1,14 @@
-describe('04 - Corpo Clínico / Médicos (CRUD Completo)', () => {
-  const cpfMedico = '85321496773';
-  const crmMedico = '998877-SP';
-  const nomeMedico = 'Dra. Fernanda Lima E2E';
+import { gerarCpfValido, sufixoExecucao } from '../support/dados-teste';
+
+describe('04 - Corpo Clínico / Médicos (cadastro, edição e inativação)', () => {
+  // Médicos não são apagados (apenas inativados): dados próprios por execução.
+  const sufixo = sufixoExecucao();
+  const cpfMedico = gerarCpfValido();
+  const crmMedico = `${sufixo}-SP`;
+  const nomeMedico = `Dra. Fernanda Lima E2E ${sufixo}`;
 
   beforeEach(() => {
     cy.loginApi();
-    cy.request('GET', '/api/medico').then((res) => {
-      const encontrado = (res.body as any[]).find(
-        (m) => m.crm === crmMedico || m.nome === nomeMedico
-      );
-      if (encontrado) {
-        cy.request('DELETE', `/api/medico/${encontrado.id}`);
-      }
-    });
   });
 
   it('Deve cadastrar, filtrar, editar e excluir um médico pela interface', () => {
@@ -65,9 +61,9 @@ describe('04 - Corpo Clínico / Médicos (CRUD Completo)', () => {
 
     cy.contains('.observacao-box', 'Horário ampliado E2E').should('be.visible');
 
-    // 4. Excluir Médico
+    // 4. Inativar Médico (histórico preservado)
     cy.contains('ion-card.registro-card', nomeMedico).within(() => {
-      cy.contains('ion-button', 'Excluir').click();
+      cy.contains('ion-button', 'Inativar').click();
     });
 
     cy.get('ion-alert').should('be.visible');

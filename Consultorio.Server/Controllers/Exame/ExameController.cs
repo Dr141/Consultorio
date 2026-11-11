@@ -2,13 +2,16 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Excecoes;
+using Consultorio.Server.Extensoes;
+using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Consultorio.Server.Controllers.Exame;
 
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PoliticasAcesso.Recepcao)]
+[Auditar("Exame")]
 [ApiController]
 public class ExameController(IExameAppService exameAppService) : ControllerBase
 {
@@ -57,6 +60,7 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = PoliticasAcesso.Clinico)]
     [EndpointSummary("Atualizar exame")]
     [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -76,6 +80,7 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
     public record RegistrarResultadoDto(string Resultado, int? IdMedico = null);
 
     [HttpPatch("{id:int}/resultado")]
+    [Authorize(Policy = PoliticasAcesso.Clinico)]
     [EndpointSummary("Registrar resultado do exame")]
     [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -92,8 +97,24 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
         }
     }
 
+    [HttpPatch("{id:int}/cancelar")]
+    [EndpointSummary("Cancelar solicitação de exame (o registro é preservado com o motivo)")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> Cancelar(int id, [FromBody] MotivoRequest request)
+    {
+        try
+        {
+            return Ok(await exameAppService.CancelarAsync(id, request.Motivo));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
-    [EndpointSummary("Excluir exame")]
+    [EndpointSummary("Exclusão não permitida: use cancelar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Remover(int id)

@@ -1,0 +1,33 @@
+.filtros-card {
+  margin: 0 0 16px;
+}
+
+.filtros-acoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+
+  ion-button {
+    text-transform: none;
+  }
+}
+
+.lista-auditoria {
+  ion-item {
+    --background: var(--app-surface);
+  }
+
+  h3 {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  p {
+    font-size: 12px;
+  }
+
+  .badge-acao {
+    min-width: 96px;
+    text-align: center;
+  }
+}
