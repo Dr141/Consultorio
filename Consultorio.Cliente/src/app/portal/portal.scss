@@ -1,0 +1,203 @@
+.portal-entrada {
+  max-width: 440px;
+  margin: 32px auto;
+  padding: 0 12px;
+}
+
+.cartao-entrada {
+  border-radius: 18px;
+  margin: 0;
+
+  ion-card-header {
+    text-align: center;
+  }
+
+  .icone-entrada {
+    font-size: 56px;
+    color: var(--ion-color-primary);
+    margin: 0 auto 4px;
+  }
+}
+
+.botao-principal {
+  margin-top: 12px;
+  --border-radius: 12px;
+  height: 46px;
+}
+
+.aviso-erro {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--ion-color-danger);
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  font-size: 14px;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+}
+
+.campo-codigo {
+  font-size: 22px;
+  letter-spacing: 6px;
+}
+
+.acoes-codigo {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.dica-portal {
+  margin: 12px 4px 0;
+  font-size: 13px;
+  color: var(--app-text-muted);
+  text-align: center;
+
+  &.rodape {
+    margin-top: 20px;
+  }
+
+  a {
+    color: var(--ion-color-primary);
+    font-weight: 600;
+  }
+}
+
+/* Área do paciente */
+.boas-vindas {
+  margin: 0 0 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--app-text-muted);
+    font-size: 14px;
+  }
+}
+
+.cartao-portal {
+  border-radius: 14px;
+  margin: 0 0 12px;
+
+  .linha-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .data-grande {
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+
+  .detalhe {
+    margin: 4px 0 0;
+    color: var(--app-text-muted);
+    font-size: 14px;
+  }
+
+  .acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+}
+
+.resultado-texto {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--app-surface-elevated);
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+
+.medico-horarios {
+  border-radius: 14px;
+  margin: 0 0 14px;
+
+  .dia {
+    margin: 10px 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--app-text-muted);
+    text-transform: capitalize;
+  }
+
+  .horarios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .horario {
+    min-width: 72px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--ion-color-primary-rgb), 0.4);
+    background: rgba(var(--ion-color-primary-rgb), 0.06);
+    color: var(--ion-color-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(var(--ion-color-primary-rgb), 0.16);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+.filtro-especialidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 10px;
+
+  ion-chip {
+    margin: 2px;
+  }
+}
+
+.aviso-portal {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  font-size: 14px;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: var(--ion-color-primary);
+  }
+
+  &.alerta {
+    background: rgba(var(--ion-color-warning-rgb), 0.12);
+
+    ion-icon {
+      color: var(--ion-color-warning-shade);
+    }
+  }
+}

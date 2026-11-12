@@ -1,11 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { FinanceiroPage } from './financeiro.page';
-import { ReciboPage } from './recibo.page';
 
 const routes: Routes = [
   { path: '', component: FinanceiroPage },
-  { path: 'recibo/:id', component: ReciboPage }
+  { path: 'recibo', loadChildren: () => import('./recibo.module').then(m => m.ReciboPageModule) }
 ];
 
 @NgModule({

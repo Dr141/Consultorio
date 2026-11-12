@@ -18,7 +18,7 @@ import { hojeInputData, paraInputData } from '../shared/utils/formatadores';
 export class AuditoriaPage {
   public registros: RegistroAuditoria[] = [];
   public carregando = false;
-  public readonly recursos = ['Consulta', 'Exame', 'Paciente', 'Prontuario', 'Documento', 'Financeiro', 'Convenio'];
+  public readonly recursos = ['Consulta', 'Exame', 'Paciente', 'Prontuario', 'Documento', 'Financeiro', 'Convenio', 'Portal'];
   public aba: 'trilha' | 'revisao' = 'trilha';
   public acessos: AcessoUsuario[] = [];
   public carregandoRevisao = false;

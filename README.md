@@ -221,6 +221,42 @@ Os arquivos contêm dados de pacientes: guarde uma cópia fora do servidor (outr
 
 ---
 
+## 🧑‍⚕️ Portal do Paciente
+
+Área pública em **`/portal`**, com link na tela de login da equipe. O paciente consulta e resolve o que é dele sem ligar para a clínica.
+
+- **Acesso sem senha:** o paciente informa CPF e data de nascimento e recebe um código de 6 dígitos no e-mail cadastrado na clínica. O código vale 10 minutos e aceita até 5 tentativas.
+- **Sessão:** curta (padrão 30 min), guardada só na aba do navegador (`sessionStorage`), com o token enviado no cabeçalho `X-Portal-Token`. Código e token ficam no banco apenas como hash.
+- **Privacidade:**
+  - a resposta ao pedido de código é sempre a mesma, exista ou não o cadastro, então não revela quem é paciente;
+  - o paciente da sessão vem do servidor, nunca do navegador;
+  - pedir dados de outra pessoa responde "não encontrado";
+  - a evolução clínica nunca aparece no portal.
+- **Proteções:** cada IP faz no máximo 10 tentativas de entrada a cada 5 minutos, e cada paciente pede no máximo 5 códigos por hora. Todo acesso autenticado entra na trilha de auditoria como `portal:paciente:{id}`.
+- **O que o paciente faz:**
+  - vê os próximos atendimentos e o histórico;
+  - confirma presença e desmarca, com antecedência mínima;
+  - agenda horários livres de consulta ou retorno, filtrando por especialidade;
+  - vê os resultados de exames já laudados (texto e arquivos);
+  - abre e imprime documentos emitidos;
+  - vê as cobranças e imprime recibos.
+
+```json
+"Clinica": {
+  "PortalHabilitado": true,
+  "PortalSessaoMinutos": 30,
+  "PortalDiasAgendamento": 30,
+  "PortalAntecedenciaAgendamentoHoras": 2,
+  "PortalAntecedenciaCancelamentoHoras": 12,
+  "PortalMaximoAgendamentosFuturos": 2,
+  "PortalLiberarResultados": true
+}
+```
+
+O portal depende do envio de e-mails (seção `Notificacoes:Email`). Pacientes sem e-mail cadastrado precisam pedir a inclusão na recepção.
+
+---
+
 ## 🧪 Práticas de TDD e Testes Automatizados
 
 O sistema segue o ciclo de **Test-Driven Development (TDD)**, com cobertura para regras de domínio, orquestração de serviços, cache distribuído e controllers da API.
@@ -351,6 +387,9 @@ O repositório possui automação completa configurada em `.github/workflows/rel
 | | `PATCH` | `/api/documento/{id}/cancelar` | Cancela com motivo (continua no histórico) |
 | | `GET` | `/api/publico/documento/{codigo}` | Verificação pública de autenticidade |
 | **CID-10** | `GET` | `/api/cid?busca=` | Busca de códigos frequentes |
+| **Portal do paciente** | `POST` | `/api/portal/acesso/codigo` · `/acesso/sessao` | Código por e-mail e abertura da sessão |
+| | `GET` | `/api/portal/resumo` · `/horarios` · `/exames` · `/documentos` · `/cobrancas` | Dados do próprio paciente (cabeçalho `X-Portal-Token`) |
+| | `POST` / `PATCH` / `DELETE` | `/api/portal/agendamentos/{idAgenda}` | Agendar, confirmar e desmarcar |
 | **Convênios** | `GET` / `POST` | `/api/convenio` | Lista e cadastra convênios |
 | | `GET` / `PUT` | `/api/convenio/precos` | Tabela de preços (particular e por convênio) |
 | | `PUT` | `/api/paciente/{id}/convenio` | Convênio e carteirinha do paciente |

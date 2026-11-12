@@ -15,6 +15,7 @@ describe('11 - Financeiro, Indicadores e Pendências', () => {
       cy.request('POST', '/api/financeiro/cobrancas', { idPaciente, descricao, valor: 150.5 });
     });
 
+    cy.intercept('GET', '/api/financeiro/cobrancas/*/recibo').as('recibo');
     cy.visit('/financeiro');
     cy.aguardarCarregamento();
     cy.contains('ion-title', 'Financeiro').should('exist');
@@ -33,13 +34,25 @@ describe('11 - Financeiro, Indicadores e Pendências', () => {
     cy.get('ion-alert button.alert-button:not(.alert-button-role-cancel)').click();
 
     cy.url().should('include', '/financeiro/recibo/');
+    // Em caso de falha, a mensagem do servidor aparece no relatório do Cypress.
+    cy.wait('@recibo').then(({ response }) => {
+      expect(response?.statusCode, JSON.stringify(response?.body)).to.eq(200);
+    });
     cy.contains('cento e cinquenta reais e cinquenta centavos').should('exist');
     cy.contains(descricao).should('exist');
   });
 
   it('Deve cadastrar convênio e definir valor na tabela de preços', () => {
     const nomeConvenio = `Plano E2E ${sufixo}`;
-    cy.request({ method: 'POST', url: '/api/convenio', body: { nome: nomeConvenio }, failOnStatusCode: false });
+    cy.request({ method: 'POST', url: '/api/convenio', body: { nome: nomeConvenio }, failOnStatusCode: false }).then((res) => {
+      expect(res.status, JSON.stringify(res.body)).to.eq(201);
+    });
+    cy.request({ url: '/api/convenio?incluirInativos=true', failOnStatusCode: false }).then((res) => {
+      expect(res.status, JSON.stringify(res.body)).to.eq(200);
+    });
+    cy.request({ url: '/api/convenio/precos', failOnStatusCode: false }).then((res) => {
+      expect(res.status, JSON.stringify(res.body)).to.eq(200);
+    });
 
     cy.intercept('PUT', '/api/convenio/precos').as('salvarPreco');
     cy.visit('/financeiro?aba=precos');

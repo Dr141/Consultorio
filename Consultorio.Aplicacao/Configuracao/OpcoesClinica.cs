@@ -47,6 +47,29 @@ public class OpcoesClinica
     /// <summary>Usuários sem atividade há mais dias que isso são destacados na revisão de acessos.</summary>
     public int DiasInatividadeRevisaoAcessos { get; set; } = 90;
 
+    // ---- Fase 5: portal do paciente ----
+
+    /// <summary>Liga/desliga o portal do paciente.</summary>
+    public bool PortalHabilitado { get; set; } = true;
+
+    /// <summary>Duração da sessão do paciente no portal, em minutos.</summary>
+    public int PortalSessaoMinutos { get; set; } = 30;
+
+    /// <summary>Quantos dias à frente o paciente enxerga horários livres para agendar.</summary>
+    public int PortalDiasAgendamento { get; set; } = 30;
+
+    /// <summary>Antecedência mínima, em horas, para agendar pelo portal.</summary>
+    public int PortalAntecedenciaAgendamentoHoras { get; set; } = 2;
+
+    /// <summary>Até quantas horas antes o paciente pode desmarcar pelo portal.</summary>
+    public int PortalAntecedenciaCancelamentoHoras { get; set; } = 12;
+
+    /// <summary>Máximo de agendamentos futuros simultâneos feitos/visíveis por paciente no portal.</summary>
+    public int PortalMaximoAgendamentosFuturos { get; set; } = 2;
+
+    /// <summary>Mostra o texto do laudo e os arquivos do exame no portal quando o laudo estiver pronto.</summary>
+    public bool PortalLiberarResultados { get; set; } = true;
+
     public TimeZoneInfo ObterFuso()
     {
         try

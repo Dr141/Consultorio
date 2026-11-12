@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { PortalService } from '../services/portal/portal.service';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { Recibo } from '../types/types';
 
@@ -10,7 +12,7 @@ import { Recibo } from '../types/types';
     <ion-header>
       <ion-toolbar color="primary">
         <ion-buttons slot="start">
-          <ion-back-button defaultHref="/financeiro" text="Voltar"></ion-back-button>
+          <ion-back-button [defaultHref]="portal ? '/portal/inicio' : '/financeiro'" text="Voltar"></ion-back-button>
         </ion-buttons>
         <ion-title>Recibo</ion-title>
         <ion-buttons slot="end">
@@ -103,8 +105,10 @@ export class ReciboPage implements OnInit {
   recibo: Recibo | null = null;
   carregando = true;
   erro = '';
+  /** Aberto pelo portal do paciente (usa a sessão do portal em vez do login da equipe). */
+  portal = false;
 
-  constructor(private rota: ActivatedRoute, private api: ConsultorioApiService) {}
+  constructor(private rota: ActivatedRoute, private api: ConsultorioApiService, private router: Router, private portalService: PortalService) {}
 
   ngOnInit() {
     const id = Number(this.rota.snapshot.paramMap.get('id'));
@@ -113,7 +117,9 @@ export class ReciboPage implements OnInit {
       this.erro = 'Recibo inválido.';
       return;
     }
-    this.api.obterRecibo(id).subscribe({
+    this.portal = this.router.url.startsWith('/portal');
+    const origem: Observable<Recibo> = this.portal ? this.portalService.recibo(id) : this.api.obterRecibo(id);
+    origem.subscribe({
       next: (r) => {
         this.recibo = r;
         this.carregando = false;

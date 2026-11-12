@@ -9,6 +9,7 @@ builder.Services.AddOpenApi();
 builder.Services.RegisterServices(builder.Configuration);
 builder.Services.ConfigAuthentication(builder.Configuration);
 builder.Services.AdicionarPoliticasAcesso();
+builder.Services.AdicionarLimitePortal();
 builder.Services.AddHostedService<Consultorio.Server.Rotinas.RotinasAgendaHostedService>();
 
 var app = builder.Build();
@@ -24,6 +25,7 @@ app.MapOpenApi();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

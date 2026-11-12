@@ -55,7 +55,7 @@ public class ConfirmacaoController(IAgendaAppService agendaAppService, OpcoesCli
     private ContentResult Pagina(string titulo, string mensagem, AgendaResponse? agenda, string? conteudoExtra)
     {
         static string H(string? v) => WebUtility.HtmlEncode(v ?? string.Empty);
-        var cultura = new System.Globalization.CultureInfo("pt-BR");
+        var cultura = Consultorio.Aplicacao.Servicos.Notificacoes.PtBr;
         var detalhes = agenda is null ? "" : $"""
             <div class="card">
               <div class="quando">{H(agenda.Data.Date.Add(agenda.Hora).ToString("dddd, dd 'de' MMMM 'às' HH:mm", cultura))}</div>

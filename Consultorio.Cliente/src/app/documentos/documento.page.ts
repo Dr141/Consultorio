@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { PortalService } from '../services/portal/portal.service';
 import { NavController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
@@ -17,15 +19,20 @@ export class DocumentoPage implements OnInit {
   documento: DocumentoClinico | null = null;
   carregando = true;
   erroCarregamento = '';
+  /** Aberto pelo portal do paciente: só leitura e impressão. */
+  portal = false;
 
   constructor(
     private rota: ActivatedRoute,
     private api: ConsultorioApiService,
     private feedback: FeedbackService,
-    private nav: NavController
+    private nav: NavController,
+    private router: Router,
+    private portalService: PortalService
   ) {}
 
   ngOnInit() {
+    this.portal = this.router.url.startsWith('/portal');
     const id = Number(this.rota.snapshot.paramMap.get('id'));
     if (!id) {
       this.carregando = false;
@@ -37,7 +44,8 @@ export class DocumentoPage implements OnInit {
 
   carregar(id: number) {
     this.carregando = true;
-    this.api.obterDocumento(id).subscribe({
+    const origem: Observable<DocumentoClinico> = this.portal ? this.portalService.documento(id) : this.api.obterDocumento(id);
+    origem.subscribe({
       next: (d) => {
         this.documento = d;
         this.carregando = false;

@@ -503,3 +503,49 @@ export type AcessoUsuario = {
   revisarAcesso: boolean;
   motivoRevisao?: string | null;
 };
+
+// ---------- Fase 5: portal do paciente ----------
+
+export type PortalSessao = { token: string; expiraEm: string; nomePaciente: string };
+
+export type PortalAgendamento = {
+  id: number;
+  dataHora: string;
+  duracaoMinutos: number;
+  tipo: string;
+  nomeMedico?: string | null;
+  especialidades: string[];
+  status?: StatusAgendamento | null;
+  podeConfirmar: boolean;
+  podeCancelar: boolean;
+};
+
+export type PortalResumo = {
+  nome: string;
+  convenio?: string | null;
+  carteirinhaVencida: boolean;
+  proximosAgendamentos: PortalAgendamento[];
+  historico: PortalAgendamento[];
+  podeAgendar: boolean;
+  maximoAgendamentosFuturos: number;
+  antecedenciaCancelamentoHoras: number;
+  nomeClinica: string;
+  telefoneClinica?: string | null;
+  enderecoClinica?: string | null;
+};
+
+export type PortalHorario = { idAgenda: number; dataHora: string; duracaoMinutos: number; tipo: string };
+
+export type PortalMedicoHorarios = { idMedico: number; nome: string; especialidades: string[]; horarios: PortalHorario[] };
+
+export type PortalExame = {
+  id: number;
+  descricao: string;
+  dtSolicitacao: string;
+  status: StatusExame;
+  resultadoDisponivel: boolean;
+  resultado?: string | null;
+  dtLaudo?: string | null;
+  nomeMedico?: string | null;
+  anexos: ExameAnexo[];
+};

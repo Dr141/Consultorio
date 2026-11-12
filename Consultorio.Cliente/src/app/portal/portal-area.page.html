@@ -1,0 +1,250 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Portal do Paciente</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      <ion-button (click)="sair()" title="Sair do portal">
+        <ion-icon slot="start" name="log-out-outline"></ion-icon>
+        Sair
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [value]="aba" (ionChange)="mudarAba($any($event).detail.value)" [scrollable]="true" aria-label="Seções do portal">
+      <ion-segment-button value="agenda"><ion-label>Meus horários</ion-label></ion-segment-button>
+      <ion-segment-button value="agendar"><ion-label>Agendar</ion-label></ion-segment-button>
+      <ion-segment-button value="exames"><ion-label>Exames</ion-label></ion-segment-button>
+      <ion-segment-button value="documentos"><ion-label>Documentos</ion-label></ion-segment-button>
+      <ion-segment-button value="pagamentos"><ion-label>Pagamentos</ion-label></ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+  @if (carregando) { <ion-progress-bar type="indeterminate"></ion-progress-bar> }
+
+  <div class="page-container">
+    @if (resumo) {
+      <div class="boas-vindas">
+        <h2>Olá, {{ resumo.nome }}!</h2>
+        <p>{{ resumo.nomeClinica }}{{ resumo.telefoneClinica ? ' · ' + resumo.telefoneClinica : '' }}</p>
+      </div>
+      @if (resumo.carteirinhaVencida) {
+        <div class="aviso-portal alerta">
+          <ion-icon name="card-outline" aria-hidden="true"></ion-icon>
+          <span>A carteirinha do seu convênio ({{ resumo.convenio }}) está vencida. Leve a carteirinha atualizada no próximo atendimento.</span>
+        </div>
+      }
+    }
+
+    @switch (aba) {
+      @case ('agenda') {
+        @if (resumo) {
+          <p class="secao-formulario">Próximos atendimentos</p>
+          @if (resumo.proximosAgendamentos.length === 0) {
+            <div class="ion-text-center ion-padding empty-state">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <h3>Nenhum atendimento marcado</h3>
+              @if (resumo.podeAgendar) {
+                <ion-button (click)="mudarAba('agendar')">
+                  <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                  Agendar agora
+                </ion-button>
+              }
+            </div>
+          }
+          @for (a of resumo.proximosAgendamentos; track a.id) {
+            <ion-card class="cartao-portal">
+              <ion-card-content>
+                <div class="linha-topo">
+                  <span class="data-grande">{{ dataLonga(a.dataHora) }}</span>
+                  <ion-badge [color]="corStatus(a.status)">{{ rotuloStatus(a.status) }}</ion-badge>
+                </div>
+                <p class="detalhe">
+                  {{ a.tipo }}{{ a.nomeMedico ? ' com ' + a.nomeMedico : '' }}{{ a.especialidades.length ? ' · ' + a.especialidades.join(', ') : '' }}
+                </p>
+                <div class="acoes">
+                  @if (a.podeConfirmar) {
+                    <ion-button size="small" color="success" (click)="confirmar(a)" [disabled]="processando === a.id">
+                      <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+                      Confirmar presença
+                    </ion-button>
+                  }
+                  @if (a.podeCancelar) {
+                    <ion-button size="small" fill="clear" color="danger" (click)="desmarcar(a)" [disabled]="processando === a.id">
+                      Desmarcar
+                    </ion-button>
+                  } @else if (a.status === 'Agendado' || a.status === 'Confirmado') {
+                    <span class="detalhe">Para desmarcar com menos de {{ resumo.antecedenciaCancelamentoHoras }} h, ligue para a clínica.</span>
+                  }
+                </div>
+              </ion-card-content>
+            </ion-card>
+          }
+          @if (!resumo.podeAgendar && resumo.proximosAgendamentos.length) {
+            <div class="aviso-portal">
+              <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+              <span>Você já tem {{ resumo.maximoAgendamentosFuturos }} atendimento(s) marcado(s), o máximo pelo portal.</span>
+            </div>
+          }
+
+          @if (resumo.historico.length) {
+            <p class="secao-formulario">Atendimentos anteriores</p>
+            <ion-list lines="full" class="lista-historico">
+              @for (a of resumo.historico; track a.id) {
+                <ion-item>
+                  <ion-label>
+                    <h3>{{ dataLonga(a.dataHora) }}</h3>
+                    <p>{{ a.tipo }}{{ a.nomeMedico ? ' com ' + a.nomeMedico : '' }}</p>
+                  </ion-label>
+                  <ion-badge slot="end" [color]="corStatus(a.status)">{{ rotuloStatus(a.status) }}</ion-badge>
+                </ion-item>
+              }
+            </ion-list>
+          }
+        }
+      }
+
+      @case ('agendar') {
+        @if (resumo && !resumo.podeAgendar) {
+          <div class="aviso-portal alerta">
+            <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+            <span>Você já tem {{ resumo.maximoAgendamentosFuturos }} atendimento(s) marcado(s). Para marcar outro, desmarque um deles ou fale com a clínica.</span>
+          </div>
+        }
+        @if (medicos && medicos.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="calendar-clear-outline"></ion-icon>
+            <h3>Nenhum horário livre no momento</h3>
+            <p>Novos horários são abertos com frequência. Volte mais tarde ou ligue para a clínica{{ resumo?.telefoneClinica ? ': ' + resumo.telefoneClinica : '' }}.</p>
+          </div>
+        } @else if (medicos) {
+          @if (especialidades.length > 1) {
+            <div class="filtro-especialidades" role="group" aria-label="Especialidade">
+              <ion-chip [outline]="!!especialidade" [color]="!especialidade ? 'primary' : 'medium'" (click)="especialidade = null">Todas</ion-chip>
+              @for (e of especialidades; track e) {
+                <ion-chip [outline]="especialidade !== e" [color]="especialidade === e ? 'primary' : 'medium'" (click)="especialidade = e">{{ e }}</ion-chip>
+              }
+            </div>
+          }
+          @for (m of medicosFiltrados; track m.idMedico) {
+            <ion-card class="medico-horarios">
+              <ion-card-header>
+                <ion-card-title>{{ m.nome }}</ion-card-title>
+                <ion-card-subtitle>{{ m.especialidades.join(', ') }}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                @for (d of dias(m); track d.rotulo) {
+                  <p class="dia">{{ d.rotulo }}</p>
+                  <div class="horarios">
+                    @for (h of d.horarios; track h.idAgenda) {
+                      <button type="button" class="horario" (click)="agendar(m, h)"
+                              [disabled]="!resumo?.podeAgendar || processando === h.idAgenda"
+                              [attr.aria-label]="h.tipo + ' às ' + hora(h.dataHora) + ', ' + d.rotulo">
+                        {{ hora(h.dataHora) }}
+                      </button>
+                    }
+                  </div>
+                }
+              </ion-card-content>
+            </ion-card>
+          }
+        }
+      }
+
+      @case ('exames') {
+        @if (exames && exames.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="flask-outline"></ion-icon>
+            <h3>Nenhum exame</h3>
+            <p>Os exames solicitados pelo seu médico aparecem aqui.</p>
+          </div>
+        }
+        @for (e of exames ?? []; track e.id) {
+          <ion-card class="cartao-portal">
+            <ion-card-content>
+              <div class="linha-topo">
+                <strong>{{ e.descricao }}</strong>
+                <ion-badge [color]="e.resultadoDisponivel ? 'success' : 'warning'">{{ rotuloExame(e.status) }}</ion-badge>
+              </div>
+              <p class="detalhe">Solicitado em {{ e.dtSolicitacao | dataBr:'dataHora' }}{{ e.nomeMedico ? ' · ' + e.nomeMedico : '' }}</p>
+              @if (e.resultadoDisponivel && e.resultado) {
+                <p class="resultado-texto">{{ e.resultado }}</p>
+              }
+              @if (e.anexos.length) {
+                <div class="acoes">
+                  @for (a of e.anexos; track a.id) {
+                    <ion-button size="small" fill="outline" (click)="abrirArquivo(e, a)">
+                      <ion-icon slot="start" [name]="a.contentType === 'application/pdf' ? 'document-outline' : 'image-outline'"></ion-icon>
+                      {{ a.nomeArquivo }}
+                    </ion-button>
+                  }
+                </div>
+              }
+              @if (e.resultadoDisponivel) {
+                <p class="detalhe">Leve o resultado ao seu médico para a avaliação.</p>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+      }
+
+      @case ('documentos') {
+        @if (documentos && documentos.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <h3>Nenhum documento</h3>
+            <p>Receitas, atestados e pedidos emitidos para você aparecem aqui.</p>
+          </div>
+        }
+        <ion-list lines="full">
+          @for (d of documentos ?? []; track d.id) {
+            <ion-item button detail="true" (click)="abrirDocumento(d)">
+              <ion-icon slot="start" name="document-text-outline" color="primary"></ion-icon>
+              <ion-label>
+                <h3>{{ d.tipoNome }}</h3>
+                <p>{{ d.dtEmissao | dataBr:'dataHora' }} · {{ d.nomeMedico }}</p>
+              </ion-label>
+            </ion-item>
+          }
+        </ion-list>
+      }
+
+      @case ('pagamentos') {
+        @if (cobrancas && cobrancas.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="wallet-outline"></ion-icon>
+            <h3>Nenhum pagamento</h3>
+          </div>
+        }
+        @for (c of cobrancas ?? []; track c.id) {
+          <ion-card class="cartao-portal">
+            <ion-card-content>
+              <div class="linha-topo">
+                <strong>{{ c.descricao }}</strong>
+                <ion-badge [color]="c.status === 'Paga' ? 'success' : (c.vencida ? 'danger' : (c.status === 'Pendente' ? 'warning' : 'medium'))">
+                  {{ c.status === 'Pendente' ? (c.vencida ? 'Em atraso' : 'A pagar') : c.status }}
+                </ion-badge>
+              </div>
+              <p class="detalhe">
+                {{ c.valorFinal | moeda }} · {{ c.nomeConvenio || 'Particular' }}
+                · {{ c.status === 'Paga' ? 'pago em ' + (c.dtPagamento | dataBr) : 'vencimento ' + (c.dtVencimento | dataBr) }}
+              </p>
+              @if (c.status === 'Paga') {
+                <div class="acoes">
+                  <ion-button size="small" fill="outline" (click)="abrirRecibo(c)">
+                    <ion-icon slot="start" name="receipt-outline"></ion-icon>
+                    Recibo
+                  </ion-button>
+                </div>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+      }
+    }
+  </div>
+</ion-content>

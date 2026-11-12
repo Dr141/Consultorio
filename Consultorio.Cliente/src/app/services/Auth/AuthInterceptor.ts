@@ -9,6 +9,11 @@ export const AuthInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
   const consultorioService = inject(ConsultorioApiService);
   const router = inject(Router);
 
+  // O portal do paciente tem sessão própria (cabeçalho X-Portal-Token) e trata o 401 por conta própria.
+  if (req.url.includes('/api/portal')) {
+    return next(req);
+  }
+
   // Garante envio de cookies de sessão em todas as requisições
   const authReq = req.clone({ withCredentials: true });
 

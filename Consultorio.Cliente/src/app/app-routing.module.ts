@@ -62,6 +62,10 @@ const routes: Routes = [
   {
     path: 'indicadores',
     loadChildren: () => import('./indicadores/indicadores.module').then(m => m.IndicadoresPageModule)
+  },
+  {
+    path: 'portal',
+    loadChildren: () => import('./portal/portal.module').then(m => m.PortalPageModule)
   }
 ];
 

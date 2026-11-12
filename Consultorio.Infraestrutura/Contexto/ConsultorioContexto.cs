@@ -22,6 +22,7 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
     public DbSet<TabelaPreco> TabelaPreco { get; set; } = null!;
     public DbSet<Cobranca> Cobranca { get; set; } = null!;
     public DbSet<ExecucaoRotina> ExecucaoRotina { get; set; } = null!;
+    public DbSet<AcessoPortal> AcessoPortal { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -324,6 +325,22 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(e => e.Nome).HasMaxLength(100).IsRequired();
             builder.HasIndex(e => e.Nome).IsUnique();
             builder.Property(e => e.Referencia).HasMaxLength(20).IsRequired();
+        });
+
+        // Fase 5 — acessos do paciente ao portal (código por e-mail + sessão curta)
+        modelBuilder.Entity<AcessoPortal>(builder =>
+        {
+            builder.ToTable("AcessoPortal");
+            builder.HasKey(a => a.Id);
+            builder.HasIndex(a => a.Chave).IsUnique();
+            builder.HasIndex(a => a.TokenHash);
+            builder.HasIndex(a => new { a.IdPaciente, a.DtCriacao });
+            builder.Property(a => a.Salt).HasMaxLength(64).IsRequired();
+            builder.Property(a => a.CodigoHash).HasMaxLength(64).IsRequired();
+            builder.Property(a => a.TokenHash).HasMaxLength(64);
+            builder.Property(a => a.Ip).HasMaxLength(64);
+            builder.Ignore(a => a.TentativasEsgotadas);
+            builder.HasOne(a => a.Paciente).WithMany().HasForeignKey(a => a.IdPaciente).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

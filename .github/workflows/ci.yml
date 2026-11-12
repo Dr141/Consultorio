@@ -82,3 +82,16 @@ jobs:
       - name: 🧪 Executar Suíte E2E (Cypress Headless)
         working-directory: Consultorio.E2E
         run: npm run cy:run:headless
+
+      # Em caso de falha: log da API (exceções do servidor) e capturas de tela do Cypress para diagnóstico.
+      - name: 📋 Log da API (em caso de falha)
+        if: failure()
+        run: docker compose logs app --no-color --tail=400
+
+      - name: 📸 Capturas de tela do Cypress (em caso de falha)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: Consultorio.E2E/cypress/screenshots
+          if-no-files-found: ignore

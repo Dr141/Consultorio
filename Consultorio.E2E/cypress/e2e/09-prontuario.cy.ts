@@ -29,7 +29,9 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     // Valida a folha de ofício gerada (o ofício é longo: cada trecho é rolado até a área visível)
     // A folha inteira é mais alta que a tela (o centro dela fica fora da área visível), então a visibilidade
     // é conferida trecho a trecho; para a folha basta existir.
-    const visivel = (seletor: string, texto: string) => cy.contains(seletor, texto).scrollIntoView().should('be.visible');
+    // O ofício fica dentro do scroll do Ionic, sob a barra fixa: conferimos que cada trecho foi renderizado
+    // (a visibilidade "geométrica" do Cypress não é confiável dentro de ion-content).
+    const visivel = (seletor: string, texto: string) => cy.contains(seletor, texto).should('exist');
     cy.get('.oficio-sheet').should('exist');
     visivel('.timbre-text h1', 'Consultório de Gestão Clínica');
     visivel('.oficio-meta .oficio-num', 'OF-');

@@ -123,7 +123,7 @@ public class RotinasAgendaAppService(
         if (pessoa is null || agenda.TokenConfirmacao is null) return null;
 
         var nome = pessoa.Nome.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? pessoa.Nome;
-        var quando = agenda.InicioLocal.ToString("dddd, dd/MM 'às' HH:mm", new System.Globalization.CultureInfo("pt-BR"));
+        var quando = agenda.InicioLocal.ToString("dddd, dd/MM 'às' HH:mm", Notificacoes.PtBr);
         var medico = agenda.Medico?.Pessoa?.Nome;
         var baseUrl = opcoes.UrlPublica.TrimEnd('/');
         var linkConfirmar = $"{baseUrl}/api/publico/confirmacao/{agenda.TokenConfirmacao}?resposta=sim";

@@ -1,11 +1,11 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/consultas" text="Voltar"></ion-back-button>
+      <ion-back-button [defaultHref]="portal ? '/portal/inicio' : '/consultas'" text="Voltar"></ion-back-button>
     </ion-buttons>
     <ion-title>{{ documento?.tipoNome || 'Documento' }}</ion-title>
     <ion-buttons slot="end">
-      @if (documento && !documento.cancelado) {
+      @if (documento && !documento.cancelado && !portal) {
         <ion-button (click)="cancelar()" title="Cancelar documento emitido por engano">
           <ion-icon slot="start" name="ban-outline"></ion-icon>
           <span class="ion-hide-md-down">Cancelar</span>

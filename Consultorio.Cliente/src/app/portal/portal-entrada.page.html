@@ -1,0 +1,79 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Portal do Paciente</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="portal-entrada">
+    <ion-card class="cartao-entrada">
+      <ion-card-header>
+        <ion-icon name="person-circle-outline" class="icone-entrada" aria-hidden="true"></ion-icon>
+        <ion-card-title>{{ etapa === 'dados' ? 'Acesse seus dados' : 'Digite o código' }}</ion-card-title>
+        <ion-card-subtitle>
+          @if (etapa === 'dados') {
+            Agendamentos, resultados de exames, documentos e pagamentos.
+          } @else {
+            {{ mensagem }}
+          }
+        </ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        @if (erro) {
+          <div class="aviso-erro" role="alert">
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ erro }}</span>
+          </div>
+        }
+
+        @if (etapa === 'dados') {
+          <form [formGroup]="form" (ngSubmit)="solicitar()" novalidate>
+            <ion-item class="form-item">
+              <ion-input label="CPF" labelPlacement="floating" formControlName="cpf" appMascara="cpf" inputmode="numeric"
+                         autocomplete="off" [maxlength]="14" [errorText]="erroCampo('cpf')"></ion-input>
+            </ion-item>
+            <ion-item class="form-item">
+              <ion-input type="date" label="Data de nascimento" labelPlacement="floating" formControlName="dtNasc"
+                         [errorText]="erroCampo('dtNasc')"></ion-input>
+            </ion-item>
+            <ion-button expand="block" type="submit" [disabled]="enviando" class="botao-principal">
+              @if (enviando) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
+              Receber código por e-mail
+            </ion-button>
+          </form>
+          <p class="dica-portal">
+            O código é enviado ao e-mail cadastrado na clínica. Sem e-mail cadastrado? Peça na recepção para incluir.
+          </p>
+        } @else {
+          <ion-item class="form-item">
+            <ion-input label="Código de 6 dígitos" labelPlacement="floating" [formControl]="codigo" inputmode="numeric"
+                       autocomplete="one-time-code" [maxlength]="6" class="campo-codigo"
+                       (keyup.enter)="entrar()"
+                       [errorText]="codigo.touched && codigo.invalid ? 'Informe os 6 dígitos recebidos por e-mail.' : ''"></ion-input>
+          </ion-item>
+          <ion-button expand="block" (click)="entrar()" [disabled]="enviando" class="botao-principal">
+            @if (enviando) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
+            Entrar
+          </ion-button>
+          <div class="acoes-codigo">
+            <ion-button fill="clear" size="small" (click)="voltar()">
+              <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+              Corrigir dados
+            </ion-button>
+            <ion-button fill="clear" size="small" (click)="solicitar()" [disabled]="segundosReenvio > 0 || enviando">
+              {{ segundosReenvio > 0 ? 'Reenviar em ' + segundosReenvio + 's' : 'Reenviar código' }}
+            </ion-button>
+          </div>
+        }
+      </ion-card-content>
+    </ion-card>
+
+    <p class="dica-portal rodape">
+      Profissional da clínica? <a href="/login">Entre pelo sistema</a>.
+    </p>
+  </div>
+</ion-content>

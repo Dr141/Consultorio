@@ -8,7 +8,47 @@ namespace Consultorio.Aplicacao.Servicos;
 /// <summary>Envio pelo primeiro canal disponível e modelo visual comum das mensagens automáticas.</summary>
 public static class Notificacoes
 {
-    public static readonly CultureInfo PtBr = new("pt-BR");
+    /// <summary>
+    /// Cultura pt-BR. Em contêineres sem ICU (globalização invariável), "pt-BR" não existe e o construtor
+    /// lança exceção; nesse caso usa uma cópia da cultura invariável com moeda, números e datas em português.
+    /// </summary>
+    public static readonly CultureInfo PtBr = CriarPtBr();
+
+    private static CultureInfo CriarPtBr()
+    {
+        try
+        {
+            var cultura = CultureInfo.GetCultureInfo("pt-BR");
+            // Sem ICU, alguns ambientes devolvem uma cultura "fantasma" com formatos invariáveis.
+            if (cultura.NumberFormat.CurrencySymbol == "R$") return cultura;
+        }
+        catch (CultureNotFoundException)
+        {
+        }
+
+        var copia = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        var numeros = copia.NumberFormat;
+        numeros.CurrencySymbol = "R$";
+        numeros.CurrencyDecimalSeparator = ",";
+        numeros.CurrencyGroupSeparator = ".";
+        numeros.CurrencyPositivePattern = 2; // "R$ 1.234,56"
+        numeros.CurrencyNegativePattern = 9;
+        numeros.NumberDecimalSeparator = ",";
+        numeros.NumberGroupSeparator = ".";
+        numeros.PercentDecimalSeparator = ",";
+        numeros.PercentGroupSeparator = ".";
+        var datas = copia.DateTimeFormat;
+        datas.DayNames = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+        datas.AbbreviatedDayNames = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+        datas.MonthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro", ""];
+        datas.MonthGenitiveNames = datas.MonthNames;
+        datas.AbbreviatedMonthNames = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez", ""];
+        datas.AbbreviatedMonthGenitiveNames = datas.AbbreviatedMonthNames;
+        datas.ShortDatePattern = "dd/MM/yyyy";
+        datas.LongTimePattern = "HH:mm:ss";
+        datas.ShortTimePattern = "HH:mm";
+        return CultureInfo.ReadOnly(copia);
+    }
 
     /// <summary>true = enviado; false = falhou; null = sem canal/contato para o destinatário.</summary>
     public static async Task<bool?> EnviarAsync(IEnumerable<INotificador> notificadores, MensagemNotificacao mensagem, CancellationToken cancellationToken)
