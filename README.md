@@ -147,6 +147,20 @@ Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.en
 
 ---
 
+## 🩺 Prontuário Clínico, Documentos e Exames
+
+- **Evolução estruturada:** a consulta aceita texto livre e/ou SOAP (Subjetivo, Objetivo, Avaliação, Plano), sinais vitais (PA, FC, FR, temperatura, SpO₂, peso, altura com IMC calculado, glicemia) e diagnóstico CID-10 com busca por código ou descrição (`GET /api/cid?busca=`). Os limites dos sinais vitais recusam valores impossíveis (erro de digitação), não valores clínicos anormais.
+- **Alertas clínicos do paciente:** alergias, medicamentos em uso e condições crônicas (um item por linha) aparecem em destaque no registro da consulta, na emissão de documentos e no prontuário. Só perfis clínicos editam.
+- **Documentos:** receita simples, receita de controle especial (impressa em duas vias), atestado com dias de afastamento, declaração de comparecimento, pedido de exames, encaminhamento e relatório. A tela `/documento/:id` imprime ou salva em PDF pelo navegador.
+  - O médico logado só emite e cancela em nome próprio. Documento emitido não é apagado: é cancelado com motivo.
+  - O CID só sai no documento quando o médico marca "Incluir CID" (no atestado, com autorização do paciente).
+  - Pedido de exames pode criar automaticamente um exame "Solicitado" por linha.
+  - Cada documento tem um código de verificação. A página pública `GET /api/publico/documento/{codigo}` confirma a autenticidade mostrando tipo, data, médico/CRM, iniciais do paciente e se foi cancelado, nunca o conteúdo.
+- **Ciclo do exame:** Solicitado → Realizado → Laudado → Entregue, com data de cada etapa. Resultados podem ser anexados (PDF, JPG ou PNG até 10 MB); o tipo é conferido pela assinatura do arquivo, não pela extensão.
+- **Assinatura digital (ICP-Brasil):** ainda não integrada. O ponto de extensão natural é a emissão em `DocumentoAppService`, gerando o PDF assinado a partir do mesmo `DocumentoResponse`.
+
+---
+
 ## 🧪 Práticas de TDD e Testes Automatizados
 
 O sistema segue o ciclo de **Test-Driven Development (TDD)**, com cobertura para regras de domínio, orquestração de serviços, cache distribuído e controllers da API.
@@ -268,6 +282,15 @@ O repositório possui automação completa configurada em `.github/workflows/rel
 | **Exames** | `GET` | `/api/exame/paciente/{pacienteId}` | Lista exames do paciente |
 | | `POST` | `/api/exame` | Solicitação de exame |
 | | `PUT` | `/api/exame/{id}/laudo` | Registra laudo técnico |
+| | `PUT` | `/api/consulta/{id}/evolucao` | Atualiza SOAP, CID e sinais vitais de consulta aberta |
+| | `PATCH` | `/api/exame/{id}/realizado` · `/entregue` | Avança o ciclo do exame |
+| | `POST` / `GET` | `/api/exame/{id}/anexos` | Envia e lista arquivos do resultado |
+| **Pacientes** | `PUT` | `/api/paciente/{id}/alertas` | Alergias, medicamentos em uso e condições crônicas |
+| **Documentos** | `POST` | `/api/documento` | Emite receita, atestado, pedido de exames etc. |
+| | `GET` | `/api/documento/paciente/{id}` | Documentos emitidos para o paciente |
+| | `PATCH` | `/api/documento/{id}/cancelar` | Cancela com motivo (continua no histórico) |
+| | `GET` | `/api/publico/documento/{codigo}` | Verificação pública de autenticidade |
+| **CID-10** | `GET` | `/api/cid?busca=` | Busca de códigos frequentes |
 | **Autenticação** | `POST` | `/api/usuario/login` | Login com retorno de token JWT |
 | | `POST` | `/api/usuario/registrar` | Registro de novo usuário |
 

@@ -102,4 +102,21 @@ public class PacienteController(IPacienteAppService pacienteAppService) : Contro
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPut("{id:int}/alertas")]
+    [Authorize(Policy = PoliticasAcesso.Clinico)]
+    [EndpointSummary("Atualizar alertas clínicos do paciente (alergias, medicamentos em uso, condições crônicas)")]
+    [ProducesResponseType(typeof(PacienteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PacienteResponse>> AtualizarAlertas(int id, [FromBody] AlertasClinicosRequest request)
+    {
+        try
+        {
+            return Ok(await pacienteAppService.AtualizarAlertasAsync(id, request));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

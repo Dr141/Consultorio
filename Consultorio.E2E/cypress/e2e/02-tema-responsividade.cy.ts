@@ -32,10 +32,10 @@ describe('02 - Tema Dark/Light, Botões em Português e Responsividade', () => {
 
   it('Deve exibir o botão "Voltar" em português (e nunca "Back") em todas as páginas internas', () => {
     const paginasInternas = [
-      { rota: '/pacientes', titulo: 'Gestão de Pacientes' },
-      { rota: '/medicos', titulo: 'Corpo Clínico / Médicos' },
-      { rota: '/agenda', titulo: 'Agenda de Consultas e Exames' },
-      { rota: '/consultas', titulo: 'Prontuário e Consultas' },
+      { rota: '/pacientes', titulo: 'Pacientes' },
+      { rota: '/medicos', titulo: 'Corpo Clínico' },
+      { rota: '/agenda', titulo: 'Agenda' },
+      { rota: '/consultas', titulo: 'Consultas' },
       { rota: '/exames', titulo: 'Exames e Laudos' },
       { rota: '/users', titulo: 'Gerenciamento de Usuários' }
     ];

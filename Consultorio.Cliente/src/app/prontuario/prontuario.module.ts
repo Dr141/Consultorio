@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '../shared/ionic.module';
 import { ProntuarioPageRoutingModule } from './prontuario-routing.module';
 import { ProntuarioPage } from './prontuario.page';
+import { DocumentoModalModule } from '../documentos/documento-modal.module';
 
 @NgModule({
   imports: [
@@ -11,7 +12,8 @@ import { ProntuarioPage } from './prontuario.page';
     FormsModule,
     ReactiveFormsModule,
     IonicModule,
-    ProntuarioPageRoutingModule
+    ProntuarioPageRoutingModule,
+    DocumentoModalModule
   ],
   declarations: [ProntuarioPage]
 })

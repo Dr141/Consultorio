@@ -8,6 +8,8 @@ export default defineConfig({
     video: false,
     screenshotOnRunFailure: true,
     defaultCommandTimeout: 10000,
+    // Rola o elemento até o centro antes de clicar: no topo ele fica sob a toolbar fixa do Ionic.
+    scrollBehavior: 'center',
     requestTimeout: 15000,
     responseTimeout: 15000,
     setupNodeEvents(on, config) {

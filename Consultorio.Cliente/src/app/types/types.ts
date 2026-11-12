@@ -39,6 +39,9 @@ export type Paciente = {
   ativo?: boolean;
   dtInativacao?: string | null;
   email?: string | null;
+  alergias?: string | null;
+  medicamentosEmUso?: string | null;
+  condicoesCronicas?: string | null;
 };
 
 export type Medico = {
@@ -149,6 +152,103 @@ export type Consulta = {
   dtAnulacao?: string | null;
   motivoAnulacao?: string | null;
   adendos?: ConsultaAdendo[];
+  subjetivo?: string | null;
+  objetivo?: string | null;
+  avaliacao?: string | null;
+  plano?: string | null;
+  cidCodigo?: string | null;
+  cidDescricao?: string | null;
+  sinaisVitais?: SinaisVitais | null;
+};
+
+export type SinaisVitais = {
+  pressaoSistolica?: number | null;
+  pressaoDiastolica?: number | null;
+  frequenciaCardiaca?: number | null;
+  frequenciaRespiratoria?: number | null;
+  temperatura?: number | null;
+  saturacaoO2?: number | null;
+  pesoKg?: number | null;
+  alturaCm?: number | null;
+  glicemia?: number | null;
+  imc?: number | null;
+};
+
+export type Cid = { codigo: string; descricao: string };
+
+/** Evolução clínica enviada ao criar/atualizar uma consulta. */
+export type EvolucaoClinica = {
+  observacao?: string | null;
+  subjetivo?: string | null;
+  objetivo?: string | null;
+  avaliacao?: string | null;
+  plano?: string | null;
+  cidCodigo?: string | null;
+  cidDescricao?: string | null;
+  sinaisVitais?: SinaisVitais | null;
+};
+
+export type AlertasClinicos = {
+  alergias: string | null;
+  medicamentosEmUso: string | null;
+  condicoesCronicas: string | null;
+};
+
+export type TipoDocumento =
+  | 'Receita' | 'ReceitaControleEspecial' | 'Atestado' | 'DeclaracaoComparecimento'
+  | 'PedidoExames' | 'Encaminhamento' | 'Relatorio';
+
+export const TIPOS_DOCUMENTO: { valor: number; tipo: TipoDocumento; nome: string; icone: string }[] = [
+  { valor: 1, tipo: 'Receita', nome: 'Receita simples', icone: 'medkit-outline' },
+  { valor: 2, tipo: 'ReceitaControleEspecial', nome: 'Receita de controle especial', icone: 'shield-checkmark-outline' },
+  { valor: 3, tipo: 'Atestado', nome: 'Atestado médico', icone: 'bed-outline' },
+  { valor: 4, tipo: 'DeclaracaoComparecimento', nome: 'Declaração de comparecimento', icone: 'time-outline' },
+  { valor: 5, tipo: 'PedidoExames', nome: 'Pedido de exames', icone: 'flask-outline' },
+  { valor: 6, tipo: 'Encaminhamento', nome: 'Encaminhamento', icone: 'arrow-redo-outline' },
+  { valor: 7, tipo: 'Relatorio', nome: 'Relatório médico', icone: 'document-text-outline' }
+];
+
+export type DocumentoRequest = {
+  tipo: number;
+  idPaciente: number;
+  conteudo: string;
+  idMedico?: number | null;
+  idConsulta?: number | null;
+  diasAfastamento?: number | null;
+  incluirCid?: boolean;
+  cidCodigo?: string | null;
+  cidDescricao?: string | null;
+  criarExames?: boolean;
+};
+
+export type DocumentoClinico = {
+  id: number;
+  tipo: TipoDocumento;
+  tipoNome: string;
+  idPaciente: number;
+  nomePaciente: string;
+  cpfPaciente?: string | null;
+  dtNascPaciente?: string | null;
+  idMedico: number;
+  nomeMedico: string;
+  crmMedico: string;
+  especialidadesMedico: string[];
+  idConsulta?: number | null;
+  conteudo: string;
+  diasAfastamento?: number | null;
+  cidCodigo?: string | null;
+  cidDescricao?: string | null;
+  codigoVerificacao: string;
+  urlVerificacao: string;
+  dtEmissao: string;
+  emitidoPor: string;
+  cancelado: boolean;
+  dtCancelamento?: string | null;
+  motivoCancelamento?: string | null;
+  nomeClinica: string;
+  enderecoClinica?: string | null;
+  telefoneClinica?: string | null;
+  examesCriados?: number;
 };
 
 export type RegistroAuditoria = {
@@ -179,6 +279,23 @@ export type Exame = {
   cancelado?: boolean;
   dtCancelamento?: string | null;
   motivoCancelamento?: string | null;
+  status?: StatusExame;
+  dtRealizacao?: string | null;
+  dtLaudo?: string | null;
+  dtEntrega?: string | null;
+  quantidadeAnexos?: number;
+};
+
+export type StatusExame = 'Solicitado' | 'Realizado' | 'Laudado' | 'Entregue';
+
+export type ExameAnexo = {
+  id: number;
+  idExame: number;
+  nomeArquivo: string;
+  contentType: string;
+  tamanhoBytes: number;
+  enviadoPor: string;
+  dtCriacao: string;
 };
 
 export type MedicoResumoProntuario = {
@@ -200,6 +317,13 @@ export type ConsultaProntuarioItem = {
   status?: StatusConsulta;
   motivoAnulacao?: string | null;
   adendos?: ConsultaAdendo[];
+  subjetivo?: string | null;
+  objetivo?: string | null;
+  avaliacao?: string | null;
+  plano?: string | null;
+  cidCodigo?: string | null;
+  cidDescricao?: string | null;
+  sinaisVitais?: SinaisVitais | null;
 };
 
 export type ExameProntuarioItem = {
@@ -214,6 +338,7 @@ export type ExameProntuarioItem = {
   dtCriacao: string;
   cancelado?: boolean;
   motivoCancelamento?: string | null;
+  status?: StatusExame;
 };
 
 export type ProntuarioResumo = {
@@ -233,4 +358,5 @@ export type ProntuarioRelatorio = {
   resumo: ProntuarioResumo;
   consultas: ConsultaProntuarioItem[];
   exames: ExameProntuarioItem[];
+  documentos?: DocumentoClinico[] | null;
 };

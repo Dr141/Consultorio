@@ -12,6 +12,29 @@ public class Paciente : Entidade
     public bool Ativo { get; private set; } = true;
     public DateTime? DtInativacao { get; private set; }
 
+    // Alertas clínicos exibidos no topo do prontuário e no atendimento (um item por linha).
+    public string? Alergias { get; private set; }
+    public string? MedicamentosEmUso { get; private set; }
+    public string? CondicoesCronicas { get; private set; }
+
+    public void AtualizarAlertas(string? alergias, string? medicamentosEmUso, string? condicoesCronicas)
+    {
+        Alergias = NormalizarLista(alergias, "Alergias");
+        MedicamentosEmUso = NormalizarLista(medicamentosEmUso, "Medicamentos em uso");
+        CondicoesCronicas = NormalizarLista(condicoesCronicas, "Condições crônicas");
+    }
+
+    private static string? NormalizarLista(string? valor, string nome)
+    {
+        if (string.IsNullOrWhiteSpace(valor)) return null;
+        var itens = valor.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(i => i.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+        var texto = string.Join('\n', itens);
+        DomainException.When(texto.Length > 2000, $"{nome}: no máximo 2000 caracteres.");
+        return texto.Length == 0 ? null : texto;
+    }
+
     private readonly List<Consulta> _consultas = [];
     public IReadOnlyCollection<Consulta> Consultas => _consultas.AsReadOnly();
 

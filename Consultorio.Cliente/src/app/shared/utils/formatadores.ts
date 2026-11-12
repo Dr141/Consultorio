@@ -104,3 +104,72 @@ export function rotuloDia(data: Date): string {
   if (mesmoDia(data, ontem)) return 'Ontem';
   return data.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+/** Campos mínimos de sinais vitais usados nos resumos (aceita o tipo da API ou valores do formulário). */
+export type SinaisVitaisLike = {
+  pressaoSistolica?: number | null;
+  pressaoDiastolica?: number | null;
+  frequenciaCardiaca?: number | null;
+  frequenciaRespiratoria?: number | null;
+  temperatura?: number | null;
+  saturacaoO2?: number | null;
+  pesoKg?: number | null;
+  alturaCm?: number | null;
+  glicemia?: number | null;
+  imc?: number | null;
+};
+
+/** IMC com uma casa decimal, ou null se faltar peso/altura. */
+export function calcularImc(pesoKg: number | null | undefined, alturaCm: number | null | undefined): number | null {
+  const peso = Number(pesoKg);
+  const altura = Number(alturaCm);
+  if (!peso || !altura || peso <= 0 || altura <= 0) return null;
+  const metros = altura / 100;
+  return Math.round((peso / (metros * metros)) * 10) / 10;
+}
+
+/** Classificação do IMC para adultos (OMS). */
+export function classificarImc(imc: number | null | undefined): string {
+  if (imc === null || imc === undefined || !isFinite(imc)) return '';
+  if (imc < 18.5) return 'Abaixo do peso';
+  if (imc < 25) return 'Peso adequado';
+  if (imc < 30) return 'Sobrepeso';
+  if (imc < 35) return 'Obesidade grau I';
+  if (imc < 40) return 'Obesidade grau II';
+  return 'Obesidade grau III';
+}
+
+function preenchido(v: number | null | undefined): v is number {
+  return v !== null && v !== undefined && `${v}` !== '' && !isNaN(Number(v));
+}
+
+/** Lista legível dos sinais vitais preenchidos ("PA 120/80 mmHg", "FC 72 bpm"...). */
+export function resumirSinaisVitais(sv: SinaisVitaisLike | null | undefined): string[] {
+  if (!sv) return [];
+  const itens: string[] = [];
+  const decimal = (v: number, casas = 1) => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: casas });
+  if (preenchido(sv.pressaoSistolica) && preenchido(sv.pressaoDiastolica)) itens.push(`PA ${sv.pressaoSistolica}/${sv.pressaoDiastolica} mmHg`);
+  if (preenchido(sv.frequenciaCardiaca)) itens.push(`FC ${sv.frequenciaCardiaca} bpm`);
+  if (preenchido(sv.frequenciaRespiratoria)) itens.push(`FR ${sv.frequenciaRespiratoria} irpm`);
+  if (preenchido(sv.temperatura)) itens.push(`T ${decimal(sv.temperatura)} °C`);
+  if (preenchido(sv.saturacaoO2)) itens.push(`SpO₂ ${sv.saturacaoO2}%`);
+  if (preenchido(sv.pesoKg)) itens.push(`Peso ${decimal(sv.pesoKg, 2)} kg`);
+  if (preenchido(sv.alturaCm)) itens.push(`Altura ${sv.alturaCm} cm`);
+  const imc = preenchido(sv.imc) ? sv.imc : calcularImc(sv.pesoKg, sv.alturaCm);
+  if (preenchido(imc)) itens.push(`IMC ${decimal(imc)}`);
+  if (preenchido(sv.glicemia)) itens.push(`Glicemia ${sv.glicemia} mg/dL`);
+  return itens;
+}
+
+/** Quebra um texto de "um item por linha" em lista (alergias, medicamentos, condições). */
+export function linhas(valor: string | null | undefined): string[] {
+  return (valor ?? '').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+}
+
+/** Tamanho de arquivo legível (KB/MB). */
+export function formatarTamanhoArquivo(bytes: number | null | undefined): string {
+  const b = Number(bytes) || 0;
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} KB`;
+  return `${(b / (1024 * 1024)).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`;
+}

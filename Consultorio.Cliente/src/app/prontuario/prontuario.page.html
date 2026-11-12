@@ -116,6 +116,15 @@
 
     <!-- Visualização do Ofício Clínico -->
     @if (!carregando && prontuario) {
+      <div class="acoes-prontuario no-print">
+        <app-alertas-clinicos [paciente]="prontuario.paciente" [mostrarVazio]="true" [editavel]="true"
+                              (editar)="editarAlertas()"></app-alertas-clinicos>
+        <ion-button fill="outline" size="small" (click)="abrirDocumentos()">
+          <ion-icon slot="start" name="print-outline"></ion-icon>
+          Emitir documento
+        </ion-button>
+      </div>
+
       <div class="oficio-container">
         <div class="oficio-sheet" id="area-oficio">
           
@@ -172,6 +181,24 @@
                   <td class="campo-valor" colspan="3"><em>{{ prontuario.paciente.observacao }}</em></td>
                 </tr>
               }
+              @if ((prontuario.paciente.alergias | linhas).length) {
+                <tr>
+                  <td class="campo-rotulo">Alergias:</td>
+                  <td class="campo-valor campo-alerta" colspan="3"><strong>{{ (prontuario.paciente.alergias | linhas).join('; ') }}</strong></td>
+                </tr>
+              }
+              @if ((prontuario.paciente.condicoesCronicas | linhas).length) {
+                <tr>
+                  <td class="campo-rotulo">Condições Crônicas:</td>
+                  <td class="campo-valor" colspan="3">{{ (prontuario.paciente.condicoesCronicas | linhas).join('; ') }}</td>
+                </tr>
+              }
+              @if ((prontuario.paciente.medicamentosEmUso | linhas).length) {
+                <tr>
+                  <td class="campo-rotulo">Medicamentos em Uso:</td>
+                  <td class="campo-valor" colspan="3">{{ (prontuario.paciente.medicamentosEmUso | linhas).join('; ') }}</td>
+                </tr>
+              }
             </tbody>
           </table>
 
@@ -217,10 +244,22 @@
                     <span> &bullet; ({{ c.especialidadesMedico.join(', ') }})</span>
                   }
                 </div>
+                @if ((c.sinaisVitais | sinaisVitais).length) {
+                  <div class="registro-sinais"><strong>Sinais vitais:</strong> {{ (c.sinaisVitais | sinaisVitais).join(' · ') }}</div>
+                }
                 <div class="registro-conteudo" [class.conteudo-anulado]="c.status === 'Anulada'">
-                  <strong>Evolução / Prescrição:</strong><br />
-                  {{ c.observacao }}
+                  @if (c.observacao) {
+                    <strong>Evolução / Prescrição:</strong><br />
+                    {{ c.observacao }}
+                  }
+                  @if (c.subjetivo) { <div class="registro-soap"><strong>S — Subjetivo:</strong> {{ c.subjetivo }}</div> }
+                  @if (c.objetivo) { <div class="registro-soap"><strong>O — Objetivo:</strong> {{ c.objetivo }}</div> }
+                  @if (c.avaliacao) { <div class="registro-soap"><strong>A — Avaliação:</strong> {{ c.avaliacao }}</div> }
+                  @if (c.plano) { <div class="registro-soap"><strong>P — Plano:</strong> {{ c.plano }}</div> }
                 </div>
+                @if (c.cidCodigo) {
+                  <div class="registro-cid"><strong>Diagnóstico (CID-10):</strong> {{ c.cidCodigo }} — {{ c.cidDescricao }}</div>
+                }
                 @if (c.status === 'Anulada') {
                   <div class="registro-anulacao"><strong>Registro anulado.</strong> Motivo: {{ c.motivoAnulacao }}</div>
                 }
@@ -242,7 +281,10 @@
             @for (e of prontuario.exames; track e.id) {
               <div class="registro-oficio-item">
                 <div class="registro-header">
-                  <span class="registro-titulo">{{ e.descricao }} (Exame #{{ e.id }})</span>
+                  <span class="registro-titulo">
+                    {{ e.descricao }} (Exame #{{ e.id }})
+                    @if (!e.cancelado && e.status) { <span class="selo-status">{{ rotuloStatusExame(e.status) }}</span> }
+                  </span>
                   <span class="registro-data">{{ formatarDataHora(e.dataExame) }}</span>
                 </div>
                 @if (e.nomeMedico) {
@@ -263,6 +305,37 @@
                   <div class="aguardando-bloco">
                     <span>* Exame solicitado &mdash; laudo técnico pendente de emissão pelo laboratório/profissional.</span>
                   </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- 5. Documentos emitidos -->
+          @if (prontuario.documentos?.length) {
+            <div class="secao-titulo">5. Documentos Emitidos</div>
+            @for (d of prontuario.documentos; track d.id) {
+              <div class="registro-oficio-item">
+                <div class="registro-header">
+                  <span class="registro-titulo">
+                    {{ d.tipoNome }}
+                    @if (d.cancelado) { <span class="selo-status selo-anulado">CANCELADO</span> }
+                  </span>
+                  <span class="registro-data">{{ formatarDataHora(d.dtEmissao) }}</span>
+                </div>
+                <div class="registro-medico">
+                  <strong>Emitido por:</strong> {{ d.nomeMedico }} &bullet; <strong>CRM:</strong> {{ d.crmMedico }}
+                  &bullet; <strong>Código:</strong> {{ d.codigoVerificacao }}
+                  <ion-button class="no-print" fill="clear" size="small" (click)="abrirDocumento(d.id)">
+                    <ion-icon slot="icon-only" name="open-outline"></ion-icon>
+                  </ion-button>
+                </div>
+                <div class="registro-conteudo" [class.conteudo-anulado]="d.cancelado">
+                  {{ d.conteudo }}
+                  @if (d.diasAfastamento) { <br /><strong>Afastamento:</strong> {{ d.diasAfastamento }} dia(s) }
+                  @if (d.cidCodigo) { <br /><strong>CID-10:</strong> {{ d.cidCodigo }} — {{ d.cidDescricao }} }
+                </div>
+                @if (d.cancelado) {
+                  <div class="registro-anulacao"><strong>Documento cancelado.</strong> Motivo: {{ d.motivoCancelamento }}</div>
                 }
               </div>
             }

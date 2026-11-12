@@ -39,15 +39,21 @@ export class HomePage implements OnInit {
 
   ngOnInit(): void {
     this.ehAdmin();
+    this.atualizarCabecalho();
   }
 
   ionViewWillEnter(): void {
+    this.atualizarCabecalho();
+    this.carregarResumo();
+  }
+
+  /** Saudação e data por extenso; recalculadas ao voltar para a tela (a hora pode ter mudado). */
+  private atualizarCabecalho(): void {
     const agora = new Date();
     const hora = agora.getHours();
     this.saudacao = hora < 12 ? 'Bom dia!' : hora < 18 ? 'Boa tarde!' : 'Boa noite!';
     const extenso = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     this.hojeExtenso = extenso.charAt(0).toUpperCase() + extenso.slice(1);
-    this.carregarResumo();
   }
 
   /** Números do dia exibidos no topo do painel. Falhas isoladas não impedem o restante. */

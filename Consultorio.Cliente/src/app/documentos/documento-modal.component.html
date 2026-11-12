@@ -1,0 +1,147 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Documentos do paciente</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [value]="aba" (ionChange)="aba = $any($event).detail.value" aria-label="Emitir ou consultar documentos">
+      <ion-segment-button value="emitir">
+        <ion-label>Emitir</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="historico">
+        <ion-label>Emitidos ({{ documentos.length }})</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="exame-info-card">
+    <h3><strong>Paciente:</strong> {{ nomePaciente || paciente?.nome }}</h3>
+    @if (paciente?.dtNasc) {
+      <p>{{ paciente!.dtNasc | idade }} · CPF {{ paciente!.cpf | cpf }}</p>
+    }
+  </div>
+
+  @if (aba === 'emitir') {
+    <app-alertas-clinicos [paciente]="paciente" [compacto]="true"></app-alertas-clinicos>
+
+    <form [formGroup]="form" (ngSubmit)="emitir()" novalidate>
+      <p class="secao-formulario">Tipo de documento</p>
+      <div class="tipos-grid" role="radiogroup" aria-label="Tipo de documento">
+        @for (t of tipos; track t.valor) {
+          <button type="button" class="tipo-opcao" role="radio" [attr.aria-checked]="tipoAtual === t.tipo"
+                  [class.ativo]="tipoAtual === t.tipo" (click)="selecionarTipo(t.tipo)">
+            <ion-icon [name]="t.icone" aria-hidden="true"></ion-icon>
+            <span>{{ t.nome }}</span>
+          </button>
+        }
+      </div>
+
+      @if (!medicoLogado) {
+        <ion-item class="form-item">
+          <ion-select label="Médico emissor *" labelPlacement="floating" formControlName="idMedico" placeholder="Selecione o médico"
+                      cancelText="Cancelar" okText="Confirmar" [errorText]="erro('idMedico')">
+            @for (m of medicos; track m.id) {
+              <ion-select-option [value]="m.id">{{ m.nome }} ({{ m.crm }})</ion-select-option>
+            }
+          </ion-select>
+        </ion-item>
+      } @else {
+        <p class="dica">Emitido por {{ medicoLogado.nome }} · CRM {{ medicoLogado.crm }}</p>
+      }
+
+      @if (tipoAtual === 'Atestado') {
+        <ion-item class="form-item">
+          <ion-input type="number" inputmode="numeric" label="Dias de afastamento *" labelPlacement="floating"
+                     formControlName="diasAfastamento" min="1" max="365" [errorText]="erro('diasAfastamento')"></ion-input>
+        </ion-item>
+      }
+
+      <div class="linha-modelo">
+        <ion-button fill="clear" size="small" type="button" (click)="usarModelo()">
+          <ion-icon slot="start" name="document-text-outline"></ion-icon>
+          Usar modelo
+        </ion-button>
+      </div>
+      <ion-item class="form-item">
+        <ion-textarea [label]="rotuloConteudo" labelPlacement="floating" formControlName="conteudo"
+                      [autoGrow]="true" rows="8" [counter]="true" [maxlength]="8000" [errorText]="erro('conteudo')"></ion-textarea>
+      </ion-item>
+      @if (dica) {
+        <p class="dica">{{ dica }}</p>
+      }
+
+      @if (tipoAtual === 'PedidoExames') {
+        <ion-item class="form-item" lines="none">
+          <ion-toggle formControlName="criarExames" justify="space-between">
+            <span class="toggle-rotulo">Adicionar à lista de exames</span>
+            <span class="toggle-dica">Cria {{ quantidadeExames }} exame(s) como "Solicitado" para acompanhar coleta e laudo.</span>
+          </ion-toggle>
+        </ion-item>
+      }
+
+      @if (tipoAtual !== 'Receita' && tipoAtual !== 'ReceitaControleEspecial') {
+        <ion-item class="form-item" lines="none">
+          <ion-toggle formControlName="incluirCid" justify="space-between">
+            <span class="toggle-rotulo">Incluir CID no documento</span>
+            <span class="toggle-dica">Somente com autorização do paciente (sigilo do diagnóstico).</span>
+          </ion-toggle>
+        </ion-item>
+        @if (form.value.incluirCid) {
+          <app-busca-cid [valor]="cid" (valorChange)="definirCid($event)"></app-busca-cid>
+        }
+      }
+
+      <div class="acoes-formulario">
+        <ion-button class="btn-cancelar" fill="outline" color="medium" type="button" (click)="fechar()">Cancelar</ion-button>
+        <ion-button type="submit" color="primary" [disabled]="bloquearEnvio()">
+          @if (salvando) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          } @else {
+            <ion-icon slot="start" name="print-outline"></ion-icon>
+          }
+          {{ salvando ? 'Emitindo...' : 'Emitir e imprimir' }}
+        </ion-button>
+      </div>
+    </form>
+  } @else {
+    @if (carregandoHistorico) {
+      <ion-progress-bar type="indeterminate"></ion-progress-bar>
+    } @else if (documentos.length === 0) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="document-outline"></ion-icon>
+        <h3>Nenhum documento emitido</h3>
+        <p>Receitas, atestados e pedidos emitidos para este paciente aparecem aqui.</p>
+        <ion-button fill="outline" (click)="aba = 'emitir'">Emitir documento</ion-button>
+      </div>
+    } @else {
+      <ion-list lines="full">
+        @for (d of documentos; track d.id) {
+          <ion-item class="doc-item" [class.cancelado]="d.cancelado">
+            <ion-label>
+              <h3>{{ d.tipoNome }}</h3>
+              <p>{{ d.dtEmissao | dataBr:'dataHora' }} · {{ d.nomeMedico }} · código {{ d.codigoVerificacao }}</p>
+              @if (d.cancelado) {
+                <p><ion-text color="danger">Cancelado: {{ d.motivoCancelamento }}</ion-text></p>
+              }
+            </ion-label>
+            <ion-button slot="end" fill="clear" size="small" (click)="abrir(d)" title="Abrir / imprimir">
+              <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+            </ion-button>
+            @if (!d.cancelado) {
+              <ion-button slot="end" fill="clear" size="small" color="danger" (click)="cancelar(d)" title="Cancelar documento">
+                <ion-icon slot="icon-only" name="ban-outline"></ion-icon>
+              </ion-button>
+            }
+          </ion-item>
+        }
+      </ion-list>
+    }
+  }
+</ion-content>

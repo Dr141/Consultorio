@@ -1,3 +1,4 @@
+using Consultorio.Aplicacao.Configuracao;
 using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
@@ -11,7 +12,9 @@ public class ProntuarioAppService(
     IPacienteRepositorio pacienteRepositorio,
     IMedicoRepositorio medicoRepositorio,
     IConsultaRepositorio consultaRepositorio,
-    IExameRepositorio exameRepositorio) : IProntuarioAppService
+    IExameRepositorio exameRepositorio,
+    IDocumentoClinicoRepositorio? documentoRepositorio = null,
+    OpcoesClinica? opcoes = null) : IProntuarioAppService
 {
     public async Task<ProntuarioResponse> GerarProntuarioAsync(ProntuarioFiltroRequest filtro)
     {
@@ -70,7 +73,14 @@ public class ProntuarioAppService(
                 c.Adendos
                     .OrderBy(a => a.DtCriacao)
                     .Select(a => new ConsultaAdendoResponse(a.Id, a.Texto, a.Autor, a.DtCriacao))
-                    .ToList()
+                    .ToList(),
+                c.Subjetivo,
+                c.Objetivo,
+                c.Avaliacao,
+                c.Plano,
+                c.CidCodigo,
+                c.CidDescricao,
+                MapeadorClinico.MapearSinaisVitais(c.SinaisVitais)
             );
         }).ToList();
 
@@ -102,7 +112,8 @@ public class ProntuarioAppService(
                 dataExame,
                 e.DtCriacao,
                 e.Cancelado,
-                e.MotivoCancelamento
+                e.MotivoCancelamento,
+                e.Status.ToString()
             );
         }).ToList();
 
@@ -122,6 +133,21 @@ public class ProntuarioAppService(
         var dataEmissao = DateTime.UtcNow;
         var numeroOficio = $"OF-{dataEmissao:yyyy}-{filtro.IdPaciente:D4}-{dataEmissao:MMddHHmm}";
 
+        // Documentos emitidos no período (receitas, atestados, pedidos), respeitando os mesmos filtros.
+        List<DocumentoResponse>? documentos = null;
+        if (documentoRepositorio is not null)
+        {
+            var opcoesClinica = opcoes ?? new OpcoesClinica();
+            var inicio = filtro.DataInicio?.Date;
+            var fim = filtro.DataFim?.Date.AddDays(1);
+            documentos = (await documentoRepositorio.ObterPorPaciente(filtro.IdPaciente))
+                .Where(d => (!filtro.IdMedico.HasValue || filtro.IdMedico.Value <= 0 || d.IdMedico == filtro.IdMedico.Value)
+                            && (!inicio.HasValue || d.DtCriacao >= inicio.Value)
+                            && (!fim.HasValue || d.DtCriacao < fim.Value))
+                .Select(d => DocumentoAppService.Mapear(d, opcoesClinica))
+                .ToList();
+        }
+
         return new ProntuarioResponse(
             numeroOficio,
             dataEmissao,
@@ -131,7 +157,8 @@ public class ProntuarioAppService(
             filtro.DataFim,
             resumo,
             consultasMapeadas,
-            examesMapeados
+            examesMapeados,
+            documentos
         );
     }
 }

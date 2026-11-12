@@ -56,16 +56,31 @@
           <ion-icon slot="start" name="person-add-outline"></ion-icon>
           Cadastrar paciente
         </ion-button>
+        @if (!mostrarInativos) {
+          <ion-chip outline="true" color="medium" (click)="alternarInativos()" role="switch" aria-checked="false">
+            <ion-icon name="eye-off-outline"></ion-icon>
+            <ion-label>Mostrar inativos</ion-label>
+          </ion-chip>
+        }
       </div>
     } @else if (pacientesFiltrados.length === 0) {
       <div class="ion-text-center ion-padding empty-state">
         <ion-icon name="search-outline"></ion-icon>
         <h3>Nenhum paciente encontrado</h3>
         <p>Nenhum resultado para "{{ termoBusca }}". Confira a grafia ou busque pelo CPF.</p>
+        @if (!mostrarInativos) {
+          <p>O cadastro pode estar inativo.</p>
+        }
         <ion-button fill="outline" (click)="limparBusca()">
           <ion-icon slot="start" name="close-circle-outline"></ion-icon>
           Limpar busca
         </ion-button>
+        @if (!mostrarInativos) {
+          <ion-chip outline="true" color="medium" (click)="alternarInativos()" role="switch" aria-checked="false">
+            <ion-icon name="eye-off-outline"></ion-icon>
+            <ion-label>Mostrar inativos</ion-label>
+          </ion-chip>
+        }
       </div>
     } @else {
       <div class="lista-resumo">
@@ -127,12 +142,26 @@
                     <p class="observacao-box"><em>{{ p.observacao }}</em></p>
                   }
 
+                  @if (podeVerProntuario) {
+                    <app-alertas-clinicos [paciente]="p" [compacto]="true"></app-alertas-clinicos>
+                  }
+
                   <div class="card-actions">
                     @if (podeVerProntuario) {
                       <ion-button fill="solid" color="secondary" size="small" (click)="abrirProntuario(p)" title="Ver e imprimir prontuário em formato de ofício">
                         <ion-icon slot="start" name="document-text-outline"></ion-icon>
                         Prontuário
                       </ion-button>
+                      @if (p.ativo !== false) {
+                        <ion-button fill="outline" color="danger" size="small" (click)="editarAlertas(p)" title="Alergias, medicamentos em uso e condições crônicas">
+                          <ion-icon slot="start" name="warning-outline"></ion-icon>
+                          Alertas
+                        </ion-button>
+                        <ion-button fill="outline" color="primary" size="small" (click)="abrirDocumentos(p)" title="Emitir receita, atestado, pedido de exames...">
+                          <ion-icon slot="start" name="print-outline"></ion-icon>
+                          Documentos
+                        </ion-button>
+                      }
                     }
                     @if (p.ativo !== false) {
                       <ion-button fill="outline" color="primary" size="small" (click)="editar(p)" [attr.aria-label]="'Editar ' + p.nome">

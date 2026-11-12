@@ -20,12 +20,16 @@ import {
   IonTitle, IonToast, IonToolbar
 } from '@ionic/angular';
 import { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
-import { CpfPipe, DataBrPipe, IdadePipe, TelefonePipe } from './pipes/formatacao.pipes';
+import { CpfPipe, DataBrPipe, IdadePipe, LinhasPipe, SinaisVitaisPipe, TamanhoArquivoPipe, TelefonePipe } from './pipes/formatacao.pipes';
+import { AlertasClinicosComponent } from './alertas-clinicos/alertas-clinicos.component';
+import { AlertasModalComponent } from './alertas-clinicos/alertas-modal.component';
+import { BuscaCidComponent } from './busca-cid/busca-cid.component';
 import { MascaraDirective } from './directives/mascara.directive';
 import { SelecionarPacienteComponent } from './selecionar-paciente/selecionar-paciente.component';
 
 const COMPARTILHADOS = [
-  ThemeToggleComponent, CpfPipe, TelefonePipe, DataBrPipe, IdadePipe, MascaraDirective, SelecionarPacienteComponent
+  ThemeToggleComponent, CpfPipe, TelefonePipe, DataBrPipe, IdadePipe, MascaraDirective, SelecionarPacienteComponent,
+  SinaisVitaisPipe, LinhasPipe, TamanhoArquivoPipe, AlertasClinicosComponent, AlertasModalComponent, BuscaCidComponent
 ];
 
 const IONIC_COMPONENTS = [

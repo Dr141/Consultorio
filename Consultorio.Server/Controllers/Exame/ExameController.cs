@@ -6,6 +6,7 @@ using Consultorio.Server.Extensoes;
 using Consultorio.Server.Filtros;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace Consultorio.Server.Controllers.Exame;
 
@@ -128,5 +129,88 @@ public class ExameController(IExameAppService exameAppService) : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpPatch("{id:int}/realizado")]
+    [EndpointSummary("Registrar que o exame foi realizado (coleta/execução)")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> RegistrarRealizacao(int id)
+    {
+        try
+        {
+            return Ok(await exameAppService.RegistrarRealizacaoAsync(id));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/entregue")]
+    [EndpointSummary("Registrar a entrega do resultado ao paciente")]
+    [ProducesResponseType(typeof(ExameResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameResponse>> RegistrarEntrega(int id)
+    {
+        try
+        {
+            return Ok(await exameAppService.RegistrarEntregaAsync(id));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:int}/anexos")]
+    [EndpointSummary("Listar arquivos anexados ao exame")]
+    [ProducesResponseType(typeof(List<ExameAnexoResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ExameAnexoResponse>>> ObterAnexos(int id)
+    {
+        return Ok(await exameAppService.ObterAnexosAsync(id));
+    }
+
+    [HttpPost("{id:int}/anexos")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 11 * 1024 * 1024)]
+    [EndpointSummary("Anexar resultado do exame (PDF, JPG ou PNG, até 10 MB)")]
+    [ProducesResponseType(typeof(ExameAnexoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ExameAnexoResponse>> AdicionarAnexo(int id, IFormFile? arquivo, CancellationToken cancellationToken)
+    {
+        if (arquivo is null || arquivo.Length == 0)
+            return BadRequest(new { message = "Selecione um arquivo." });
+        if (arquivo.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "O arquivo ultrapassa o limite de 10 MB." });
+
+        try
+        {
+            using var memoria = new MemoryStream();
+            await arquivo.CopyToAsync(memoria, cancellationToken);
+            return Ok(await exameAppService.AdicionarAnexoAsync(id, arquivo.FileName, memoria.ToArray(), User.ObterEmail()));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:int}/anexos/{idAnexo:int}")]
+    [EndpointSummary("Abrir/baixar um arquivo anexado ao exame")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ObterArquivoAnexo(int id, int idAnexo)
+    {
+        var arquivo = await exameAppService.ObterArquivoAnexoAsync(id, idAnexo);
+        if (arquivo is null) return NotFound(new { message = "Arquivo não encontrado." });
+
+        // "inline" abre PDF/imagem no navegador; nosniff impede que o conteúdo seja interpretado como outro tipo.
+        var disposicao = new ContentDispositionHeaderValue("inline");
+        disposicao.SetHttpFileName(arquivo.NomeArquivo);
+        Response.Headers[HeaderNames.ContentDisposition] = disposicao.ToString();
+        Response.Headers[HeaderNames.XContentTypeOptions] = "nosniff";
+        return File(arquivo.Conteudo, arquivo.ContentType);
     }
 }

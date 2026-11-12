@@ -50,6 +50,10 @@ const routes: Routes = [
   {
     path: 'prontuario',
     loadChildren: () => import('./prontuario/prontuario.module').then(m => m.ProntuarioPageModule)
+  },
+  {
+    path: 'documento',
+    loadChildren: () => import('./documentos/documento.module').then(m => m.DocumentoPageModule)
   }
 ];
 

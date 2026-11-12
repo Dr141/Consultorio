@@ -5,6 +5,7 @@ using Consultorio.Dominio.Entidades;
 using Consultorio.Dominio.Enumerados;
 using Consultorio.Dominio.Excecoes;
 using Consultorio.Dominio.Interfaces.Repositorios;
+using Consultorio.Dominio.ValueObjects;
 
 namespace Consultorio.Aplicacao.Servicos;
 
@@ -54,7 +55,10 @@ public class ConsultaAppService(
                 ?? throw new DomainException($"Agenda com id {request.IdAgenda.Value} não encontrada.");
         }
 
-        var consulta = new Consulta(request.IdPaciente, request.IdMedico, request.Observacao, request.IdAgenda);
+        var evolucao = new EvolucaoClinica(request.Observacao, request.Subjetivo, request.Objetivo, request.Avaliacao, request.Plano);
+        var consulta = new Consulta(request.IdPaciente, request.IdMedico, evolucao, request.IdAgenda);
+        consulta.DefinirDiagnostico(MapeadorClinico.CriarCid(request.CidCodigo, request.CidDescricao));
+        consulta.RegistrarSinaisVitais(MapeadorClinico.CriarSinaisVitais(request.SinaisVitais));
         var salva = await consultaRepositorio.Adicionar(consulta);
 
         if (request.IdAgenda.HasValue && request.IdAgenda.Value > 0)
@@ -86,6 +90,20 @@ public class ConsultaAppService(
         var atualizada = await consultaRepositorio.Atualizar(consulta);
         var detalhada = await consultaRepositorio.ObterDetalhadoPorId(atualizada.Id);
         return MapearResponse(detalhada ?? atualizada);
+    }
+
+    public async Task<ConsultaResponse> AtualizarEvolucaoAsync(int id, EvolucaoRequest request, UsuarioAtual? usuario = null)
+    {
+        var consulta = await consultaRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Consulta com id {id} não encontrada.");
+
+        GarantirAutoria(consulta, usuario);
+        consulta.AtualizarEvolucao(new EvolucaoClinica(request.Observacao, request.Subjetivo, request.Objetivo, request.Avaliacao, request.Plano));
+        consulta.DefinirDiagnostico(MapeadorClinico.CriarCid(request.CidCodigo, request.CidDescricao));
+        consulta.RegistrarSinaisVitais(MapeadorClinico.CriarSinaisVitais(request.SinaisVitais));
+
+        var atualizada = await consultaRepositorio.Atualizar(consulta);
+        return MapearResponse(atualizada);
     }
 
     public async Task<ConsultaResponse> FinalizarAsync(int id, UsuarioAtual? usuario = null)
@@ -176,7 +194,14 @@ public class ConsultaAppService(
             c.Adendos
                 .OrderBy(a => a.DtCriacao)
                 .Select(a => new ConsultaAdendoResponse(a.Id, a.Texto, a.Autor, a.DtCriacao))
-                .ToList()
+                .ToList(),
+            c.Subjetivo,
+            c.Objetivo,
+            c.Avaliacao,
+            c.Plano,
+            c.CidCodigo,
+            c.CidDescricao,
+            MapeadorClinico.MapearSinaisVitais(c.SinaisVitais)
         );
     }
 }

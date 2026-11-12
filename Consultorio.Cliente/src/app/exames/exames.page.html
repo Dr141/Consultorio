@@ -90,6 +90,8 @@
                       <ion-card-title [title]="e.descricao">{{ e.descricao }}</ion-card-title>
                       @if (e.cancelado) {
                         <ion-badge color="medium">Cancelado</ion-badge>
+                      } @else if (e.status === 'Entregue') {
+                        <ion-badge color="tertiary">Entregue</ion-badge>
                       } @else {
                         <ion-badge [color]="e.resultado ? 'success' : 'warning'">
                           {{ e.resultado ? 'Laudo Pronto' : 'Aguardando' }}
@@ -115,6 +117,16 @@
                   </ion-card-header>
 
                   <ion-card-content>
+                    @if (!e.cancelado) {
+                      <ol class="etapas-exame" aria-label="Etapas do exame">
+                        @for (etapa of etapas; track etapa.status) {
+                          <li [class.concluida]="etapaConcluida(e, etapa.status)" [title]="dataEtapa(e, etapa.status)">
+                            <span class="marcador"></span>
+                            <span class="rotulo">{{ etapa.rotulo }}</span>
+                          </li>
+                        }
+                      </ol>
+                    }
                     @if (e.cancelado) {
                       <div class="sem-resultado-box">
                         <ion-icon name="ban-outline" aria-hidden="true"></ion-icon>
@@ -140,6 +152,22 @@
                             {{ e.resultado ? 'Editar Laudo' : 'Lançar Laudo' }}
                           </ion-button>
                         }
+                        @if (statusDe(e) === 'Solicitado') {
+                          <ion-button fill="outline" color="secondary" size="small" (click)="registrarRealizacao(e)" title="Coleta ou execução do exame concluída">
+                            <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+                            Realizado
+                          </ion-button>
+                        }
+                        @if (statusDe(e) === 'Laudado') {
+                          <ion-button fill="outline" color="tertiary" size="small" (click)="registrarEntrega(e)" title="Resultado entregue ao paciente">
+                            <ion-icon slot="start" name="hand-right-outline"></ion-icon>
+                            Entregue
+                          </ion-button>
+                        }
+                        <ion-button fill="clear" color="primary" size="small" (click)="abrirAnexos(e)" title="Arquivos do resultado (PDF, imagens)">
+                          <ion-icon slot="start" name="attach-outline"></ion-icon>
+                          Arquivos{{ e.quantidadeAnexos ? ' (' + e.quantidadeAnexos + ')' : '' }}
+                        </ion-button>
                         @if (!e.resultado) {
                           <ion-button fill="clear" color="danger" size="small" (click)="cancelar(e)" title="O registro continua no histórico com o motivo">
                             <ion-icon slot="start" name="ban-outline"></ion-icon>

@@ -16,6 +16,8 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
     public DbSet<ConsultaAdendo> ConsultaAdendo { get; set; } = null!;
     public DbSet<RegistroAuditoria> RegistroAuditoria { get; set; } = null!;
     public DbSet<BloqueioAgenda> BloqueioAgenda { get; set; } = null!;
+    public DbSet<DocumentoClinico> DocumentoClinico { get; set; } = null!;
+    public DbSet<ExameAnexo> ExameAnexo { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +54,9 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
 
             builder.Property(p => p.Ativo).IsRequired();
             builder.Property(p => p.DtInativacao);
+            builder.Property(p => p.Alergias).HasMaxLength(2000);
+            builder.Property(p => p.MedicamentosEmUso).HasMaxLength(2000);
+            builder.Property(p => p.CondicoesCronicas).HasMaxLength(2000);
         });
 
         // Configuração de Medico
@@ -121,6 +126,28 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(c => c.DtFinalizacao);
             builder.Property(c => c.DtAnulacao);
             builder.Property(c => c.MotivoAnulacao).HasMaxLength(500);
+            builder.Property(c => c.Subjetivo).HasMaxLength(4000);
+            builder.Property(c => c.Objetivo).HasMaxLength(4000);
+            builder.Property(c => c.Avaliacao).HasMaxLength(4000);
+            builder.Property(c => c.Plano).HasMaxLength(4000);
+            builder.Property(c => c.CidCodigo).HasMaxLength(10);
+            builder.Property(c => c.CidDescricao).HasMaxLength(200);
+
+            // Sinais vitais na própria tabela de consulta (colunas com prefixo "Sv")
+            builder.OwnsOne(c => c.SinaisVitais, sv =>
+            {
+                sv.Property(p => p.PressaoSistolica).HasColumnName("SvPressaoSistolica");
+                sv.Property(p => p.PressaoDiastolica).HasColumnName("SvPressaoDiastolica");
+                sv.Property(p => p.FrequenciaCardiaca).HasColumnName("SvFrequenciaCardiaca");
+                sv.Property(p => p.FrequenciaRespiratoria).HasColumnName("SvFrequenciaRespiratoria");
+                sv.Property(p => p.Temperatura).HasColumnName("SvTemperatura").HasPrecision(4, 1);
+                sv.Property(p => p.SaturacaoO2).HasColumnName("SvSaturacaoO2");
+                sv.Property(p => p.PesoKg).HasColumnName("SvPesoKg").HasPrecision(5, 2);
+                sv.Property(p => p.AlturaCm).HasColumnName("SvAlturaCm");
+                sv.Property(p => p.Glicemia).HasColumnName("SvGlicemia");
+                sv.Ignore(p => p.Imc);
+                sv.Ignore(p => p.Vazio);
+            });
 
             builder.HasMany(c => c.Adendos)
                 .WithOne()
@@ -153,6 +180,7 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(e => e.Descricao).HasMaxLength(200).IsRequired();
             builder.Property(e => e.Resultado);
             builder.Property(e => e.Cancelado).IsRequired();
+            builder.Property(e => e.Status).HasConversion<int>().IsRequired();
             builder.Property(e => e.DtCancelamento);
             builder.Property(e => e.MotivoCancelamento).HasMaxLength(500);
 
@@ -210,6 +238,36 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
                 .HasForeignKey(b => b.IdMedico)
                 .OnDelete(DeleteBehavior.Cascade);
             builder.HasIndex(b => new { b.DataInicio, b.DataFim });
+        });
+        // Documentos clínicos (receitas, atestados, pedidos...)
+        modelBuilder.Entity<DocumentoClinico>(builder =>
+        {
+            builder.ToTable("DocumentoClinico");
+            builder.HasKey(d => d.Id);
+            builder.Property(d => d.Tipo).HasConversion<int>().IsRequired();
+            builder.Property(d => d.Conteudo).HasMaxLength(8000).IsRequired();
+            builder.Property(d => d.CidCodigo).HasMaxLength(10);
+            builder.Property(d => d.CidDescricao).HasMaxLength(200);
+            builder.Property(d => d.CodigoVerificacao).HasMaxLength(20).IsRequired();
+            builder.HasIndex(d => d.CodigoVerificacao).IsUnique();
+            builder.Property(d => d.EmitidoPor).HasMaxLength(256).IsRequired();
+            builder.Property(d => d.MotivoCancelamento).HasMaxLength(500);
+            builder.HasOne(d => d.Paciente).WithMany().HasForeignKey(d => d.IdPaciente).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(d => d.Medico).WithMany().HasForeignKey(d => d.IdMedico).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(d => d.IdPaciente);
+        });
+
+        // Anexos de exames (PDF/imagem do resultado)
+        modelBuilder.Entity<ExameAnexo>(builder =>
+        {
+            builder.ToTable("ExameAnexo");
+            builder.HasKey(a => a.Id);
+            builder.Property(a => a.NomeArquivo).HasMaxLength(200).IsRequired();
+            builder.Property(a => a.ContentType).HasMaxLength(100).IsRequired();
+            builder.Property(a => a.Conteudo).IsRequired();
+            builder.Property(a => a.EnviadoPor).HasMaxLength(256).IsRequired();
+            builder.HasOne<Exame>().WithMany().HasForeignKey(a => a.IdExame).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(a => a.IdExame);
         });
     }
 }

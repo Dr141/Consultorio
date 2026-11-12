@@ -128,3 +128,57 @@ ion-col {
     text-decoration: line-through;
   }
 }
+
+.etapas-exame {
+  display: flex;
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+
+  li {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--app-text-muted);
+
+    // Linha que liga uma etapa à anterior
+    &:not(:first-child)::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      right: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--app-border);
+      z-index: 0;
+    }
+
+    .marcador {
+      position: relative;
+      z-index: 1;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--app-border);
+      background: var(--app-surface);
+    }
+
+    &.concluida {
+      color: var(--app-text);
+      font-weight: 600;
+
+      .marcador {
+        border-color: var(--ion-color-success);
+        background: var(--ion-color-success);
+      }
+
+      &::before {
+        background: var(--ion-color-success);
+      }
+    }
+  }
+}

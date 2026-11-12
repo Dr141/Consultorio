@@ -2,6 +2,7 @@ using Consultorio.Aplicacao.DTOs.Request;
 using Consultorio.Aplicacao.DTOs.Response;
 using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Dominio.Entidades;
+using Consultorio.Dominio.Enumerados;
 using Consultorio.Dominio.Excecoes;
 using Consultorio.Dominio.Interfaces.Repositorios;
 
@@ -11,13 +12,73 @@ public class ExameAppService(
     IExameRepositorio exameRepositorio,
     IPacienteRepositorio pacienteRepositorio,
     IAgendaRepositorio agendaRepositorio,
-    IMedicoRepositorio? medicoRepositorio = null) : IExameAppService
+    IMedicoRepositorio? medicoRepositorio = null,
+    IExameAnexoRepositorio? anexoRepositorio = null) : IExameAppService
 {
     public async Task<List<ExameResponse>> ObterTodosAsync()
     {
         var exames = await exameRepositorio.ObterTodosDetalhado();
-        return exames.Select(MapearResponse).ToList();
+        return await MapearComAnexosAsync(exames);
     }
+
+    private async Task<List<ExameResponse>> MapearComAnexosAsync(List<Exame> exames)
+    {
+        var contagem = anexoRepositorio is null
+            ? new Dictionary<int, int>()
+            : await anexoRepositorio.ContarPorExames(exames.Select(e => e.Id));
+        return exames
+            .Select(e => MapearResponse(e) with { QuantidadeAnexos = contagem.GetValueOrDefault(e.Id) })
+            .ToList();
+    }
+
+    public Task<ExameResponse> RegistrarRealizacaoAsync(int id) => AlterarAsync(id, e => e.RegistrarRealizacao());
+    public Task<ExameResponse> RegistrarEntregaAsync(int id) => AlterarAsync(id, e => e.RegistrarEntrega());
+
+    private async Task<ExameResponse> AlterarAsync(int id, Action<Exame> alteracao)
+    {
+        var exame = await exameRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Exame com id {id} não encontrado.");
+        alteracao(exame);
+        var atualizado = await exameRepositorio.Atualizar(exame);
+        return MapearResponse(atualizado);
+    }
+
+    public async Task<ExameAnexoResponse> AdicionarAnexoAsync(int id, string nomeArquivo, byte[] conteudo, string enviadoPor)
+    {
+        var repositorio = anexoRepositorio ?? throw new DomainException("Anexos de exames não estão disponíveis.");
+        var exame = await exameRepositorio.ObterId(id)
+            ?? throw new DomainException($"Exame com id {id} não encontrado.");
+        DomainException.When(exame.Cancelado, "Exame cancelado não aceita anexos.");
+
+        var anexo = await repositorio.Adicionar(new ExameAnexo(id, nomeArquivo, conteudo, enviadoPor));
+
+        // Resultado anexado a um exame ainda "solicitado" indica que ele foi realizado.
+        if (exame.Status == StatusExame.Solicitado)
+        {
+            exame.RegistrarRealizacao();
+            await exameRepositorio.Atualizar(exame);
+        }
+
+        return MapearAnexo(anexo);
+    }
+
+    public async Task<List<ExameAnexoResponse>> ObterAnexosAsync(int id)
+    {
+        if (anexoRepositorio is null) return [];
+        var anexos = await anexoRepositorio.ObterResumoPorExame(id);
+        return anexos.Select(MapearAnexo).ToList();
+    }
+
+    public async Task<ArquivoResponse?> ObterArquivoAnexoAsync(int idExame, int idAnexo)
+    {
+        if (anexoRepositorio is null) return null;
+        var anexo = await anexoRepositorio.ObterId(idAnexo);
+        if (anexo is null || anexo.IdExame != idExame) return null;
+        return new ArquivoResponse(anexo.NomeArquivo, anexo.ContentType, anexo.Conteudo);
+    }
+
+    private static ExameAnexoResponse MapearAnexo(ExameAnexo a) =>
+        new(a.Id, a.IdExame, a.NomeArquivo, a.ContentType, a.TamanhoBytes, a.EnviadoPor, a.DtCriacao);
 
     public async Task<ExameResponse?> ObterPorIdAsync(int id)
     {
@@ -28,7 +89,7 @@ public class ExameAppService(
     public async Task<List<ExameResponse>> ObterPorPacienteAsync(int idPaciente)
     {
         var exames = await exameRepositorio.ObterPorPaciente(idPaciente);
-        return exames.Select(MapearResponse).ToList();
+        return await MapearComAnexosAsync(exames);
     }
 
     public async Task<ExameResponse> AdicionarAsync(ExameRequest request)
@@ -151,7 +212,11 @@ public class ExameAppService(
             medico?.Crm?.Valor,
             e.Cancelado,
             e.DtCancelamento,
-            e.MotivoCancelamento
+            e.MotivoCancelamento,
+            e.Status.ToString(),
+            e.DtRealizacao,
+            e.DtLaudo,
+            e.DtEntrega
         );
     }
 }

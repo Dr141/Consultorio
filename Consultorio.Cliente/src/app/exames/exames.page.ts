@@ -4,9 +4,10 @@ import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
 import { RoleService } from '../services/role/role.service';
-import { Exame } from '../types/types';
+import { Exame, StatusExame } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { ExameModalComponent } from './exame-modal.component';
+import { AnexosModalComponent } from './anexos-modal.component';
 
 type FiltroExame = 'todos' | 'pendentes' | 'laudados' | 'cancelados';
 
@@ -24,6 +25,12 @@ export class ExamesPage {
   public filtroStatus: FiltroExame = 'todos';
   public totais = { todos: 0, pendentes: 0, laudados: 0, cancelados: 0 };
   public podeLaudar = false;
+  public readonly etapas: { status: StatusExame; rotulo: string }[] = [
+    { status: 'Solicitado', rotulo: 'Solicitado' },
+    { status: 'Realizado', rotulo: 'Realizado' },
+    { status: 'Laudado', rotulo: 'Laudo' },
+    { status: 'Entregue', rotulo: 'Entregue' }
+  ];
 
   constructor(
     private api: ConsultorioApiService,
@@ -74,7 +81,7 @@ export class ExamesPage {
 
   filtrar() {
     const encontrados = this.exames.filter(e =>
-      correspondeBusca(this.termoBusca, e.descricao, e.nomePaciente, e.nomeMedico, e.resultado)
+      correspondeBusca(this.termoBusca, e.descricao, e.nomePaciente, e.nomeMedico, e.resultado, e.status)
     );
 
     const ativos = encontrados.filter(e => !e.cancelado);
@@ -114,6 +121,62 @@ export class ExamesPage {
       this.feedback.sucesso(exame ? 'Laudo salvo com sucesso.' : 'Exame solicitado com sucesso.');
       this.carregarExames();
     }
+  }
+
+  /** Status com fallback para registros antigos (antes do ciclo do exame existir). */
+  statusDe(e: Exame): StatusExame {
+    return e.status ?? (e.resultado ? 'Laudado' : 'Solicitado');
+  }
+
+  etapaConcluida(e: Exame, etapa: StatusExame): boolean {
+    const ordem: StatusExame[] = ['Solicitado', 'Realizado', 'Laudado', 'Entregue'];
+    return ordem.indexOf(this.statusDe(e)) >= ordem.indexOf(etapa);
+  }
+
+  dataEtapa(e: Exame, etapa: StatusExame): string {
+    const valor = etapa === 'Solicitado' ? (e.dataHora || e.dtCriacao)
+      : etapa === 'Realizado' ? e.dtRealizacao
+      : etapa === 'Laudado' ? e.dtLaudo
+      : e.dtEntrega;
+    if (!valor) return '';
+    const d = new Date(valor);
+    return isNaN(d.getTime()) ? '' : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  registrarRealizacao(exame: Exame) {
+    this.api.registrarRealizacaoExame(exame.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Exame marcado como realizado.');
+        this.carregarExames();
+      },
+      error: (err) => this.feedback.erro(err, 'Não foi possível registrar a realização.')
+    });
+  }
+
+  async registrarEntrega(exame: Exame) {
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Registrar entrega?',
+      mensagem: `Confirma que o resultado de "${exame.descricao}" foi entregue a ${exame.nomePaciente ?? 'paciente'}?`,
+      textoConfirmar: 'Registrar entrega'
+    });
+    if (!confirmado) return;
+    this.api.registrarEntregaExame(exame.id).subscribe({
+      next: () => {
+        this.feedback.sucesso('Entrega registrada.');
+        this.carregarExames();
+      },
+      error: (err) => this.feedback.erro(err, 'Não foi possível registrar a entrega.')
+    });
+  }
+
+  async abrirAnexos(exame: Exame) {
+    const modal = await this.modalCtrl.create({
+      component: AnexosModalComponent,
+      componentProps: { exame }
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss();
+    if (data) this.carregarExames();
   }
 
   async cancelar(exame: Exame) {

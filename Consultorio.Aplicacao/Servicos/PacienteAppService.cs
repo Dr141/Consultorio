@@ -180,6 +180,17 @@ public class PacienteAppService(
         return MapearResponse(atualizado);
     }
 
+    public async Task<PacienteResponse> AtualizarAlertasAsync(int id, AlertasClinicosRequest request)
+    {
+        var paciente = await pacienteRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Paciente com id {id} não encontrado.");
+
+        paciente.AtualizarAlertas(request.Alergias, request.MedicamentosEmUso, request.CondicoesCronicas);
+        var atualizado = await pacienteRepositorio.Atualizar(paciente);
+        await LimparCache(id);
+        return MapearResponse(atualizado);
+    }
+
     private async Task LimparCache(int id)
     {
         if (cacheService is not null)
@@ -201,6 +212,9 @@ public class PacienteAppService(
             p.DtCriacao,
             p.Ativo,
             p.DtInativacao,
-            p.Pessoa?.Email
+            p.Pessoa?.Email,
+            p.Alergias,
+            p.MedicamentosEmUso,
+            p.CondicoesCronicas
         );
 }

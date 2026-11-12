@@ -8,7 +8,7 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     cy.visit('/home');
     cy.aguardarCarregamento();
 
-    cy.contains('ion-card.cardHome', 'Prontuário').click();
+    cy.contains('ion-card.cardHome ion-card-title', 'Prontuário').click();
     cy.url().should('include', '/prontuario');
     cy.contains('ion-title', 'Prontuário do Paciente').should('be.visible');
     cy.contains('Nenhum prontuário carregado').should('be.visible');
@@ -26,15 +26,16 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     cy.url().should('include', '/prontuario?idPaciente=');
     cy.aguardarCarregamento();
 
-    // Valida a folha de ofício gerada
-    cy.get('.oficio-sheet').should('be.visible');
-    cy.contains('.timbre-text h1', 'Consultório de Gestão Clínica').should('be.visible');
-    cy.contains('.oficio-meta .oficio-num', 'OF-').should('be.visible');
-    cy.contains('.secao-titulo', '1. Identificação do Paciente').should('be.visible');
-    cy.contains('.secao-titulo', '2. Síntese de Atendimentos no Período').should('be.visible');
-    cy.contains('.secao-titulo', '3. Histórico de Consultas e Evoluções Clínicas').should('be.visible');
-    cy.contains('.secao-titulo', '4. Solicitações de Exames e Laudos Técnicos').should('be.visible');
-    cy.contains('.oficio-fecho', 'São Paulo').should('be.visible');
+    // Valida a folha de ofício gerada (o ofício é longo: cada trecho é rolado até a área visível)
+    const visivel = (seletor: string, texto: string) => cy.contains(seletor, texto).scrollIntoView().should('be.visible');
+    cy.get('.oficio-sheet').scrollIntoView().should('be.visible');
+    visivel('.timbre-text h1', 'Consultório de Gestão Clínica');
+    visivel('.oficio-meta .oficio-num', 'OF-');
+    visivel('.secao-titulo', '1. Identificação do Paciente');
+    visivel('.secao-titulo', '2. Síntese de Atendimentos no Período');
+    visivel('.secao-titulo', '3. Histórico de Consultas e Evoluções Clínicas');
+    visivel('.secao-titulo', '4. Solicitações de Exames e Laudos Técnicos');
+    visivel('.oficio-fecho', 'São Paulo');
   });
 
   it('Deve aplicar chips de período rápido e filtrar histórico', () => {
@@ -56,6 +57,6 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     cy.contains('ion-button', 'Gerar Prontuário').click();
     cy.aguardarCarregamento();
 
-    cy.get('.oficio-sheet').should('be.visible');
+    cy.get('.oficio-sheet').scrollIntoView().should('be.visible');
   });
 });

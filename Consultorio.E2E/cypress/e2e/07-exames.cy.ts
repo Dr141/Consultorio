@@ -168,11 +168,14 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
   });
 
   it('Deve desistir do cancelamento no diálogo e depois cancelar o exame com motivo', () => {
+    // Descrição própria: o teste de busca já criou um exame com a descrição padrão nesta execução.
+    const descricaoCancelamento = `Ultrassonografia para Cancelamento E2E ${sufixo}`;
+
     cy.request('GET', '/api/paciente').then((resPac) => {
       const pacId = (resPac.body as any[])[0].id;
       cy.request('POST', '/api/exame', {
         idPaciente: pacId,
-        descricao: descricaoExame
+        descricao: descricaoCancelamento
       });
     });
 
@@ -180,17 +183,17 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.aguardarCarregamento();
 
     // 1. Abrir o cancelamento e desistir
-    cy.contains('ion-card.exame-card', descricaoExame).first().within(() => {
+    cy.contains('ion-card.exame-card', descricaoCancelamento).first().within(() => {
       cy.contains('ion-button', 'Cancelar').click();
     });
 
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert button.alert-button-role-cancel').click();
     cy.get('ion-alert').should('not.exist');
-    cy.contains('ion-card.exame-card', descricaoExame).should('be.visible');
+    cy.contains('ion-card.exame-card', descricaoCancelamento).should('be.visible');
 
     // 2. Cancelar informando o motivo
-    cy.contains('ion-card.exame-card', descricaoExame).first().within(() => {
+    cy.contains('ion-card.exame-card', descricaoCancelamento).first().within(() => {
       cy.contains('ion-button', 'Cancelar').click();
     });
 
@@ -201,9 +204,9 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.aguardarCarregamento();
 
     // Sai da lista principal e aparece na aba de cancelados, com o motivo
-    cy.contains('ion-card.exame-card', descricaoExame).should('not.exist');
+    cy.contains('ion-card.exame-card', descricaoCancelamento).should('not.exist');
     cy.contains('ion-segment-button', 'Cancelados').click();
-    cy.contains('ion-card.exame-card', descricaoExame).within(() => {
+    cy.contains('ion-card.exame-card', descricaoCancelamento).within(() => {
       cy.contains('ion-badge', 'Cancelado').should('be.visible');
       cy.contains('Pedido duplicado').should('be.visible');
     });

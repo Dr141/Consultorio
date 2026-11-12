@@ -5,6 +5,7 @@ import { IonicModule } from '../shared/ionic.module';
 import { ConsultasPageRoutingModule } from './consultas-routing.module';
 import { ConsultasPage } from './consultas.page';
 import { ConsultaModalModule } from './consulta-modal.module';
+import { DocumentoModalModule } from '../documentos/documento-modal.module';
 
 @NgModule({
   imports: [
@@ -13,7 +14,8 @@ import { ConsultaModalModule } from './consulta-modal.module';
     ReactiveFormsModule,
     IonicModule,
     ConsultasPageRoutingModule,
-    ConsultaModalModule
+    ConsultaModalModule,
+    DocumentoModalModule
   ],
   declarations: [ConsultasPage]
 })

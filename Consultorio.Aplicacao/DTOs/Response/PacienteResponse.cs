@@ -11,5 +11,8 @@ public record PacienteResponse(
     DateTime DtCriacao,
     bool Ativo = true,
     DateTime? DtInativacao = null,
-    string? Email = null
+    string? Email = null,
+    string? Alergias = null,
+    string? MedicamentosEmUso = null,
+    string? CondicoesCronicas = null
 );

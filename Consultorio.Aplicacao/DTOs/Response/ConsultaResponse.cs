@@ -14,5 +14,12 @@ public record ConsultaResponse(
     DateTime? DtFinalizacao = null,
     DateTime? DtAnulacao = null,
     string? MotivoAnulacao = null,
-    List<ConsultaAdendoResponse>? Adendos = null
+    List<ConsultaAdendoResponse>? Adendos = null,
+    string? Subjetivo = null,
+    string? Objetivo = null,
+    string? Avaliacao = null,
+    string? Plano = null,
+    string? CidCodigo = null,
+    string? CidDescricao = null,
+    SinaisVitaisResponse? SinaisVitais = null
 );

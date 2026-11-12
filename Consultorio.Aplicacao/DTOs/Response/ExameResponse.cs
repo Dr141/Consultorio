@@ -14,5 +14,10 @@ public record ExameResponse(
     string? CrmMedico = null,
     bool Cancelado = false,
     DateTime? DtCancelamento = null,
-    string? MotivoCancelamento = null
+    string? MotivoCancelamento = null,
+    string Status = "Solicitado",
+    DateTime? DtRealizacao = null,
+    DateTime? DtLaudo = null,
+    DateTime? DtEntrega = null,
+    int QuantidadeAnexos = 0
 );

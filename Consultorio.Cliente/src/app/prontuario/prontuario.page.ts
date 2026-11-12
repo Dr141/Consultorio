@@ -1,8 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { ModalController, ToastController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
-import { Medico, Paciente, ProntuarioRelatorio } from '../types/types';
+import { Medico, Paciente, ProntuarioRelatorio, StatusExame } from '../types/types';
+import { AlertasModalComponent } from '../shared/alertas-clinicos/alertas-modal.component';
+import { DocumentoModalComponent } from '../documentos/documento-modal.component';
 
 @Component({
   selector: 'app-prontuario',
@@ -27,7 +29,8 @@ export class ProntuarioPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private toastCtrl: ToastController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private modalCtrl: ModalController
   ) {}
 
   ngOnInit() {
@@ -129,6 +132,8 @@ export class ProntuarioPage implements OnInit {
         this.prontuario = relatorio;
         this.carregando = false;
         this.cdr.detectChanges();
+        // Em telas menores o ofício fica abaixo dos filtros; leva a visão até ele.
+        setTimeout(() => document.getElementById('area-oficio')?.scrollIntoView({ block: 'start' }));
       },
       error: (err) => {
         this.carregando = false;
@@ -140,6 +145,42 @@ export class ProntuarioPage implements OnInit {
         this.exibirMensagem(err?.message || 'Erro ao gerar prontuário.', 'danger');
       }
     });
+  }
+
+  rotuloStatusExame(status: StatusExame): string {
+    switch (status) {
+      case 'Solicitado': return 'SOLICITADO';
+      case 'Realizado': return 'REALIZADO';
+      case 'Laudado': return 'LAUDADO';
+      case 'Entregue': return 'ENTREGUE';
+    }
+  }
+
+  async editarAlertas() {
+    if (!this.prontuario) return;
+    const modal = await this.modalCtrl.create({
+      component: AlertasModalComponent,
+      componentProps: { paciente: this.prontuario.paciente }
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss();
+    if (data && this.prontuario) {
+      this.prontuario = { ...this.prontuario, paciente: data as Paciente };
+      this.cdr.detectChanges();
+    }
+  }
+
+  async abrirDocumentos() {
+    if (!this.prontuario) return;
+    const modal = await this.modalCtrl.create({
+      component: DocumentoModalComponent,
+      componentProps: { idPaciente: this.prontuario.paciente.id, nomePaciente: this.prontuario.paciente.nome }
+    });
+    await modal.present();
+  }
+
+  abrirDocumento(id: number) {
+    this.router.navigate(['/documento', id]);
   }
 
   imprimir() {

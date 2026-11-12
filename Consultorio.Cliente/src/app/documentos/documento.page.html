@@ -1,0 +1,112 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/consultas" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ documento?.tipoNome || 'Documento' }}</ion-title>
+    <ion-buttons slot="end">
+      @if (documento && !documento.cancelado) {
+        <ion-button (click)="cancelar()" title="Cancelar documento emitido por engano">
+          <ion-icon slot="start" name="ban-outline"></ion-icon>
+          <span class="ion-hide-md-down">Cancelar</span>
+        </ion-button>
+      }
+      @if (documento) {
+        <ion-button (click)="imprimir()">
+          <ion-icon slot="start" name="print-outline"></ion-icon>
+          Imprimir / Salvar PDF
+        </ion-button>
+      }
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="page-container">
+    @if (carregando) {
+      <div class="loading-state" aria-busy="true">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Carregando documento...</p>
+      </div>
+    } @else if (!documento) {
+      <div class="ion-text-center ion-padding empty-state">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <h3>Documento indisponível</h3>
+        <p>{{ erroCarregamento }}</p>
+        <ion-button fill="outline" (click)="voltar()">Voltar</ion-button>
+      </div>
+    } @else {
+      @if (documento.cancelado) {
+        <div class="aviso-cancelado no-print">
+          <ion-icon name="ban-outline"></ion-icon>
+          <span>Documento cancelado em {{ documento.dtCancelamento | dataBr:'dataHora' }}: {{ documento.motivoCancelamento }}</span>
+        </div>
+      }
+
+      @for (via of vias; track $index) {
+        <div class="documento-folha" [class.cancelado]="documento.cancelado" [class.quebra]="$index > 0">
+          @if (documento.cancelado) {
+            <div class="marca-cancelado" aria-hidden="true">CANCELADO</div>
+          }
+
+          <header class="doc-cabecalho">
+            <div>
+              <h1>{{ documento.nomeClinica }}</h1>
+              @if (documento.enderecoClinica || documento.telefoneClinica) {
+                <p>{{ documento.enderecoClinica }}@if (documento.enderecoClinica && documento.telefoneClinica) { · }{{ documento.telefoneClinica }}</p>
+              }
+            </div>
+            @if (via) {
+              <span class="doc-via">{{ via }}</span>
+            }
+          </header>
+
+          <h2 class="doc-titulo">{{ documento.tipoNome }}</h2>
+
+          <section class="doc-paciente">
+            <div><span>Paciente</span><strong>{{ documento.nomePaciente }}</strong></div>
+            @if (documento.cpfPaciente) {
+              <div><span>CPF</span><strong>{{ documento.cpfPaciente | cpf }}</strong></div>
+            }
+            @if (documento.dtNascPaciente) {
+              <div><span>Idade</span><strong>{{ documento.dtNascPaciente | idade }}</strong></div>
+            }
+          </section>
+
+          <section class="doc-corpo">
+            @if (documento.tipo === 'PedidoExames') {
+              <p class="doc-rotulo">Solicito:</p>
+              <ol class="doc-itens">
+                @for (item of itensPedido; track $index) {
+                  <li>{{ item }}</li>
+                }
+              </ol>
+            } @else {
+              <p class="doc-texto" [class.receita]="ehReceita">{{ documento.conteudo }}</p>
+            }
+
+            @if (documento.diasAfastamento) {
+              <p class="doc-destaque">Período de afastamento: {{ documento.diasAfastamento }} dia(s) a partir de {{ documento.dtEmissao | dataBr }}.</p>
+            }
+            @if (documento.cidCodigo) {
+              <p class="doc-destaque">CID-10: {{ documento.cidCodigo }} — {{ documento.cidDescricao }}</p>
+            }
+          </section>
+
+          <footer class="doc-rodape">
+            <p class="doc-local-data">{{ documento.dtEmissao | dataBr:'extenso' }}</p>
+            <div class="doc-assinatura">
+              <div class="linha"></div>
+              <strong>{{ documento.nomeMedico }}</strong>
+              <span>CRM {{ documento.crmMedico }}@if (documento.especialidadesMedico.length) { · {{ documento.especialidadesMedico.join(', ') }} }</span>
+            </div>
+            <p class="doc-verificacao">
+              Código de verificação <strong>{{ documento.codigoVerificacao }}</strong> · confira a autenticidade em
+              <span class="url">{{ documento.urlVerificacao }}</span>
+            </p>
+          </footer>
+        </div>
+      }
+    }
+  </div>
+</ion-content>

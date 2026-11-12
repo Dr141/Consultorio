@@ -623,3 +623,179 @@ ion-toast.app-toast {
     color: var(--app-text-muted);
   }
 }
+
+/* ---------- Fase 3: componentes clínicos ---------- */
+
+.alertas-clinicos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--ion-color-danger-rgb), 0.35);
+  background: rgba(var(--ion-color-danger-rgb), 0.06);
+
+  &.vazio {
+    border-color: var(--app-border);
+    background: transparent;
+    color: var(--app-text-muted);
+  }
+
+  &.compacto {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .alerta-linha {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 14px;
+    line-height: 1.4;
+
+    ion-icon {
+      align-self: center;
+      flex-shrink: 0;
+    }
+  }
+
+  .alerta-alergia {
+    color: var(--ion-color-danger);
+    font-weight: 600;
+  }
+
+  .alerta-condicao ion-icon {
+    color: var(--ion-color-warning-shade);
+  }
+
+  .alerta-medicamento ion-icon {
+    color: var(--ion-color-primary);
+  }
+
+  ion-button {
+    align-self: flex-start;
+    margin: 0;
+    --padding-start: 0;
+    text-transform: none;
+  }
+}
+
+.sinais-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+
+  ion-item.form-item {
+    margin: 0;
+  }
+}
+
+.imc-indicador {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+  color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+.sinais-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+
+  span {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: var(--app-surface-elevated);
+    border: 1px solid var(--app-border);
+  }
+}
+
+.soap-bloco {
+  margin: 6px 0;
+
+  h4 {
+    margin: 0 0 2px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--app-text-muted);
+  }
+
+  p {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+}
+
+.cid-resultados {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.cid-selecionado {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  .cid-chip {
+    height: auto;
+    min-height: 32px;
+    white-space: normal;
+  }
+}
+
+.cid-dica {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--app-text-muted);
+}
+
+.cid-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+}
+
+.secao-colapsavel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 18px 0 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  .secao-formulario {
+    margin: 0;
+  }
+
+  .secao-resumo {
+    font-size: 12px;
+    color: var(--app-text-muted);
+    margin-left: 8px;
+  }
+}

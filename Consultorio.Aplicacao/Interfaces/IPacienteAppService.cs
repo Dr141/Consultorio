@@ -12,4 +12,5 @@ public interface IPacienteAppService
     /// <summary>Inativa o cadastro. O paciente e seu prontuário nunca são apagados.</summary>
     Task RemoverAsync(int id);
     Task<PacienteResponse> ReativarAsync(int id);
+    Task<PacienteResponse> AtualizarAlertasAsync(int id, AlertasClinicosRequest request);
 }

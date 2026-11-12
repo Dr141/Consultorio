@@ -150,4 +150,20 @@ public class ConsultaController(IConsultaAppService consultaAppService) : Contro
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPut("{id:int}/evolucao")]
+    [EndpointSummary("Atualizar evolução estruturada (SOAP), CID e sinais vitais de uma consulta aberta")]
+    [ProducesResponseType(typeof(ConsultaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ConsultaResponse>> AtualizarEvolucao(int id, [FromBody] EvolucaoRequest request)
+    {
+        try
+        {
+            return Ok(await consultaAppService.AtualizarEvolucaoAsync(id, request, User.ObterUsuarioAtual()));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

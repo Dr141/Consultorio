@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { formatarCpf, formatarTelefone, paraDataLocal } from '../utils/formatadores';
+import { SinaisVitaisLike, formatarCpf, formatarTamanhoArquivo, formatarTelefone, linhas, paraDataLocal, resumirSinaisVitais } from '../utils/formatadores';
 
 @Pipe({ name: 'cpf', standalone: false })
 export class CpfPipe implements PipeTransform {
@@ -52,5 +52,28 @@ export class IdadePipe implements PipeTransform {
     if (aindaNaoFezAniversario) anos--;
     if (anos < 0) return '';
     return anos === 1 ? '1 ano' : `${anos} anos`;
+  }
+}
+
+/** Sinais vitais preenchidos em forma de lista curta ("PA 120/80 mmHg", "FC 72 bpm"...). */
+@Pipe({ name: 'sinaisVitais', standalone: false })
+export class SinaisVitaisPipe implements PipeTransform {
+  transform(valor: SinaisVitaisLike | null | undefined): string[] {
+    return resumirSinaisVitais(valor);
+  }
+}
+
+/** Texto "um item por linha" convertido em lista. */
+@Pipe({ name: 'linhas', standalone: false })
+export class LinhasPipe implements PipeTransform {
+  transform(valor: string | null | undefined): string[] {
+    return linhas(valor);
+  }
+}
+
+@Pipe({ name: 'tamanhoArquivo', standalone: false })
+export class TamanhoArquivoPipe implements PipeTransform {
+  transform(valor: number | null | undefined): string {
+    return formatarTamanhoArquivo(valor);
   }
 }

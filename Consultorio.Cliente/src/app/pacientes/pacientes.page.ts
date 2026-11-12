@@ -8,6 +8,8 @@ import { RoleService } from '../services/role/role.service';
 import { Paciente } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { PacienteModalComponent } from './paciente-modal.component';
+import { AlertasModalComponent } from '../shared/alertas-clinicos/alertas-modal.component';
+import { DocumentoModalComponent } from '../documentos/documento-modal.component';
 
 @Component({
   selector: 'app-pacientes',
@@ -104,6 +106,24 @@ export class PacientesPage {
       this.feedback.sucesso(paciente ? 'Dados do paciente atualizados.' : 'Paciente cadastrado com sucesso.');
       this.carregarPacientes();
     }
+  }
+
+  async editarAlertas(paciente: Paciente) {
+    const modal = await this.modalCtrl.create({
+      component: AlertasModalComponent,
+      componentProps: { paciente }
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss();
+    if (data) this.carregarPacientes();
+  }
+
+  async abrirDocumentos(paciente: Paciente) {
+    const modal = await this.modalCtrl.create({
+      component: DocumentoModalComponent,
+      componentProps: { idPaciente: paciente.id, nomePaciente: paciente.nome }
+    });
+    await modal.present();
   }
 
   abrirProntuario(paciente: Paciente) {

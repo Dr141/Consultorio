@@ -1,0 +1,208 @@
+.aviso-cancelado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 820px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--ion-color-danger);
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  border: 1px solid rgba(var(--ion-color-danger-rgb), 0.3);
+  font-weight: 600;
+}
+
+.documento-folha {
+  position: relative;
+  max-width: 820px;
+  min-height: 900px;
+  margin: 0 auto 24px;
+  padding: 40px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+  overflow: hidden;
+}
+
+.marca-cancelado {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-28deg);
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: rgba(220, 38, 38, 0.15);
+  pointer-events: none;
+}
+
+.doc-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #0f172a;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    color: #0f172a;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #475569;
+  }
+}
+
+.doc-via {
+  padding: 4px 10px;
+  border: 1px solid #0f172a;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.doc-titulo {
+  margin: 24px 0 18px;
+  text-align: center;
+  font-size: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.doc-paciente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  span {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+}
+
+.doc-corpo {
+  flex: 1;
+  font-size: 15px;
+}
+
+.doc-texto {
+  margin: 0 0 16px;
+  white-space: pre-wrap;
+  text-align: justify;
+
+  &.receita {
+    text-align: left;
+    font-size: 16px;
+  }
+}
+
+.doc-rotulo {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.doc-itens {
+  margin: 0 0 16px;
+  padding-left: 22px;
+
+  li {
+    padding: 3px 0;
+  }
+}
+
+.doc-destaque {
+  margin: 8px 0;
+  font-weight: 600;
+}
+
+.doc-rodape {
+  margin-top: 40px;
+}
+
+.doc-local-data {
+  text-align: right;
+  margin: 0 0 56px;
+}
+
+.doc-assinatura {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 28px;
+
+  .linha {
+    width: 300px;
+    max-width: 80%;
+    border-top: 1px solid #0f172a;
+    margin-bottom: 6px;
+  }
+
+  span {
+    font-size: 13px;
+    color: #475569;
+  }
+}
+
+.doc-verificacao {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+
+  .url {
+    word-break: break-all;
+  }
+}
+
+@media (max-width: 600px) {
+  .documento-folha {
+    padding: 24px 18px;
+    min-height: 0;
+  }
+}
+
+@media print {
+  .documento-folha {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    min-height: 260mm;
+  }
+
+  .documento-folha.quebra {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

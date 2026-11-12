@@ -18,7 +18,14 @@ public record ConsultaProntuarioResponse(
     DateTime DtCriacao,
     string Status = "Aberta",
     string? MotivoAnulacao = null,
-    List<ConsultaAdendoResponse>? Adendos = null
+    List<ConsultaAdendoResponse>? Adendos = null,
+    string? Subjetivo = null,
+    string? Objetivo = null,
+    string? Avaliacao = null,
+    string? Plano = null,
+    string? CidCodigo = null,
+    string? CidDescricao = null,
+    SinaisVitaisResponse? SinaisVitais = null
 );
 
 public record ExameProntuarioResponse(
@@ -32,7 +39,8 @@ public record ExameProntuarioResponse(
     DateTime DataExame,
     DateTime DtCriacao,
     bool Cancelado = false,
-    string? MotivoCancelamento = null
+    string? MotivoCancelamento = null,
+    string Status = "Solicitado"
 );
 
 public record ProntuarioResumoResponse(
@@ -51,5 +59,6 @@ public record ProntuarioResponse(
     DateTime? DataFim,
     ProntuarioResumoResponse Resumo,
     List<ConsultaProntuarioResponse> Consultas,
-    List<ExameProntuarioResponse> Exames
+    List<ExameProntuarioResponse> Exames,
+    List<DocumentoResponse>? Documentos = null
 );

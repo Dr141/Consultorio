@@ -112,11 +112,35 @@
                 </ion-card-header>
 
                 <ion-card-content>
+                  @if (c.cidCodigo) {
+                    <div class="cid-tag" [title]="c.cidDescricao || ''">
+                      <ion-icon name="pricetag-outline" aria-hidden="true"></ion-icon>
+                      {{ c.cidCodigo }} · {{ c.cidDescricao }}
+                    </div>
+                  }
+                  @if ((c.sinaisVitais | sinaisVitais); as sinais) {
+                    @if (sinais.length) {
+                      <div class="sinais-lista" aria-label="Sinais vitais">
+                        @for (s of sinais; track s) {
+                          <span>{{ s }}</span>
+                        }
+                      </div>
+                    }
+                  }
+
                   <div class="observacao-box">
-                    <p class="observacao-texto" [class.recolhido]="!expandidas.has(c.id) && ehLongo(c.observacao)">{{ c.observacao }}</p>
-                    @if (ehLongo(c.observacao)) {
+                    @if (c.observacao) {
+                      <p class="observacao-texto" [class.recolhido]="!expandidas.has(c.id) && ehLongo(c.observacao)">{{ c.observacao }}</p>
+                    }
+                    @if (temSoap(c) && (expandidas.has(c.id) || !c.observacao)) {
+                      @if (c.subjetivo) { <div class="soap-bloco"><h4>Subjetivo</h4><p>{{ c.subjetivo }}</p></div> }
+                      @if (c.objetivo) { <div class="soap-bloco"><h4>Objetivo</h4><p>{{ c.objetivo }}</p></div> }
+                      @if (c.avaliacao) { <div class="soap-bloco"><h4>Avaliação</h4><p>{{ c.avaliacao }}</p></div> }
+                      @if (c.plano) { <div class="soap-bloco"><h4>Plano</h4><p>{{ c.plano }}</p></div> }
+                    }
+                    @if (ehLongo(c.observacao) || (temSoap(c) && c.observacao)) {
                       <button type="button" class="ver-mais" (click)="alternarExpandida(c.id)">
-                        {{ expandidas.has(c.id) ? 'Ver menos' : 'Ver mais' }}
+                        {{ expandidas.has(c.id) ? 'Ver menos' : (temSoap(c) && c.observacao ? 'Ver SOAP completo' : 'Ver mais') }}
                       </button>
                     }
                   </div>
@@ -155,6 +179,12 @@
                       <ion-button fill="outline" color="primary" size="small" (click)="adicionarAdendo(c)">
                         <ion-icon slot="start" name="add-circle-outline"></ion-icon>
                         Adendo
+                      </ion-button>
+                    }
+                    @if (c.status !== 'Anulada') {
+                      <ion-button fill="clear" color="primary" size="small" (click)="abrirDocumentos(c)" title="Emitir receita, atestado, pedido de exames...">
+                        <ion-icon slot="start" name="print-outline"></ion-icon>
+                        Documentos
                       </ion-button>
                     }
                     <ion-button fill="clear" color="secondary" size="small" (click)="abrirProntuario(c)" title="Abrir prontuário do paciente">

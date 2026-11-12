@@ -7,6 +7,7 @@ import { FeedbackService } from '../services/feedback/feedback.service';
 import { Consulta, StatusConsulta } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { ConsultaModalComponent } from './consulta-modal.component';
+import { DocumentoModalComponent } from '../documentos/documento-modal.component';
 
 const LIMITE_TEXTO_RECOLHIDO = 280;
 
@@ -74,7 +75,8 @@ export class ConsultasPage {
 
   filtrar() {
     this.consultasFiltradas = this.consultas.filter(c =>
-      correspondeBusca(this.termoBusca, c.nomePaciente, c.nomeMedico, c.observacao, ...(c.adendos ?? []).map(a => a.texto))
+      correspondeBusca(this.termoBusca, c.nomePaciente, c.nomeMedico, c.observacao, c.subjetivo, c.objetivo, c.avaliacao, c.plano,
+        c.cidCodigo, c.cidDescricao, ...(c.adendos ?? []).map(a => a.texto))
     );
     const status = (c: Consulta): StatusConsulta => c.status ?? 'Aberta';
     this.totais = {
@@ -112,6 +114,24 @@ export class ConsultasPage {
   limparBusca() {
     this.termoBusca = '';
     this.filtrar();
+  }
+
+  temSoap(c: Consulta): boolean {
+    return !!(c.subjetivo || c.objetivo || c.avaliacao || c.plano);
+  }
+
+  async abrirDocumentos(consulta: Consulta) {
+    const modal = await this.modalCtrl.create({
+      component: DocumentoModalComponent,
+      componentProps: {
+        idPaciente: consulta.idPaciente,
+        nomePaciente: consulta.nomePaciente,
+        idConsulta: consulta.id,
+        idMedico: consulta.idMedico,
+        cidSugerido: consulta.cidCodigo ? { codigo: consulta.cidCodigo, descricao: consulta.cidDescricao ?? '' } : null
+      }
+    });
+    await modal.present();
   }
 
   abrirProntuario(consulta: Consulta) {

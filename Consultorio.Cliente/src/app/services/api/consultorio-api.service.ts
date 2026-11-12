@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
 import { Observable, catchError, throwError } from 'rxjs';
-import { Agenda, BloqueioAgenda, BloqueioCriado, Consulta, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
+import { AlertasClinicos, Agenda, BloqueioAgenda, BloqueioCriado, Cid, Consulta, DocumentoClinico, DocumentoRequest, EvolucaoClinica, ExameAnexo, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -80,6 +80,10 @@ export class ConsultorioApiService {
 
   atualizarPaciente(id: number, paciente: any): Observable<Paciente> {
     return this.observable(this.http.put<Paciente>(`/api/paciente/${id}`, paciente));
+  }
+
+  atualizarAlertasPaciente(id: number, alertas: AlertasClinicos): Observable<Paciente> {
+    return this.observable(this.http.put<Paciente>(`/api/paciente/${id}/alertas`, alertas));
   }
 
   removerPaciente(id: number): Observable<void> {
@@ -218,6 +222,15 @@ export class ConsultorioApiService {
     }));
   }
 
+  /** Atualiza a evolução estruturada (SOAP), CID e sinais vitais de uma consulta aberta. */
+  atualizarEvolucaoConsulta(id: number, evolucao: EvolucaoClinica): Observable<Consulta> {
+    return this.observable(this.http.put<Consulta>(`/api/consulta/${id}/evolucao`, evolucao));
+  }
+
+  buscarCid(termo: string): Observable<Cid[]> {
+    return this.observable(this.http.get<Cid[]>(`/api/cid?busca=${encodeURIComponent(termo ?? '')}&limite=15`));
+  }
+
   finalizarConsulta(id: number): Observable<Consulta> {
     return this.observable(this.http.patch<Consulta>(`/api/consulta/${id}/finalizar`, {}));
   }
@@ -257,6 +270,45 @@ export class ConsultorioApiService {
 
   cancelarExame(id: number, motivo: string): Observable<Exame> {
     return this.observable(this.http.patch<Exame>(`/api/exame/${id}/cancelar`, { motivo }));
+  }
+
+  registrarRealizacaoExame(id: number): Observable<Exame> {
+    return this.observable(this.http.patch<Exame>(`/api/exame/${id}/realizado`, {}));
+  }
+
+  registrarEntregaExame(id: number): Observable<Exame> {
+    return this.observable(this.http.patch<Exame>(`/api/exame/${id}/entregue`, {}));
+  }
+
+  obterAnexosExame(id: number): Observable<ExameAnexo[]> {
+    return this.observable(this.http.get<ExameAnexo[]>(`/api/exame/${id}/anexos`));
+  }
+
+  enviarAnexoExame(id: number, arquivo: File): Observable<ExameAnexo> {
+    const dados = new FormData();
+    dados.append('arquivo', arquivo, arquivo.name);
+    return this.observable(this.http.post<ExameAnexo>(`/api/exame/${id}/anexos`, dados));
+  }
+
+  baixarAnexoExame(idExame: number, idAnexo: number): Observable<Blob> {
+    return this.observable(this.http.get(`/api/exame/${idExame}/anexos/${idAnexo}`, { responseType: 'blob' }));
+  }
+
+  // Documentos clínicos
+  emitirDocumento(documento: DocumentoRequest): Observable<DocumentoClinico> {
+    return this.observable(this.http.post<DocumentoClinico>('/api/documento', documento));
+  }
+
+  obterDocumento(id: number): Observable<DocumentoClinico> {
+    return this.observable(this.http.get<DocumentoClinico>(`/api/documento/${id}`));
+  }
+
+  obterDocumentosPorPaciente(idPaciente: number): Observable<DocumentoClinico[]> {
+    return this.observable(this.http.get<DocumentoClinico[]>(`/api/documento/paciente/${idPaciente}`));
+  }
+
+  cancelarDocumento(id: number, motivo: string): Observable<DocumentoClinico> {
+    return this.observable(this.http.patch<DocumentoClinico>(`/api/documento/${id}/cancelar`, { motivo }));
   }
 
   // Auditoria (somente administradores)

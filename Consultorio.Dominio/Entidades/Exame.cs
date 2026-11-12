@@ -1,4 +1,5 @@
 using Consultorio.Dominio.Entidades.Base;
+using Consultorio.Dominio.Enumerados;
 using Consultorio.Dominio.Excecoes;
 
 namespace Consultorio.Dominio.Entidades;
@@ -18,6 +19,11 @@ public class Exame : Entidade
     public string? Resultado { get; private set; }
 
     /// <summary>Exames não são apagados; solicitações feitas por engano são canceladas com motivo.</summary>
+    public StatusExame Status { get; private set; } = StatusExame.Solicitado;
+    public DateTime? DtRealizacao { get; private set; }
+    public DateTime? DtLaudo { get; private set; }
+    public DateTime? DtEntrega { get; private set; }
+
     public bool Cancelado { get; private set; }
     public DateTime? DtCancelamento { get; private set; }
     public string? MotivoCancelamento { get; private set; }
@@ -33,6 +39,29 @@ public class Exame : Entidade
         Resultado = resultado?.Trim();
         IdAgenda = idAgenda;
         IdMedico = idMedico;
+        if (!string.IsNullOrWhiteSpace(Resultado))
+        {
+            Status = StatusExame.Laudado;
+            DtLaudo = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>Coleta/execução feita; aguarda resultado.</summary>
+    public void RegistrarRealizacao()
+    {
+        DomainException.When(Cancelado, "Exame cancelado não pode ser marcado como realizado.");
+        DomainException.When(Status != StatusExame.Solicitado, "Só exames solicitados podem ser marcados como realizados.");
+        Status = StatusExame.Realizado;
+        DtRealizacao = DateTime.UtcNow;
+    }
+
+    /// <summary>Resultado entregue ao paciente.</summary>
+    public void RegistrarEntrega()
+    {
+        DomainException.When(Cancelado, "Exame cancelado não pode ser entregue.");
+        DomainException.When(Status != StatusExame.Laudado, "Só é possível entregar exames com laudo emitido.");
+        Status = StatusExame.Entregue;
+        DtEntrega = DateTime.UtcNow;
     }
 
     public void Cancelar(string motivo)
@@ -56,6 +85,9 @@ public class Exame : Entidade
             IdMedico = idMedico.Value;
         }
         Resultado = resultado.Trim();
+        DtRealizacao ??= DateTime.UtcNow;
+        DtLaudo = DateTime.UtcNow;
+        if (Status != StatusExame.Entregue) Status = StatusExame.Laudado;
     }
 
     public void Atualizar(string descricao, string? resultado = null, int? idMedico = null)
@@ -64,6 +96,11 @@ public class Exame : Entidade
         Validar(IdPaciente, descricao, idMedico);
         Descricao = descricao.Trim();
         Resultado = resultado?.Trim();
+        if (!string.IsNullOrWhiteSpace(Resultado) && Status is StatusExame.Solicitado or StatusExame.Realizado)
+        {
+            Status = StatusExame.Laudado;
+            DtLaudo = DateTime.UtcNow;
+        }
         if (idMedico.HasValue)
         {
             IdMedico = idMedico.Value;
