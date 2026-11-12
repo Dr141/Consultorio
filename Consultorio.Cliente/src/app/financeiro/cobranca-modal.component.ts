@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
@@ -98,7 +98,8 @@ export class CobrancaModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
-    private feedback: FeedbackService
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -106,10 +107,11 @@ export class CobrancaModalComponent implements OnInit {
       next: (lista) => {
         this.pacientes = [...lista].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
         if (this.idPacienteInicial) this.definirPaciente(this.pacientes.find(p => p.id === this.idPacienteInicial) ?? null);
+        this.cdr.detectChanges();
       },
       error: (err) => this.feedback.erro(err, 'Não foi possível carregar os pacientes.')
     });
-    this.api.obterConvenios().subscribe({ next: (c) => this.convenios = c, error: () => undefined });
+    this.api.obterConvenios().subscribe({ next: (c) => { this.convenios = c; this.cdr.detectChanges(); }, error: () => undefined });
   }
 
   get valido(): boolean {

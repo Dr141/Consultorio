@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
@@ -30,7 +30,8 @@ export class AgendaModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
-    private feedback: FeedbackService
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -62,16 +63,16 @@ export class AgendaModalComponent implements OnInit {
 
   carregarDados() {
     let pendentes = 2;
-    const concluir = () => { if (--pendentes === 0) this.carregandoListas = false; };
+    const concluir = () => { if (--pendentes === 0) this.carregandoListas = false; this.cdr.detectChanges(); };
 
     this.api.obterMedicos().subscribe({
-      next: (m) => this.medicos = [...(m || [])].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR')),
+      next: (m) => { this.medicos = [...(m || [])].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR')); this.cdr.detectChanges(); },
       error: (err) => { this.feedback.erro(err, 'Não foi possível carregar os médicos.'); concluir(); },
       complete: concluir
     });
 
     this.api.obterPacientes().subscribe({
-      next: (p) => this.pacientes = p || [],
+      next: (p) => { this.pacientes = p || []; this.cdr.detectChanges(); },
       error: () => concluir(),
       complete: concluir
     });

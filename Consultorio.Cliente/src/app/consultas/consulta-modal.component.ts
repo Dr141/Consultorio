@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { ModalController } from '@ionic/angular';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
@@ -83,7 +83,8 @@ export class ConsultaModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
-    private feedback: FeedbackService
+    private feedback: FeedbackService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -118,7 +119,7 @@ export class ConsultaModalComponent implements OnInit {
   carregarDados() {
     if (this.consulta) {
       this.api.obterPacientePorId(this.consulta.idPaciente).subscribe({
-        next: (p) => this.pacienteCarregado = p,
+        next: (p) => { this.pacienteCarregado = p; this.cdr.detectChanges(); },
         error: () => undefined
       });
       return;
@@ -128,7 +129,7 @@ export class ConsultaModalComponent implements OnInit {
       [...(lista || [])].sort((a, b) => (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'));
 
     this.api.obterMedicos().subscribe({
-      next: (m) => this.medicos = porNome(m),
+      next: (m) => { this.medicos = porNome(m); this.cdr.detectChanges(); },
       error: (err) => this.feedback.erro(err, 'Não foi possível carregar os médicos.')
     });
 
@@ -139,12 +140,13 @@ export class ConsultaModalComponent implements OnInit {
         if (meu && meu.ativo !== false && campo && !campo.value) {
           campo.setValue(meu.id);
         }
+        this.cdr.detectChanges();
       },
       error: () => undefined
     });
 
     this.api.obterPacientes().subscribe({
-      next: (p) => this.pacientes = porNome(p),
+      next: (p) => { this.pacientes = porNome(p); this.cdr.detectChanges(); },
       error: (err) => this.feedback.erro(err, 'Não foi possível carregar os pacientes.')
     });
   }

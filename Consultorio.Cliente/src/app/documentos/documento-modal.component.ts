@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
@@ -55,7 +55,8 @@ export class DocumentoModalComponent implements OnInit {
     private modalCtrl: ModalController,
     private api: ConsultorioApiService,
     private feedback: FeedbackService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -79,17 +80,19 @@ export class DocumentoModalComponent implements OnInit {
           // O médico logado só emite em nome próprio (regra também validada no servidor).
           this.form.get('idMedico')?.setValue(this.medicoLogado.id);
         }
+        this.cdr.detectChanges();
       },
       error: () => undefined
     });
     this.api.obterMedicos().subscribe({
-      next: (m) => this.medicos = [...(m || [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+      next: (m) => { this.medicos = [...(m || [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); this.cdr.detectChanges(); },
       error: () => undefined
     });
     this.api.obterPacientePorId(this.idPaciente).subscribe({
       next: (p) => {
         this.paciente = p;
         this.nomePaciente = this.nomePaciente || p.nome;
+        this.cdr.detectChanges();
       },
       error: () => undefined
     });
@@ -164,8 +167,12 @@ export class DocumentoModalComponent implements OnInit {
       next: (lista) => {
         this.documentos = lista;
         this.carregandoHistorico = false;
+        this.cdr.detectChanges();
       },
-      error: () => this.carregandoHistorico = false
+      error: () => {
+        this.carregandoHistorico = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
