@@ -114,6 +114,10 @@ export class PortalService {
     return this.get<DocumentoClinico>(`/api/portal/documentos/${id}`);
   }
 
+  pdfDocumento(id: number): Observable<Blob> {
+    return this.tratar(this.http.get(`/api/portal/documentos/${id}/pdf`, { headers: this.headers, responseType: 'blob' }));
+  }
+
   cobrancas(): Observable<Cobranca[]> {
     return this.get<Cobranca[]>('/api/portal/cobrancas');
   }

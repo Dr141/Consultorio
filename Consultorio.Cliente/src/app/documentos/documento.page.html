@@ -11,6 +11,18 @@
           <span class="ion-hide-md-down">Cancelar</span>
         </ion-button>
       }
+      @if (documento && !documento.cancelado && !documento.assinado && !portal) {
+        <ion-button (click)="assinar()" [disabled]="assinando" title="Assinar com o certificado digital (ICP-Brasil) do médico">
+          <ion-icon slot="start" name="ribbon-outline"></ion-icon>
+          <span class="ion-hide-md-down">{{ assinando ? 'Assinando...' : 'Assinar digitalmente' }}</span>
+        </ion-button>
+      }
+      @if (documento) {
+        <ion-button (click)="baixarPdf()" [disabled]="baixando" title="Baixar PDF (assinado digitalmente, se já foi assinado)">
+          <ion-icon slot="start" name="download-outline"></ion-icon>
+          <span class="ion-hide-md-down">Baixar PDF</span>
+        </ion-button>
+      }
       @if (documento) {
         <ion-button (click)="imprimir()">
           <ion-icon slot="start" name="print-outline"></ion-icon>
@@ -40,6 +52,16 @@
         <div class="aviso-cancelado no-print">
           <ion-icon name="ban-outline"></ion-icon>
           <span>Documento cancelado em {{ documento.dtCancelamento | dataBr:'dataHora' }}: {{ documento.motivoCancelamento }}</span>
+        </div>
+      }
+
+      @if (documento.assinado && !documento.cancelado) {
+        <div class="aviso-assinado no-print">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <span>
+            Assinado digitalmente por <strong>{{ documento.assinadoPor }}</strong> em {{ documento.dtAssinatura | dataBr:'dataHora' }}.
+            A via com validade jurídica é o PDF (botão "Baixar PDF").
+          </span>
         </div>
       }
 
@@ -100,6 +122,9 @@
               <strong>{{ documento.nomeMedico }}</strong>
               <span>CRM {{ documento.crmMedico }}@if (documento.especialidadesMedico.length) { · {{ documento.especialidadesMedico.join(', ') }} }</span>
             </div>
+            @if (documento.assinado && !documento.cancelado) {
+              <p class="doc-verificacao">Assinado digitalmente por {{ documento.assinadoPor }} em {{ documento.dtAssinatura | dataBr:'dataHora' }}.</p>
+            }
             <p class="doc-verificacao">
               Código de verificação <strong>{{ documento.codigoVerificacao }}</strong> · confira a autenticidade em
               <span class="url">{{ documento.urlVerificacao }}</span>

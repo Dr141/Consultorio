@@ -134,6 +134,14 @@
                     <p class="observacao-box"><em>{{ m.observacao }}</em></p>
                   }
 
+                  @if (podeGerenciarCertificado(m)) {
+                    <ion-button fill="clear" size="small" class="btn-certificado" (click)="abrirCertificado(m)"
+                                [attr.aria-label]="'Certificado digital de ' + m.nome" title="Certificado A1 para assinar documentos em PDF">
+                      <ion-icon slot="start" name="key-outline"></ion-icon>
+                      Certificado digital
+                    </ion-button>
+                  }
+
                   @if (podeGerenciar) {
                     <div class="card-actions">
                       @if (m.ativo !== false) {

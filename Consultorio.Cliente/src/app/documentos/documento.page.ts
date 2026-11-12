@@ -21,6 +21,8 @@ export class DocumentoPage implements OnInit {
   erroCarregamento = '';
   /** Aberto pelo portal do paciente: só leitura e impressão. */
   portal = false;
+  baixando = false;
+  assinando = false;
 
   constructor(
     private rota: ActivatedRoute,
@@ -75,6 +77,60 @@ export class DocumentoPage implements OnInit {
 
   imprimir() {
     window.print();
+  }
+
+  /** Baixa o PDF: a via assinada digitalmente, se o documento já foi assinado. */
+  baixarPdf() {
+    const doc = this.documento;
+    if (!doc || this.baixando) return;
+    this.baixando = true;
+    const origem = this.portal ? this.portalService.pdfDocumento(doc.id) : this.api.baixarPdfDocumento(doc.id);
+    origem.subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${doc.tipo.toLowerCase()}-${doc.codigoVerificacao}${doc.assinado && !doc.cancelado ? '-assinado' : ''}.pdf`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        this.baixando = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.baixando = false;
+        this.cdr.detectChanges();
+        this.feedback.erro(err, 'Não foi possível gerar o PDF.');
+      }
+    });
+  }
+
+  /** Assina com o certificado A1 (ICP-Brasil) do médico; depois disso o documento não pode ser alterado. */
+  async assinar() {
+    const doc = this.documento;
+    if (!doc || this.assinando) return;
+    const confirmado = await this.feedback.confirmar({
+      titulo: 'Assinar digitalmente',
+      mensagem: `O documento será assinado com o certificado digital de ${doc.nomeMedico}. ` +
+        'O PDF assinado tem validade jurídica (MP 2.200-2/2001) e pode ser enviado ao paciente ou à farmácia.',
+      textoConfirmar: 'Assinar'
+    });
+    if (!confirmado) return;
+
+    this.assinando = true;
+    this.cdr.detectChanges();
+    this.api.assinarDocumento(doc.id).subscribe({
+      next: (atualizado) => {
+        this.documento = atualizado;
+        this.assinando = false;
+        this.cdr.detectChanges();
+        this.feedback.sucesso('Documento assinado digitalmente. Use "Baixar PDF" para obter a via assinada.');
+      },
+      error: (err) => {
+        this.assinando = false;
+        this.cdr.detectChanges();
+        this.feedback.erro(err, 'Não foi possível assinar o documento.');
+      }
+    });
   }
 
   voltar() {

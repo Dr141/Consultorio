@@ -84,7 +84,7 @@ public class RotinasAgendaAppService(
 
         var resultado = await TentarEnviarAsync(agenda, cancellationToken);
         DomainException.When(resultado is null,
-            "Nenhum canal disponível para este paciente. Cadastre o e-mail do paciente e configure o envio de e-mails.");
+            "Nenhum canal disponível para este paciente. Cadastre o e-mail ou celular do paciente e configure o envio (e-mail ou WhatsApp).");
         DomainException.When(resultado == false, "O envio do lembrete falhou. Tente novamente em instantes.");
         return true;
     }
@@ -95,20 +95,10 @@ public class RotinasAgendaAppService(
         var mensagem = MontarMensagem(agenda);
         if (mensagem is null) return null;
 
-        var canal = notificadores.FirstOrDefault(n => n.PodeEnviar(mensagem));
-        if (canal is null) return null;
+        var enviado = await Notificacoes.EnviarAsync(notificadores, mensagem, cancellationToken);
+        if (enviado is null) return null;
 
-        bool enviado;
-        try
-        {
-            enviado = await canal.EnviarAsync(mensagem, cancellationToken);
-        }
-        catch (Exception)
-        {
-            enviado = false;
-        }
-
-        if (enviado)
+        if (enviado == true)
         {
             agenda.MarcarLembreteEnviado();
             await agendaRepositorio.Atualizar(agenda);

@@ -10,7 +10,8 @@ describe('MedicosPage', () => {
   let apiSpy: jasmine.SpyObj<ConsultorioApiService>;
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ConsultorioApiService', ['obterMedicos', 'removerMedico', 'reativarMedico']);
+    apiSpy = jasmine.createSpyObj('ConsultorioApiService', ['obterMedicos', 'removerMedico', 'reativarMedico', 'obterMeuMedico']);
+    apiSpy.obterMeuMedico.and.returnValue(of(null));
     apiSpy.obterMedicos.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({

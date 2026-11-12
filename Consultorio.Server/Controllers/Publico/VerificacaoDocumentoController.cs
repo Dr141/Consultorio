@@ -37,6 +37,9 @@ public class VerificacaoDocumentoController(IDocumentoAppService documentoAppSer
                 ? "<div class=\"selo invalido\">Documento CANCELADO pelo emissor</div>"
                 : "<div class=\"selo valido\">Documento autêntico</div>";
             var afastamento = r.DiasAfastamento.HasValue ? $"<dt>Afastamento</dt><dd>{r.DiasAfastamento} dia(s)</dd>" : "";
+            var assinatura = r.AssinadoDigitalmente
+                ? $"<dt>Assinatura digital</dt><dd>{H(r.AssinadoPor)} em {r.DtAssinatura?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")}</dd>"
+                : "";
             corpo = $"""
                 {situacao}
                 <dl>
@@ -45,6 +48,7 @@ public class VerificacaoDocumentoController(IDocumentoAppService documentoAppSer
                   <dt>Médico</dt><dd>{H(r.NomeMedico)} — CRM {H(r.CrmMedico)}</dd>
                   <dt>Paciente</dt><dd>{H(r.IniciaisPaciente)}</dd>
                   {afastamento}
+                  {assinatura}
                   <dt>Código</dt><dd>{H(codigoLimpo)}</dd>
                 </dl>
                 """;

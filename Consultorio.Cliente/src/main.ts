@@ -1,11 +1,11 @@
 import { addIcons, setAssetPath } from 'ionicons';
-import * as allIcons from 'ionicons/icons';
+import { ICONES } from './app/icones';
 
 // Define o asset path para resolver qualquer SVG na raiz da aplicação
 setAssetPath(window.location.origin + '/');
 
-// Registra globalmente todos os ícones da biblioteca Ionicons v8
-addIcons(allIcons);
+// Registra os ícones usados pelo sistema (lista em app/icones.ts)
+addIcons(ICONES);
 
 import { provideZoneChangeDetection } from '@angular/core';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';

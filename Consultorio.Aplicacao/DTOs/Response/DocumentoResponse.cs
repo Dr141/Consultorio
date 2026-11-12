@@ -27,7 +27,10 @@ public record DocumentoResponse(
     string NomeClinica,
     string? EnderecoClinica,
     string? TelefoneClinica,
-    int ExamesCriados = 0
+    int ExamesCriados = 0,
+    bool Assinado = false,
+    DateTime? DtAssinatura = null,
+    string? AssinadoPor = null
 );
 
 /// <summary>Dados mínimos exibidos na verificação pública (sem expor o conteúdo clínico).</summary>
@@ -40,7 +43,26 @@ public record VerificacaoDocumentoResponse(
     string? IniciaisPaciente,
     int? DiasAfastamento,
     bool Cancelado,
-    string NomeClinica
+    string NomeClinica,
+    bool AssinadoDigitalmente = false,
+    string? AssinadoPor = null,
+    DateTime? DtAssinatura = null
+);
+
+/// <summary>Certificado digital A1 do médico (somente dados públicos; o arquivo e a senha nunca saem do servidor).</summary>
+public record CertificadoDigitalResponse(
+    int Id,
+    int IdMedico,
+    string Titular,
+    string Emissor,
+    string NumeroSerie,
+    DateTime ValidoDe,
+    DateTime ValidoAte,
+    bool IcpBrasil,
+    bool Vencido,
+    int DiasParaVencer,
+    string EnviadoPor,
+    DateTime DtEnvio
 );
 
 public record CidResponse(string Codigo, string Descricao);

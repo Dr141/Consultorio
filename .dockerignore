@@ -32,3 +32,10 @@ README.md
 **/Consultorio.E2E
 
 backups/
+
+# Caches e saídas de build do frontend (deixam o contexto do docker build lento)
+**/.angular
+**/out-tsc
+**/dist
+**/www
+**/coverage

@@ -11,6 +11,7 @@ using Consultorio.Infraestrutura.Contexto;
 using Consultorio.Infraestrutura.Notificacoes;
 using Consultorio.Infraestrutura.Repositorios;
 using Consultorio.Infraestrutura.Repositorios.Base;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -80,6 +81,8 @@ public static class RegistrarDependencias
         services.AddScoped<ICobrancaRepositorio, CobrancaRepositorio>();
         services.AddScoped<IExecucaoRotinaRepositorio, ExecucaoRotinaRepositorio>();
         services.AddScoped<IAcessoPortalRepositorio, AcessoPortalRepositorio>();
+        services.AddScoped<ICertificadoDigitalRepositorio, CertificadoDigitalRepositorio>();
+        services.AddScoped<IDocumentoAssinaturaRepositorio, DocumentoAssinaturaRepositorio>();
 
         // Serviços de Aplicação (DDD)
         services.AddScoped<IPessoaAppService, PessoaAppService>();
@@ -97,17 +100,40 @@ public static class RegistrarDependencias
         services.AddScoped<IIndicadoresAppService, IndicadoresAppService>();
         services.AddScoped<IRotinasClinicaAppService, RotinasClinicaAppService>();
         services.AddScoped<IPortalPacienteAppService, PortalPacienteAppService>();
+        services.AddScoped<IAssinaturaDigitalAppService, AssinaturaDigitalAppService>();
         services.AddScoped<IDestinatariosInternos, Consultorio.Server.Servicos.DestinatariosInternos>();
         services.AddScoped<Consultorio.Server.Servicos.RevisaoAcessosService>();
+
+        // Assinatura digital: PDF (PAdES), leitura de certificados A1 e criptografia dos segredos guardados.
+        // As chaves do Data Protection precisam persistir entre reinícios (pasta montada em volume no Docker);
+        // sem "DataProtection:Pasta", o ASP.NET usa a pasta padrão do usuário.
+        var dataProtection = services.AddDataProtection().SetApplicationName("Consultorio");
+        var pastaChaves = configuration["DataProtection:Pasta"];
+        if (!string.IsNullOrWhiteSpace(pastaChaves))
+        {
+            dataProtection.PersistKeysToFileSystem(new DirectoryInfo(pastaChaves));
+        }
+        services.AddSingleton<IProtetorDados, Consultorio.Server.Servicos.ProtetorDados>();
+        services.AddSingleton<IGeradorPdf, Consultorio.Infraestrutura.Pdf.GeradorPdf>();
+        services.AddSingleton<ILeitorCertificado, Consultorio.Infraestrutura.Pdf.LeitorCertificado>();
 
         // Dados da clínica e parâmetros das rotinas (seção "Clinica")
         services.AddSingleton(configuration.GetSection("Clinica").Get<OpcoesClinica>() ?? new OpcoesClinica());
         services.AddSingleton(TimeProvider.System);
 
-        // Canais de notificação: e-mail (se configurado) e, opcionalmente, simulação em log.
-        // Para WhatsApp/SMS, implemente INotificador e registre aqui.
+        // Canais de notificação: WhatsApp e e-mail (cada um só atua se configurado) e, opcionalmente,
+        // simulação em log. A ordem de registro define a prioridade: o canal preferido vem primeiro e,
+        // se falhar ou o destinatário não tiver o contato daquele canal, o próximo é usado.
         services.AddSingleton(configuration.GetSection("Notificacoes:Email").Get<OpcoesEmail>() ?? new OpcoesEmail());
-        services.AddSingleton<INotificador, EmailNotificador>();
+        services.AddSingleton(configuration.GetSection("Notificacoes:WhatsApp").Get<OpcoesWhatsApp>() ?? new OpcoesWhatsApp());
+        services.AddSingleton<EmailNotificador>();
+        services.AddHttpClient<WhatsAppNotificador>(cliente => cliente.Timeout = TimeSpan.FromSeconds(20));
+
+        var preferido = configuration.GetValue("Notificacoes:CanalPreferido", "WhatsApp") ?? "WhatsApp";
+        var emailPrimeiro = preferido.Replace("-", "").Equals("Email", StringComparison.OrdinalIgnoreCase);
+        if (emailPrimeiro) services.AddSingleton<INotificador>(sp => sp.GetRequiredService<EmailNotificador>());
+        services.AddTransient<INotificador>(sp => sp.GetRequiredService<WhatsAppNotificador>());
+        if (!emailPrimeiro) services.AddSingleton<INotificador>(sp => sp.GetRequiredService<EmailNotificador>());
         if (configuration.GetValue("Notificacoes:SimularEnvio", false))
         {
             services.AddSingleton<INotificador, RegistroLogNotificador>();
@@ -395,6 +421,40 @@ public static class RegistrarDependencias
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_AcessoPortal_Chave" ON "AcessoPortal" ("Chave");
             CREATE INDEX IF NOT EXISTS "IX_AcessoPortal_TokenHash" ON "AcessoPortal" ("TokenHash");
             CREATE INDEX IF NOT EXISTS "IX_AcessoPortal_IdPaciente_DtCriacao" ON "AcessoPortal" ("IdPaciente", "DtCriacao");
+            """,
+            // Fase 6 — assinatura digital de documentos (certificado A1 do médico e PDF assinado)
+            """
+            ALTER TABLE "DocumentoClinico" ADD COLUMN IF NOT EXISTS "DtAssinatura" timestamp with time zone NULL;
+            ALTER TABLE "DocumentoClinico" ADD COLUMN IF NOT EXISTS "AssinadoPor" character varying(200) NULL;
+            CREATE TABLE IF NOT EXISTS "CertificadoDigital" (
+                "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                "IdMedico" integer NOT NULL REFERENCES "Medico"("Id") ON DELETE CASCADE,
+                "Titular" character varying(200) NOT NULL,
+                "Emissor" character varying(300) NOT NULL,
+                "NumeroSerie" character varying(80) NOT NULL,
+                "Thumbprint" character varying(80) NOT NULL,
+                "ValidoDe" timestamp with time zone NOT NULL,
+                "ValidoAte" timestamp with time zone NOT NULL,
+                "IcpBrasil" boolean NOT NULL DEFAULT false,
+                "PfxProtegido" bytea NOT NULL,
+                "SenhaProtegida" bytea NOT NULL,
+                "EnviadoPor" character varying(256) NOT NULL,
+                "Ativo" boolean NOT NULL DEFAULT true,
+                "DtDesativacao" timestamp with time zone NULL,
+                "DtCriacao" timestamp with time zone NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_CertificadoDigital_IdMedico" ON "CertificadoDigital" ("IdMedico");
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_CertificadoDigital_IdMedico_Ativo" ON "CertificadoDigital" ("IdMedico") WHERE "Ativo";
+            CREATE TABLE IF NOT EXISTS "DocumentoAssinatura" (
+                "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                "IdDocumento" integer NOT NULL REFERENCES "DocumentoClinico"("Id") ON DELETE CASCADE,
+                "Pdf" bytea NOT NULL,
+                "Titular" character varying(200) NOT NULL,
+                "Thumbprint" character varying(80) NOT NULL,
+                "AssinadoPor" character varying(256) NOT NULL,
+                "DtCriacao" timestamp with time zone NOT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_DocumentoAssinatura_IdDocumento" ON "DocumentoAssinatura" ("IdDocumento");
             """
         ];
 

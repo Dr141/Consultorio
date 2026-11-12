@@ -23,6 +23,8 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
     public DbSet<Cobranca> Cobranca { get; set; } = null!;
     public DbSet<ExecucaoRotina> ExecucaoRotina { get; set; } = null!;
     public DbSet<AcessoPortal> AcessoPortal { get; set; } = null!;
+    public DbSet<CertificadoDigital> CertificadoDigital { get; set; } = null!;
+    public DbSet<DocumentoAssinatura> DocumentoAssinatura { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -259,6 +261,8 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.HasIndex(d => d.CodigoVerificacao).IsUnique();
             builder.Property(d => d.EmitidoPor).HasMaxLength(256).IsRequired();
             builder.Property(d => d.MotivoCancelamento).HasMaxLength(500);
+            builder.Property(d => d.AssinadoPor).HasMaxLength(200);
+            builder.Ignore(d => d.Assinado);
             builder.HasOne(d => d.Paciente).WithMany().HasForeignKey(d => d.IdPaciente).OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(d => d.Medico).WithMany().HasForeignKey(d => d.IdMedico).OnDelete(DeleteBehavior.Cascade);
             builder.HasIndex(d => d.IdPaciente);
@@ -341,6 +345,34 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(a => a.Ip).HasMaxLength(64);
             builder.Ignore(a => a.TentativasEsgotadas);
             builder.HasOne(a => a.Paciente).WithMany().HasForeignKey(a => a.IdPaciente).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Fase 6 — assinatura digital (certificado A1 do médico e PDFs assinados)
+        modelBuilder.Entity<CertificadoDigital>(builder =>
+        {
+            builder.ToTable("CertificadoDigital");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Titular).HasMaxLength(200).IsRequired();
+            builder.Property(c => c.Emissor).HasMaxLength(300).IsRequired();
+            builder.Property(c => c.NumeroSerie).HasMaxLength(80).IsRequired();
+            builder.Property(c => c.Thumbprint).HasMaxLength(80).IsRequired();
+            builder.Property(c => c.PfxProtegido).IsRequired();
+            builder.Property(c => c.SenhaProtegida).IsRequired();
+            builder.Property(c => c.EnviadoPor).HasMaxLength(256).IsRequired();
+            builder.HasOne<Medico>().WithMany().HasForeignKey(c => c.IdMedico).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(c => c.IdMedico);
+        });
+
+        modelBuilder.Entity<DocumentoAssinatura>(builder =>
+        {
+            builder.ToTable("DocumentoAssinatura");
+            builder.HasKey(a => a.Id);
+            builder.Property(a => a.Pdf).IsRequired();
+            builder.Property(a => a.Titular).HasMaxLength(200).IsRequired();
+            builder.Property(a => a.Thumbprint).HasMaxLength(80).IsRequired();
+            builder.Property(a => a.AssinadoPor).HasMaxLength(256).IsRequired();
+            builder.HasOne<DocumentoClinico>().WithMany().HasForeignKey(a => a.IdDocumento).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(a => a.IdDocumento).IsUnique();
         });
     }
 }

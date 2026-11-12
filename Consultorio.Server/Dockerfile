@@ -37,5 +37,9 @@ RUN dotnet publish "./Consultorio.Server.csproj" -c Release -o /app/publish /p:U
 # Fase final para a produção
 FROM base AS final
 WORKDIR /app
+# Pasta das chaves do Data Protection (criptografia dos certificados digitais); montada em volume no compose.
+USER root
+RUN mkdir -p /app/keys && chown -R $APP_UID /app/keys
+USER $APP_UID
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Consultorio.Server.dll"]

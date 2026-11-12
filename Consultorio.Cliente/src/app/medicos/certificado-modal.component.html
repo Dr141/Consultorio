@@ -1,0 +1,76 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Certificado digital</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Fechar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <p class="cert-medico">{{ medico.nome }} · CRM {{ medico.crm }}</p>
+
+  @if (carregando) {
+    <div class="loading-state" aria-busy="true">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else {
+    @if (certificado) {
+      <div class="cert-atual" [class.cert-alerta]="certificado.vencido || !certificado.icpBrasil">
+        <div class="cert-titulo">
+          <ion-icon [name]="certificado.vencido ? 'warning-outline' : 'shield-checkmark-outline'" aria-hidden="true"></ion-icon>
+          <strong>{{ certificado.titular }}</strong>
+        </div>
+        <dl>
+          <dt>Emissor</dt>
+          <dd>{{ certificado.emissor }}</dd>
+          <dt>Validade</dt>
+          <dd>
+            {{ certificado.validoDe | dataBr }} a {{ certificado.validoAte | dataBr }}
+            @if (certificado.vencido) {
+              <strong> · vencido</strong>
+            } @else if (certificado.diasParaVencer <= 30) {
+              <strong> · vence em {{ certificado.diasParaVencer }} dia(s)</strong>
+            }
+          </dd>
+          <dt>Padrão</dt>
+          <dd>{{ certificado.icpBrasil ? 'ICP-Brasil' : 'Fora da ICP-Brasil (sem validade jurídica)' }}</dd>
+          <dt>Enviado por</dt>
+          <dd>{{ certificado.enviadoPor }} em {{ certificado.dtEnvio | dataBr:'dataHora' }}</dd>
+        </dl>
+        <ion-button fill="clear" color="danger" size="small" (click)="remover()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          Remover certificado
+        </ion-button>
+      </div>
+    } @else {
+      <p class="cert-vazio">Nenhum certificado cadastrado. Sem ele, os documentos deste médico só podem ser impressos e assinados à mão.</p>
+    }
+
+    <h3 class="cert-subtitulo">{{ certificado ? 'Substituir certificado' : 'Enviar certificado A1' }}</h3>
+    <p class="cert-ajuda">
+      Arquivo <strong>.pfx</strong> ou <strong>.p12</strong> do certificado A1 (e-CPF) do médico, com a chave privada.
+      O arquivo e a senha ficam criptografados no servidor e só são usados para assinar os documentos deste médico.
+      Certificados A3 (token ou cartão) não podem ser usados pelo sistema.
+    </p>
+
+    <input #arquivoInput type="file" accept=".pfx,.p12,application/x-pkcs12" (change)="selecionar($event)" hidden />
+    <ion-button fill="outline" expand="block" (click)="arquivoInput.click()">
+      <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+      {{ arquivo?.name || 'Selecionar arquivo do certificado' }}
+    </ion-button>
+
+    <ion-item lines="full" class="cert-senha">
+      <ion-input label="Senha do certificado" labelPlacement="stacked" type="password" autocomplete="new-password"
+                 [(ngModel)]="senha" (keyup.enter)="enviar()"></ion-input>
+    </ion-item>
+
+    <ion-button expand="block" (click)="enviar()" [disabled]="!arquivo || !senha || enviando">
+      <ion-icon slot="start" name="key-outline"></ion-icon>
+      {{ enviando ? 'Enviando...' : 'Cadastrar certificado' }}
+    </ion-button>
+  }
+</ion-content>

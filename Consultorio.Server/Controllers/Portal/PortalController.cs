@@ -141,6 +141,21 @@ public class PortalController(IPortalPacienteAppService portal) : ControllerBase
         return documento is null ? NotFound(new { message = "Documento não encontrado." }) : Ok(documento);
     }
 
+    [HttpGet("documentos/{id:int}/pdf")]
+    [PortalAutenticado, Auditar("Portal")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DocumentoPdf(int id, [FromServices] IAssinaturaDigitalAppService assinatura)
+    {
+        var arquivo = await assinatura.ObterPdfPortalAsync(IdPaciente, id);
+        if (arquivo is null) return NotFound(new { message = "Documento não encontrado." });
+        var disposicao = new ContentDispositionHeaderValue("attachment");
+        disposicao.SetHttpFileName(arquivo.NomeArquivo);
+        Response.Headers[HeaderNames.ContentDisposition] = disposicao.ToString();
+        Response.Headers[HeaderNames.XContentTypeOptions] = "nosniff";
+        return File(arquivo.Conteudo, arquivo.ContentType);
+    }
+
     [HttpGet("cobrancas")]
     [PortalAutenticado, Auditar("Portal")]
     [ProducesResponseType(typeof(List<CobrancaResponse>), StatusCodes.Status200OK)]

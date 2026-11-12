@@ -8,6 +8,7 @@ import { Especialidade, Medico } from '../types/types';
 import { correspondeBusca } from '../shared/utils/formatadores';
 import { NOMES_ESPECIALIDADES } from '../shared/utils/especialidades';
 import { MedicoModalComponent } from './medico-modal.component';
+import { CertificadoModalComponent } from './certificado-modal.component';
 
 @Component({
   selector: 'app-medicos',
@@ -22,6 +23,9 @@ export class MedicosPage {
   public carregando = false;
   public mostrarInativos = false;
   public podeGerenciar = false;
+  /** Administrador gerencia o certificado de qualquer médico; o médico, só o próprio. */
+  public ehAdmin = false;
+  public idMeuMedico: number | null = null;
 
   constructor(
     private api: ConsultorioApiService,
@@ -33,6 +37,16 @@ export class MedicosPage {
 
   ionViewWillEnter() {
     this.podeGerenciar = this.role.ehGestao();
+    this.ehAdmin = this.role.ehAdmin();
+    if (!this.ehAdmin && this.role.possui('Medico')) {
+      this.api.obterMeuMedico().subscribe({
+        next: (medico) => {
+          this.idMeuMedico = medico?.id ?? null;
+          this.cdr.detectChanges();
+        },
+        error: () => (this.idMeuMedico = null)
+      });
+    }
     this.carregarMedicos();
   }
 
@@ -99,6 +113,18 @@ export class MedicosPage {
       this.feedback.sucesso(medico ? 'Dados do médico atualizados.' : 'Médico cadastrado com sucesso.');
       this.carregarMedicos();
     }
+  }
+
+  podeGerenciarCertificado(medico: Medico): boolean {
+    return medico.ativo !== false && (this.ehAdmin || medico.id === this.idMeuMedico);
+  }
+
+  async abrirCertificado(medico: Medico) {
+    const modal = await this.modalCtrl.create({
+      component: CertificadoModalComponent,
+      componentProps: { medico }
+    });
+    await modal.present();
   }
 
   async remover(medico: Medico) {

@@ -50,19 +50,26 @@ public static class Notificacoes
         return CultureInfo.ReadOnly(copia);
     }
 
-    /// <summary>true = enviado; false = falhou; null = sem canal/contato para o destinatário.</summary>
+    /// <summary>
+    /// Envia pelo primeiro canal disponível, na ordem de registro (canal preferido primeiro); se ele falhar,
+    /// tenta os seguintes (ex.: WhatsApp recusado → e-mail).
+    /// true = enviado; false = todos os canais possíveis falharam; null = sem canal/contato para o destinatário.
+    /// </summary>
     public static async Task<bool?> EnviarAsync(IEnumerable<INotificador> notificadores, MensagemNotificacao mensagem, CancellationToken cancellationToken)
     {
-        var canal = notificadores.FirstOrDefault(n => n.PodeEnviar(mensagem));
-        if (canal is null) return null;
-        try
+        bool? resultado = null;
+        foreach (var canal in notificadores.Where(n => n.PodeEnviar(mensagem)))
         {
-            return await canal.EnviarAsync(mensagem, cancellationToken);
+            try
+            {
+                if (await canal.EnviarAsync(mensagem, cancellationToken)) return true;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+            }
+            resultado = false;
         }
-        catch (Exception)
-        {
-            return false;
-        }
+        return resultado;
     }
 
     public static string H(string? valor) => WebUtility.HtmlEncode(valor ?? string.Empty);

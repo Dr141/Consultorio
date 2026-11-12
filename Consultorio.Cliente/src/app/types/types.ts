@@ -257,6 +257,26 @@ export type DocumentoClinico = {
   enderecoClinica?: string | null;
   telefoneClinica?: string | null;
   examesCriados?: number;
+  /** Assinado digitalmente com o certificado A1 (ICP-Brasil) do médico. */
+  assinado?: boolean;
+  dtAssinatura?: string | null;
+  assinadoPor?: string | null;
+};
+
+/** Certificado digital A1 do médico (somente dados públicos). */
+export type CertificadoDigital = {
+  id: number;
+  idMedico: number;
+  titular: string;
+  emissor: string;
+  numeroSerie: string;
+  validoDe: string;
+  validoAte: string;
+  icpBrasil: boolean;
+  vencido: boolean;
+  diasParaVencer: number;
+  enviadoPor: string;
+  dtEnvio: string;
 };
 
 export type RegistroAuditoria = {

@@ -5,6 +5,7 @@ import { IonicModule } from '../shared/ionic.module';
 import { MedicosPageRoutingModule } from './medicos-routing.module';
 import { MedicosPage } from './medicos.page';
 import { MedicoModalComponent } from './medico-modal.component';
+import { CertificadoModalComponent } from './certificado-modal.component';
 
 @NgModule({
   imports: [
@@ -14,6 +15,6 @@ import { MedicoModalComponent } from './medico-modal.component';
     IonicModule,
     MedicosPageRoutingModule
   ],
-  declarations: [MedicosPage, MedicoModalComponent]
+  declarations: [MedicosPage, MedicoModalComponent, CertificadoModalComponent]
 })
 export class MedicosPageModule {}

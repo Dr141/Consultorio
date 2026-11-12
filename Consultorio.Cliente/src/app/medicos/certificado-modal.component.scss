@@ -1,0 +1,61 @@
+.cert-medico {
+  margin: 0 0 16px;
+  color: var(--ion-color-medium);
+  font-weight: 600;
+}
+
+.cert-atual {
+  padding: 14px 16px 6px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: rgba(var(--ion-color-success-rgb), 0.08);
+  border: 1px solid rgba(var(--ion-color-success-rgb), 0.3);
+
+  &.cert-alerta {
+    background: rgba(var(--ion-color-warning-rgb), 0.1);
+    border-color: rgba(var(--ion-color-warning-rgb), 0.4);
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 14px;
+    margin: 12px 0 6px;
+    font-size: 14px;
+  }
+
+  dt {
+    color: var(--ion-color-medium);
+  }
+
+  dd {
+    margin: 0;
+    word-break: break-word;
+  }
+}
+
+.cert-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+}
+
+.cert-vazio,
+.cert-ajuda {
+  color: var(--ion-color-medium);
+  font-size: 14px;
+}
+
+.cert-subtitulo {
+  margin: 8px 0 4px;
+  font-size: 16px;
+}
+
+.cert-senha {
+  margin: 12px 0 16px;
+}

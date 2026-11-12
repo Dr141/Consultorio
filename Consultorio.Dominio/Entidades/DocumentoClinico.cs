@@ -35,6 +35,11 @@ public class DocumentoClinico : Entidade
     public DateTime? DtCancelamento { get; private set; }
     public string? MotivoCancelamento { get; private set; }
 
+    /// <summary>Preenchidos quando o médico assina o PDF com certificado digital (o arquivo fica em DocumentoAssinatura).</summary>
+    public DateTime? DtAssinatura { get; private set; }
+    public string? AssinadoPor { get; private set; }
+    public bool Assinado => DtAssinatura.HasValue;
+
     protected DocumentoClinico() { }
 
     public DocumentoClinico(TipoDocumentoClinico tipo, int idPaciente, int idMedico, string conteudo, string emitidoPor,
@@ -77,6 +82,16 @@ public class DocumentoClinico : Entidade
         Cancelado = true;
         DtCancelamento = DateTime.UtcNow;
         MotivoCancelamento = motivo.Trim();
+    }
+
+    public void RegistrarAssinatura(string titularCertificado, DateTime dtAssinaturaUtc)
+    {
+        DomainException.When(Cancelado, "Documento cancelado não pode ser assinado.");
+        DomainException.When(Assinado, "O documento já foi assinado digitalmente.");
+        DomainException.When(string.IsNullOrWhiteSpace(titularCertificado), "Titular do certificado não identificado.");
+        var titular = titularCertificado.Trim();
+        AssinadoPor = titular.Length > 200 ? titular[..200] : titular;
+        DtAssinatura = DateTime.SpecifyKind(dtAssinaturaUtc, DateTimeKind.Utc);
     }
 
     /// <summary>Linhas do pedido de exames (um exame por linha).</summary>

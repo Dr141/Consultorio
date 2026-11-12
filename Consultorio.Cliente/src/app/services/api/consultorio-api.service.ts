@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
 import { Observable, catchError, throwError } from 'rxjs';
-import { AcessoUsuario, AlertasClinicos, Agenda, Cobranca, Convenio, Indicadores, Pendencias, Recibo, ResumoFinanceiro, TabelaPreco, BloqueioAgenda, BloqueioCriado, Cid, Consulta, DocumentoClinico, DocumentoRequest, EvolucaoClinica, ExameAnexo, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
+import { AcessoUsuario, AlertasClinicos, CertificadoDigital, Agenda, Cobranca, Convenio, Indicadores, Pendencias, Recibo, ResumoFinanceiro, TabelaPreco, BloqueioAgenda, BloqueioCriado, Cid, Consulta, DocumentoClinico, DocumentoRequest, EvolucaoClinica, ExameAnexo, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -313,6 +313,32 @@ export class ConsultorioApiService {
 
   cancelarDocumento(id: number, motivo: string): Observable<DocumentoClinico> {
     return this.observable(this.http.patch<DocumentoClinico>(`/api/documento/${id}/cancelar`, { motivo }));
+  }
+
+  /** Assina o documento com o certificado digital do médico (só o próprio médico). */
+  assinarDocumento(id: number): Observable<DocumentoClinico> {
+    return this.observable(this.http.post<DocumentoClinico>(`/api/documento/${id}/assinar`, {}));
+  }
+
+  /** PDF do documento: o assinado digitalmente, se houver; senão um PDF sem assinatura. */
+  baixarPdfDocumento(id: number): Observable<Blob> {
+    return this.observable(this.http.get(`/api/documento/${id}/pdf`, { responseType: 'blob' }));
+  }
+
+  // Certificado digital do médico (A1, .pfx/.p12)
+  obterCertificado(idMedico: number): Observable<CertificadoDigital | null> {
+    return this.observable(this.http.get<CertificadoDigital | null>(`/api/medico/${idMedico}/certificado`));
+  }
+
+  enviarCertificado(idMedico: number, arquivo: File, senha: string): Observable<CertificadoDigital> {
+    const dados = new FormData();
+    dados.append('arquivo', arquivo, arquivo.name);
+    dados.append('senha', senha);
+    return this.observable(this.http.post<CertificadoDigital>(`/api/medico/${idMedico}/certificado`, dados));
+  }
+
+  removerCertificado(idMedico: number): Observable<void> {
+    return this.observable(this.http.delete<void>(`/api/medico/${idMedico}/certificado`));
   }
 
   // Convênios e tabela de preços

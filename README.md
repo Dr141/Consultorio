@@ -19,6 +19,8 @@ Sistema completo de gerenciamento clínico e hospitalar para consultórios médi
 - **Ionic 9** (Mobile & Web UI framework otimizado para alta performance)
 - **Capacitor 8** (Integração multiplataforma Android, iOS e Web)
 - **TypeScript 6** e **RxJS 7**
+- **Ícones:** só os ícones usados são registrados (`src/app/icones.ts`), em vez do pacote inteiro do Ionicons. Isso reduz o pacote inicial. Ao usar um ícone novo em um template, inclua-o nesse arquivo; um ícone não registrado aparece em branco e gera um aviso no console.
+- **Build:** ainda usa o builder `@angular-devkit/build-angular:browser` (webpack), que o Angular marca como obsoleto. A migração para `@angular/build:application` (esbuild) é feita com `ng update @angular/cli --name use-application-builder`. Depois da migração, use `"outputPath": { "base": "../Consultorio.Server/wwwroot", "browser": "" }` para manter os arquivos direto em `wwwroot`, porque o novo builder grava por padrão em uma subpasta `browser`.
 
 ### Banco de Dados, Cache & DevOps
 - **PostgreSQL 16+**
@@ -128,7 +130,7 @@ Regras do prontuário (Lei 13.787/2018 e LGPD):
 
 A cada `Rotinas:IntervaloMinutos` (padrão 15), o servidor:
 
-1. **Envia lembretes** aos pacientes com atendimento nas próximas `Clinica:AntecedenciaLembreteHoras` (padrão 24h) que têm e-mail cadastrado. O e-mail traz links para **confirmar** ou **desmarcar**. A página aberta pelo link pede um clique para concluir, para que filtros de e-mail e antivírus não confirmem nada sozinhos.
+1. **Envia lembretes** aos pacientes com atendimento nas próximas `Clinica:AntecedenciaLembreteHoras` (padrão 24h), por WhatsApp (celular) ou e-mail. A mensagem traz links para **confirmar** ou **desmarcar**. A página aberta pelo link pede um clique para concluir, para que filtros de e-mail e antivírus não confirmem nada sozinhos.
 2. **Marca faltas** de agendamentos sem check-in depois de `Clinica:ToleranciaFaltaMinutos` (padrão 180) do horário.
 
 Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.env.example`):
@@ -143,7 +145,34 @@ Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.en
 
 - Sem `Notificacoes:Email:Host`, nenhum e-mail é enviado. Em desenvolvimento, `SimularEnvio: true` registra no log o que seria enviado.
 - `Clinica:UrlPublica` precisa ser o endereço acessível pelo paciente, porque os links de confirmação apontam para ele.
-- **WhatsApp/SMS:** implemente `INotificador` (`Consultorio.Dominio.Interfaces.Servicos`) chamando a API do provedor e registre a classe em `RegistrarDependencias`. As rotinas usam o primeiro canal disponível para cada paciente.
+- **Outros canais (SMS etc.):** implemente `INotificador` (`Consultorio.Dominio.Interfaces.Servicos`) e registre a classe em `RegistrarDependencias`. As rotinas tentam os canais na ordem de registro e passam ao próximo se um falhar.
+
+### Notificações por WhatsApp
+
+O envio usa a **WhatsApp Cloud API** oficial da Meta. Lembretes, resultados de exame e avisos de retorno vão por WhatsApp quando o paciente tem **celular** cadastrado (DDD + 9 dígitos começando por 9). Os demais casos seguem por e-mail. Se o WhatsApp recusar a mensagem, o sistema tenta o e-mail automaticamente. O código de acesso ao portal do paciente continua indo só por e-mail.
+
+1. No [Meta for Developers](https://developers.facebook.com/), crie um app do tipo **Business** e adicione o produto **WhatsApp**. Cadastre e verifique o número da clínica.
+2. Em **Gerenciador do WhatsApp → Modelos de mensagem**, crie um modelo da categoria **Utilidade**, idioma **Português (BR)**, chamado `aviso_clinica`, com o corpo:
+
+   ```
+   Olá {{1}}! {{2}}
+   ```
+
+   `{{1}}` recebe o primeiro nome do paciente e `{{2}}` o texto do aviso, em uma linha (os links de confirmar/desmarcar vão junto). Aguarde a aprovação.
+3. Gere um **token permanente**: Configurações do negócio → Usuários do sistema → gerar token com as permissões `whatsapp_business_messaging` e `whatsapp_business_management`.
+4. Copie o **Phone number ID** (identificador do número, não o número) da tela *API Setup*.
+5. Configure (no `.env` do Docker ou no `appsettings.json`):
+
+```json
+"Notificacoes": {
+  "CanalPreferido": "WhatsApp",
+  "WhatsApp": { "Habilitado": true, "Token": "EAAG...", "PhoneNumberId": "1234567890", "Template": "aviso_clinica", "Idioma": "pt_BR" }
+}
+```
+
+- `CanalPreferido: "Email"` inverte a prioridade para quem tem e-mail e celular.
+- Falhas aparecem no log com o código de erro da Meta, por exemplo modelo não aprovado ou número sem WhatsApp. O número e o texto do paciente não são registrados.
+- Conversas iniciadas pela empresa são cobradas pela Meta por conversa. Consulte a tabela de preços da categoria Utilidade.
 
 ---
 
@@ -157,7 +186,28 @@ Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.en
   - Pedido de exames pode criar automaticamente um exame "Solicitado" por linha.
   - Cada documento tem um código de verificação. A página pública `GET /api/publico/documento/{codigo}` confirma a autenticidade mostrando tipo, data, médico/CRM, iniciais do paciente e se foi cancelado, nunca o conteúdo.
 - **Ciclo do exame:** Solicitado → Realizado → Laudado → Entregue, com data de cada etapa. Resultados podem ser anexados (PDF, JPG ou PNG até 10 MB); o tipo é conferido pela assinatura do arquivo, não pela extensão.
-- **Assinatura digital (ICP-Brasil):** ainda não integrada. O ponto de extensão natural é a emissão em `DocumentoAppService`, gerando o PDF assinado a partir do mesmo `DocumentoResponse`.
+- **PDF e assinatura digital (ICP-Brasil):** o botão **Baixar PDF** gera o documento em PDF (A4) no servidor. Com o certificado do médico cadastrado, o botão **Assinar digitalmente** produz um PDF com assinatura **PAdES** (CAdES destacada, SHA-256, atributo *signing-certificate-v2*). O Adobe Acrobat e o validador do ITI ([validar.iti.gov.br](https://validar.iti.gov.br)) reconhecem essa assinatura. Detalhes na seção a seguir.
+
+### Assinatura digital de receitas e atestados
+
+1. **Cadastrar o certificado:** em **Corpo Clínico → Certificado digital**, envie o arquivo **A1** (`.pfx`/`.p12`, e-CPF do médico) e a senha. Pode fazer isso o próprio médico (login vinculado ao cadastro) ou um administrador.
+   - O sistema confere a senha, a chave privada e a validade.
+   - Também indica se o certificado é da **ICP-Brasil**. Só certificados ICP-Brasil têm validade jurídica (MP 2.200-2/2001); para receitas de antimicrobianos e de controle especial, a farmácia exige assinatura ICP-Brasil.
+   - Certificados **A3** (token ou cartão) não podem ser usados por um servidor e não são aceitos.
+2. **Assinar:** na tela do documento, **Assinar digitalmente**. Só o próprio médico assina. Se o médico não tem login vinculado, um administrador pode assinar em seu nome (consultório de um médico só).
+   - O PDF assinado fica guardado (tabela `DocumentoAssinatura`) e não muda mais.
+   - **Baixar PDF** passa a entregar essa via, inclusive no portal do paciente.
+   - A página pública de verificação mostra quem assinou e quando.
+   - Documento cancelado depois de assinado sai sem assinatura e com a marca **CANCELADO**.
+3. **Segurança:** o `.pfx` e a senha são gravados criptografados com o **ASP.NET Core Data Protection**.
+   - As chaves ficam em `DataProtection:Pasta`; no Docker é o volume `dataprotection_keys`, montado em `/app/keys`.
+   - **Faça backup desse volume** junto com o banco:
+     ```bash
+     docker run --rm -v consultorio_dataprotection_keys:/k -v "$PWD/backups":/b alpine tar czf /b/chaves-dataprotection.tgz -C /k .
+     ```
+     O nome do volume leva o prefixo do projeto do compose (`docker volume ls` mostra o nome exato).
+   - Sem as chaves, os certificados guardados não podem ser abertos e precisam ser enviados de novo. Documentos já assinados não são afetados.
+   - Ao remover ou substituir um certificado, o arquivo e a senha antigos são apagados do banco.
 
 ---
 
@@ -218,6 +268,8 @@ docker compose start app
 ```
 
 Os arquivos contêm dados de pacientes: guarde uma cópia fora do servidor (outro disco ou nuvem com criptografia) e teste a restauração periodicamente.
+
+Guarde também uma cópia do volume `dataprotection_keys`. Ele contém as chaves que abrem os certificados digitais dos médicos; o comando está em [Assinatura digital de receitas e atestados](#assinatura-digital-de-receitas-e-atestados).
 
 ---
 
@@ -385,6 +437,9 @@ O repositório possui automação completa configurada em `.github/workflows/rel
 | **Documentos** | `POST` | `/api/documento` | Emite receita, atestado, pedido de exames etc. |
 | | `GET` | `/api/documento/paciente/{id}` | Documentos emitidos para o paciente |
 | | `PATCH` | `/api/documento/{id}/cancelar` | Cancela com motivo (continua no histórico) |
+| | `GET` | `/api/documento/{id}/pdf` | PDF do documento (a via assinada, se houver) |
+| | `POST` | `/api/documento/{id}/assinar` | Assina com o certificado A1 do médico (PAdES) |
+| | `GET` `POST` `DELETE` | `/api/medico/{id}/certificado` | Certificado digital do médico (envio em `multipart/form-data`: `arquivo` + `senha`) |
 | | `GET` | `/api/publico/documento/{codigo}` | Verificação pública de autenticidade |
 | **CID-10** | `GET` | `/api/cid?busca=` | Busca de códigos frequentes |
 | **Portal do paciente** | `POST` | `/api/portal/acesso/codigo` · `/acesso/sessao` | Código por e-mail e abertura da sessão |

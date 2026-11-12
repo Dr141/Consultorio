@@ -95,7 +95,10 @@ public class DocumentoAppService(
             Iniciais(documento.Paciente?.Pessoa?.Nome),
             documento.DiasAfastamento,
             documento.Cancelado,
-            opcoes.Nome);
+            opcoes.Nome,
+            documento.Assinado,
+            documento.AssinadoPor,
+            documento.DtAssinatura);
     }
 
     private async Task<Medico> ResolverMedicoAsync(int? idMedicoInformado, UsuarioAtual usuario)
@@ -150,6 +153,9 @@ public class DocumentoAppService(
             d.MotivoCancelamento,
             opcoes.Nome,
             opcoes.Endereco,
-            opcoes.Telefone);
+            opcoes.Telefone,
+            Assinado: d.Assinado,
+            DtAssinatura: d.DtAssinatura,
+            AssinadoPor: d.AssinadoPor);
     }
 }
