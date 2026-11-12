@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { PortalService } from '../services/portal/portal.service';
@@ -28,7 +28,8 @@ export class DocumentoPage implements OnInit {
     private feedback: FeedbackService,
     private nav: NavController,
     private router: Router,
-    private portalService: PortalService
+    private portalService: PortalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -49,10 +50,12 @@ export class DocumentoPage implements OnInit {
       next: (d) => {
         this.documento = d;
         this.carregando = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.carregando = false;
         this.erroCarregamento = err?.message || 'Não foi possível carregar o documento.';
+        this.cdr.detectChanges();
       }
     });
   }

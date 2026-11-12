@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PortalService } from '../services/portal/portal.service';
@@ -26,7 +26,7 @@ export class PortalEntradaPage implements OnDestroy {
   });
   codigo = new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^\d{6}$/)] });
 
-  constructor(private portal: PortalService, private router: Router, private rota: ActivatedRoute) {}
+  constructor(private portal: PortalService, private router: Router, private rota: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   ionViewWillEnter() {
     if (this.portal.autenticado) {
@@ -62,10 +62,12 @@ export class PortalEntradaPage implements OnDestroy {
         this.etapa = 'codigo';
         this.codigo.reset();
         this.iniciarContagem();
+        this.cdr.detectChanges();
       },
       error: (e) => {
         this.enviando = false;
         this.erro = e.message;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -76,6 +78,7 @@ export class PortalEntradaPage implements OnDestroy {
     this.temporizador = setInterval(() => {
       this.segundosReenvio = Math.max(0, this.segundosReenvio - 1);
       if (this.segundosReenvio === 0) clearInterval(this.temporizador);
+      this.cdr.detectChanges();
     }, 1000);
   }
 
@@ -95,6 +98,7 @@ export class PortalEntradaPage implements OnDestroy {
       error: (e) => {
         this.enviando = false;
         this.erro = e.message;
+        this.cdr.detectChanges();
       }
     });
   }

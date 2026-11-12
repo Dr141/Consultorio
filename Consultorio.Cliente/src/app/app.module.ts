@@ -1,4 +1,4 @@
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA, provideZoneChangeDetection } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { RouteReuseStrategy } from '@angular/router';
@@ -23,10 +23,7 @@ import { IonicModule } from './shared/ionic.module';
       backButtonText: 'Voltar',
       backButtonDefaultHref: '/home'
     }),
-    provideHttpClient(withInterceptors([AuthInterceptor])),
-    // O Angular 21+ é zoneless por padrão; as telas atualizam estado em callbacks do Ionic (ionViewWillEnter)
-    // e em subscribe sem markForCheck, então a detecção por zone.js (já carregado nos polyfills) é mantida.
-    provideZoneChangeDetection({ eventCoalescing: true })
+    provideHttpClient(withInterceptors([AuthInterceptor]))
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

@@ -7,8 +7,14 @@ setAssetPath(window.location.origin + '/');
 // Registra globalmente todos os ícones da biblioteca Ionicons v8
 addIcons(allIcons);
 
+import { provideZoneChangeDetection } from '@angular/core';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { AppModule } from './app/app.module';
 
-platformBrowserDynamic().bootstrapModule(AppModule)
+// O Angular 21+ é zoneless por padrão. As telas atualizam estado em callbacks do Ionic (ionViewWillEnter)
+// e dentro de subscribe, então a detecção de mudanças por zone.js (carregado nos polyfills) é ligada aqui.
+// Com bootstrapModule, o provider precisa ir em applicationProviders: nos providers do NgModule ele é ignorado.
+platformBrowserDynamic().bootstrapModule(AppModule, {
+  applicationProviders: [provideZoneChangeDetection({ eventCoalescing: true })]
+})
   .catch(err => console.log(err));

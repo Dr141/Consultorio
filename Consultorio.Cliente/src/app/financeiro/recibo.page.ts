@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { PortalService } from '../services/portal/portal.service';
@@ -108,7 +108,8 @@ export class ReciboPage implements OnInit {
   /** Aberto pelo portal do paciente (usa a sessão do portal em vez do login da equipe). */
   portal = false;
 
-  constructor(private rota: ActivatedRoute, private api: ConsultorioApiService, private router: Router, private portalService: PortalService) {}
+  constructor(private rota: ActivatedRoute, private api: ConsultorioApiService, private router: Router, private portalService: PortalService,
+    private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     const id = Number(this.rota.snapshot.paramMap.get('id'));
@@ -123,10 +124,12 @@ export class ReciboPage implements OnInit {
       next: (r) => {
         this.recibo = r;
         this.carregando = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.carregando = false;
         this.erro = err?.message || 'Não foi possível carregar o recibo.';
+        this.cdr.detectChanges();
       }
     });
   }
