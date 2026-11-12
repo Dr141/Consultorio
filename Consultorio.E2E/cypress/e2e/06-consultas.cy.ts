@@ -49,7 +49,8 @@ describe('06 - Prontuário e Gestão de Consultas Médicas', () => {
     cy.get('ion-button[title="Registrar nova consulta"]').click();
     cy.get('ion-modal').should('be.visible');
 
-    // Selecionar Paciente
+    // Selecionar Paciente (espera a lista de pacientes carregar: o ion-select monta as opções do alerta ao abrir)
+    cy.get('ion-modal ion-select[formControlName="idPaciente"] ion-select-option').should('have.length.at.least', 1);
     cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
