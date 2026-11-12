@@ -402,7 +402,7 @@ public class GeradorPdf : IGeradorPdf
                 {
                     escritor.WriteEncodedValue(certificado.IssuerName.RawData);
                 }
-                escritor.WriteInteger(new BigInteger(certificado.GetSerialNumberBigEndian(), isUnsigned: true, isBigEndian: true));
+                escritor.WriteInteger(new BigInteger(Convert.FromHexString(certificado.SerialNumber), isUnsigned: true, isBigEndian: true));
             }
         }
         return escritor.Encode();
