@@ -46,11 +46,18 @@ describe('07 - Gestão e Laudos de Exames Clínicos', () => {
     cy.visit('/exames');
     cy.aguardarCarregamento();
 
+    cy.intercept('GET', '/api/paciente*').as('pacientesModal');
     cy.get('ion-button[title="Solicitar novo exame"]').click();
     cy.get('ion-modal').should('be.visible');
 
-    // Selecionar Paciente (espera a lista de pacientes carregar: o ion-select monta as opções do alerta ao abrir)
-    cy.get('ion-modal ion-select[formControlName="idPaciente"] ion-select-option').should('have.length.at.least', 1);
+    // Selecionar Paciente: espera a lista carregar (o ion-select monta as opções do alerta ao abrir).
+    // Em caso de falha, o status e o tamanho da resposta aparecem no relatório do Cypress.
+    cy.wait('@pacientesModal').then(({ response }) => {
+      expect(response?.statusCode, JSON.stringify(response?.body)?.slice(0, 300)).to.eq(200);
+      expect((response?.body as unknown[])?.length, 'pacientes retornados pela API').to.be.greaterThan(0);
+    });
+    cy.get('ion-modal ion-select[formControlName="idPaciente"] ion-select-option', { timeout: 15000 })
+      .should('have.length.at.least', 1);
     cy.get('ion-modal ion-select[formControlName="idPaciente"]').click();
     cy.get('ion-alert').should('be.visible');
     cy.get('ion-alert .alert-radio-button').should('have.length.at.least', 1).first().click();
