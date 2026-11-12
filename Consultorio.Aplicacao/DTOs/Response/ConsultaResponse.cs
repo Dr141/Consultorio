@@ -21,5 +21,6 @@ public record ConsultaResponse(
     string? Plano = null,
     string? CidCodigo = null,
     string? CidDescricao = null,
-    SinaisVitaisResponse? SinaisVitais = null
+    SinaisVitaisResponse? SinaisVitais = null,
+    DateTime? RetornoEm = null
 );

@@ -72,6 +72,28 @@ services:
     networks:
       - consultorio-net
 
+  # Backup diário (pg_dump) dos bancos Consultorio e Identity, salvo em ./backups no servidor.
+  # Restauração: veja a seção "Backup e restauração" do README.
+  backup:
+    image: postgres:16-alpine
+    container_name: consultorio-backup
+    restart: always
+    entrypoint: ["sh", "/scripts/backup.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      BACKUP_HORA_UTC: ${BACKUP_HORA_UTC:-5}
+      BACKUP_RETENCAO_DIAS: ${BACKUP_RETENCAO_DIAS:-14}
+    volumes:
+      - ./scripts/backup/backup.sh:/scripts/backup.sh:ro
+      - ${BACKUP_PASTA:-./backups}:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - consultorio-net
+
 volumes:
   postgres_data:
   redis_data:

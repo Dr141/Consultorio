@@ -413,6 +413,8 @@ public class AgendaAppService(
             a.DtFimAtendimento,
             a.LembreteEnviadoEm,
             a.Paciente?.Pessoa?.Telefone?.Formatado(),
-            a.Paciente?.Pessoa?.Email
+            a.Paciente?.Pessoa?.Email,
+            a.Paciente?.IdConvenio is not null,
+            a.Paciente?.CarteirinhaVencida(a.Data) ?? false
         );
 }

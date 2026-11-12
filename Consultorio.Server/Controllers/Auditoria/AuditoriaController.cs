@@ -3,6 +3,7 @@ using Consultorio.Aplicacao.Interfaces;
 using Consultorio.Identity.Modelo.Enumerados;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Consultorio.Server.Servicos;
 
 namespace Consultorio.Server.Controllers.Auditoria;
 
@@ -23,5 +24,13 @@ public class AuditoriaController(IAuditoriaAppService auditoriaAppService) : Con
         [FromQuery] int limite = 500)
     {
         return Ok(await auditoriaAppService.ObterAsync(inicio, fim, usuario, recurso, idRecurso, limite));
+    }
+
+    [HttpGet("revisao-acessos")]
+    [EndpointSummary("Revisão de acessos: usuários, perfis e última atividade (contas a revisar primeiro)")]
+    [ProducesResponseType(typeof(List<AcessoUsuarioResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<AcessoUsuarioResponse>>> RevisaoAcessos([FromServices] RevisaoAcessosService revisao)
+    {
+        return Ok(await revisao.ObterAsync());
     }
 }

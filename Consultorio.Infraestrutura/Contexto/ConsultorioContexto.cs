@@ -18,6 +18,10 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
     public DbSet<BloqueioAgenda> BloqueioAgenda { get; set; } = null!;
     public DbSet<DocumentoClinico> DocumentoClinico { get; set; } = null!;
     public DbSet<ExameAnexo> ExameAnexo { get; set; } = null!;
+    public DbSet<Convenio> Convenio { get; set; } = null!;
+    public DbSet<TabelaPreco> TabelaPreco { get; set; } = null!;
+    public DbSet<Cobranca> Cobranca { get; set; } = null!;
+    public DbSet<ExecucaoRotina> ExecucaoRotina { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +61,8 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(p => p.Alergias).HasMaxLength(2000);
             builder.Property(p => p.MedicamentosEmUso).HasMaxLength(2000);
             builder.Property(p => p.CondicoesCronicas).HasMaxLength(2000);
+            builder.Property(p => p.NumeroCarteirinha).HasMaxLength(30);
+            builder.HasOne(p => p.Convenio).WithMany().HasForeignKey(p => p.IdConvenio).OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuração de Medico
@@ -268,6 +274,56 @@ public class ConsultorioContexto(DbContextOptions<ConsultorioContexto> options) 
             builder.Property(a => a.EnviadoPor).HasMaxLength(256).IsRequired();
             builder.HasOne<Exame>().WithMany().HasForeignKey(a => a.IdExame).OnDelete(DeleteBehavior.Cascade);
             builder.HasIndex(a => a.IdExame);
+        });
+
+        // Fase 4 — convênios, tabela de preços, cobranças e controle de rotinas
+        // (comprimentos literais: dentro do contexto, o nome da classe resolve para o DbSet de mesmo nome)
+        modelBuilder.Entity<Convenio>(builder =>
+        {
+            builder.ToTable("Convenio");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Nome).HasMaxLength(120).IsRequired();
+            builder.Property(c => c.RegistroAns).HasMaxLength(6);
+            builder.Property(c => c.Telefone).HasMaxLength(30);
+            builder.Property(c => c.Observacao).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<TabelaPreco>(builder =>
+        {
+            builder.ToTable("TabelaPreco");
+            builder.HasKey(t => t.Id);
+            builder.Property(t => t.Tipo).HasConversion<int>().IsRequired();
+            builder.Property(t => t.Valor).HasPrecision(12, 2);
+            builder.HasOne(t => t.Convenio).WithMany().HasForeignKey(t => t.IdConvenio).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Cobranca>(builder =>
+        {
+            builder.ToTable("Cobranca");
+            builder.HasKey(c => c.Id);
+            builder.Property(c => c.Descricao).HasMaxLength(200).IsRequired();
+            builder.Property(c => c.Valor).HasPrecision(12, 2);
+            builder.Property(c => c.Desconto).HasPrecision(12, 2);
+            builder.Ignore(c => c.ValorFinal);
+            builder.Property(c => c.Status).HasConversion<int>().IsRequired();
+            builder.Property(c => c.FormaPagamento).HasConversion<int?>();
+            builder.Property(c => c.RecebidoPor).HasMaxLength(256);
+            builder.Property(c => c.RegistradoPor).HasMaxLength(256).IsRequired();
+            builder.Property(c => c.MotivoCancelamento).HasMaxLength(500);
+            builder.HasOne(c => c.Paciente).WithMany().HasForeignKey(c => c.IdPaciente).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(c => c.Convenio).WithMany().HasForeignKey(c => c.IdConvenio).OnDelete(DeleteBehavior.SetNull);
+            builder.HasIndex(c => c.IdPaciente);
+            builder.HasIndex(c => c.IdAgenda);
+            builder.HasIndex(c => c.Status);
+        });
+
+        modelBuilder.Entity<ExecucaoRotina>(builder =>
+        {
+            builder.ToTable("ExecucaoRotina");
+            builder.HasKey(e => e.Id);
+            builder.Property(e => e.Nome).HasMaxLength(100).IsRequired();
+            builder.HasIndex(e => e.Nome).IsUnique();
+            builder.Property(e => e.Referencia).HasMaxLength(20).IsRequired();
         });
     }
 }

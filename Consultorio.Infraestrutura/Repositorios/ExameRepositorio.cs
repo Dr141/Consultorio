@@ -28,6 +28,16 @@ public class ExameRepositorio(ConsultorioContexto contexto) : Repositorio<Exame>
             .ToListAsync();
     }
 
+    public async Task<List<Exame>> ObterEmAndamento()
+    {
+        return await _contexto.Exame
+            .Include(e => e.Paciente).ThenInclude(p => p.Pessoa)
+            .Include(e => e.Medico).ThenInclude(m => m!.Pessoa)
+            .Where(e => !e.Cancelado && e.Status != Consultorio.Dominio.Enumerados.StatusExame.Entregue)
+            .OrderBy(e => e.DtCriacao)
+            .ToListAsync();
+    }
+
     public async Task<List<Exame>> ObterPorPaciente(int idPaciente)
     {
         return await _contexto.Exame

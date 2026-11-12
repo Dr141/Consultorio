@@ -95,6 +95,14 @@
         </span>
         <span class="resumo-rotulo">pacientes cadastrados</span>
       </button>
+
+      <button type="button" class="resumo-item" [class.resumo-alerta]="(pendencias ?? 0) > 0" (click)="pendenciasNav()">
+        <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+        <span class="resumo-valor">
+          @if (pendencias !== undefined) { {{ pendencias }} } @else { <ion-skeleton-text [animated]="true"></ion-skeleton-text> }
+        </span>
+        <span class="resumo-rotulo">pendências para resolver</span>
+      </button>
     </div>
 
     <ion-grid class="ion-no-padding">
@@ -196,6 +204,40 @@
             </ion-card-content>
           </ion-card>
         </ion-col>
+
+        <!-- Financeiro -->
+        <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+          <ion-card class="cardHome" button="true" role="link" (click)="financeiroNav()">
+            <div class="card-img-wrapper card-icone financeiro" aria-hidden="true">
+              <ion-icon name="wallet-outline"></ion-icon>
+            </div>
+            <ion-card-header>
+              <ion-card-title>Financeiro</ion-card-title>
+              <ion-card-subtitle>Cobranças e convênios</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              Recebimentos, recibos, tabela de preços e convênios atendidos.
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+
+        @if (ehGestao()) {
+          <!-- Indicadores -->
+          <ion-col size="12" size-sm="6" size-md="4" size-lg="4" size-xl="2">
+            <ion-card class="cardHome" button="true" role="link" (click)="indicadoresNav()">
+              <div class="card-img-wrapper card-icone indicadores" aria-hidden="true">
+                <ion-icon name="stats-chart-outline"></ion-icon>
+              </div>
+              <ion-card-header>
+                <ion-card-title>Indicadores</ion-card-title>
+                <ion-card-subtitle>Gestão da clínica</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                Faltas, ocupação da agenda, faturamento, exames e diagnósticos do período.
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        }
 
         @if (ehClinico()) {
           <!-- Prontuário Oficial -->

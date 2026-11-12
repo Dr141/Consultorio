@@ -11,6 +11,16 @@ public class AuditoriaRepositorio(ConsultorioContexto contexto) : Repositorio<Re
     public override Task Remover(RegistroAuditoria entidade) =>
         throw new InvalidOperationException("Registros de auditoria não podem ser removidos.");
 
+    public async Task<Dictionary<string, DateTime>> UltimaAtividadePorUsuario()
+    {
+        var ultimas = await _contexto.RegistroAuditoria
+            .AsNoTracking()
+            .GroupBy(r => r.Usuario.ToLower())
+            .Select(g => new { Usuario = g.Key, Ultima = g.Max(r => r.DtCriacao) })
+            .ToListAsync();
+        return ultimas.ToDictionary(u => u.Usuario, u => u.Ultima);
+    }
+
     public async Task<List<RegistroAuditoria>> ObterFiltrado(
         DateTime? inicio = null,
         DateTime? fim = null,

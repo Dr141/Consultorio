@@ -42,6 +42,10 @@ export type Paciente = {
   alergias?: string | null;
   medicamentosEmUso?: string | null;
   condicoesCronicas?: string | null;
+  idConvenio?: number | null;
+  nomeConvenio?: string | null;
+  numeroCarteirinha?: string | null;
+  validadeCarteirinha?: string | null;
 };
 
 export type Medico = {
@@ -91,6 +95,8 @@ export type Agenda = {
   lembreteEnviadoEm?: string | null;
   telefonePaciente?: string | null;
   emailPaciente?: string | null;
+  temConvenio?: boolean;
+  carteirinhaVencida?: boolean;
 };
 
 export type BloqueioAgenda = {
@@ -159,6 +165,7 @@ export type Consulta = {
   cidCodigo?: string | null;
   cidDescricao?: string | null;
   sinaisVitais?: SinaisVitais | null;
+  retornoEm?: string | null;
 };
 
 export type SinaisVitais = {
@@ -186,6 +193,7 @@ export type EvolucaoClinica = {
   cidCodigo?: string | null;
   cidDescricao?: string | null;
   sinaisVitais?: SinaisVitais | null;
+  retornoEm?: string | null;
 };
 
 export type AlertasClinicos = {
@@ -359,4 +367,139 @@ export type ProntuarioRelatorio = {
   consultas: ConsultaProntuarioItem[];
   exames: ExameProntuarioItem[];
   documentos?: DocumentoClinico[] | null;
+};
+
+// ---------- Fase 4: convênios, financeiro, indicadores e pendências ----------
+
+export type Convenio = {
+  id: number;
+  nome: string;
+  registroAns?: string | null;
+  telefone?: string | null;
+  observacao?: string | null;
+  ativo: boolean;
+  dtCriacao: string;
+};
+
+export type TabelaPreco = {
+  id: number;
+  tipo: TipoAtendimento;
+  tipoNome: string;
+  idConvenio?: number | null;
+  nomeConvenio?: string | null;
+  valor: number;
+  dtAtualizacao?: string | null;
+};
+
+export type StatusCobranca = 'Pendente' | 'Paga' | 'Cancelada' | 'Estornada';
+
+export const FORMAS_PAGAMENTO: { valor: number; chave: string; nome: string; icone: string }[] = [
+  { valor: 2, chave: 'Pix', nome: 'Pix', icone: 'qr-code-outline' },
+  { valor: 1, chave: 'Dinheiro', nome: 'Dinheiro', icone: 'cash-outline' },
+  { valor: 3, chave: 'CartaoDebito', nome: 'Cartão de débito', icone: 'card-outline' },
+  { valor: 4, chave: 'CartaoCredito', nome: 'Cartão de crédito', icone: 'card-outline' },
+  { valor: 6, chave: 'Transferencia', nome: 'Transferência', icone: 'swap-horizontal-outline' },
+  { valor: 5, chave: 'Boleto', nome: 'Boleto', icone: 'barcode-outline' },
+  { valor: 7, chave: 'Convenio', nome: 'Convênio (repasse)', icone: 'business-outline' }
+];
+
+export type Cobranca = {
+  id: number;
+  idPaciente: number;
+  nomePaciente: string;
+  cpfPaciente?: string | null;
+  idAgenda?: number | null;
+  idConvenio?: number | null;
+  nomeConvenio?: string | null;
+  descricao: string;
+  valor: number;
+  desconto: number;
+  valorFinal: number;
+  status: StatusCobranca;
+  dtVencimento: string;
+  vencida: boolean;
+  formaPagamento?: string | null;
+  formaPagamentoNome?: string | null;
+  dtPagamento?: string | null;
+  recebidoPor?: string | null;
+  dtCancelamento?: string | null;
+  motivoCancelamento?: string | null;
+  registradoPor: string;
+  dtCriacao: string;
+};
+
+export type ItemIndicador = { rotulo: string; quantidade: number; valor: number };
+
+export type ResumoFinanceiro = {
+  recebido: number;
+  quantidadeRecebida: number;
+  ticketMedio: number;
+  aReceber: number;
+  vencido: number;
+  estornado: number;
+  porForma: ItemIndicador[];
+  porConvenio: ItemIndicador[];
+};
+
+export type Recibo = {
+  cobranca: Cobranca;
+  valorPorExtenso: string;
+  nomeClinica: string;
+  enderecoClinica?: string | null;
+  telefoneClinica?: string | null;
+  dtEmissao: string;
+};
+
+export type IndicadorMedico = { idMedico: number; nome: string; agendados: number; atendidos: number; faltas: number };
+
+export type Indicadores = {
+  inicio: string;
+  fim: string;
+  agendamentos: number;
+  atendidos: number;
+  faltas: number;
+  taxaFaltas: number;
+  taxaConfirmacao: number;
+  horariosLivres: number;
+  taxaOcupacao: number;
+  novosPacientes: number;
+  consultasRegistradas: number;
+  examesSolicitados: number;
+  examesLaudados: number;
+  examesAtrasados: number;
+  tempoMedioLaudoDias?: number | null;
+  financeiro: ResumoFinanceiro;
+  porMedico: IndicadorMedico[];
+  porTipoAtendimento: ItemIndicador[];
+  diagnosticosFrequentes: ItemIndicador[];
+};
+
+export type PendenciaItem = {
+  categoria: string;
+  titulo: string;
+  detalhe: string;
+  data?: string | null;
+  idPaciente?: number | null;
+  idReferencia?: number | null;
+};
+
+export type Pendencias = {
+  examesAtrasados: PendenciaItem[];
+  laudosNaoEntregues: PendenciaItem[];
+  carteirinhas: PendenciaItem[];
+  cobrancasVencidas: PendenciaItem[];
+  consultasAbertas: PendenciaItem[];
+  retornosSemAgendamento: PendenciaItem[];
+  total: number;
+};
+
+export type AcessoUsuario = {
+  email: string;
+  perfis: string[];
+  emailConfirmado: boolean;
+  bloqueado: boolean;
+  ultimaAtividade?: string | null;
+  diasSemAtividade?: number | null;
+  revisarAcesso: boolean;
+  motivoRevisao?: string | null;
 };

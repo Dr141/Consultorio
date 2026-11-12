@@ -13,4 +13,5 @@ public interface IPacienteAppService
     Task RemoverAsync(int id);
     Task<PacienteResponse> ReativarAsync(int id);
     Task<PacienteResponse> AtualizarAlertasAsync(int id, AlertasClinicosRequest request);
+    Task<PacienteResponse> AtualizarConvenioAsync(int id, ConvenioPacienteRequest request);
 }

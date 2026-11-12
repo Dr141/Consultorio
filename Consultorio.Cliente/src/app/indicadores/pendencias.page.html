@@ -1,0 +1,61 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Pendências</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      <ion-button (click)="carregar()" title="Atualizar">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container">
+    @if (carregando && !dados) {
+      <div class="loading-state" aria-busy="true"><ion-spinner name="crescent"></ion-spinner><p>Verificando pendências...</p></div>
+    } @else if (dados && dados.total === 0) {
+      <div class="ion-text-center ion-padding empty-state tudo-certo">
+        <ion-icon name="checkmark-done-circle-outline"></ion-icon>
+        <h3>Nenhuma pendência</h3>
+        <p>Exames, laudos, cobranças, carteirinhas, retornos e consultas estão em dia.</p>
+      </div>
+    } @else if (dados) {
+      <p class="periodo-titulo">{{ dados.total }} item(ns) precisando de atenção</p>
+      @for (g of gruposComItens; track g.chave) {
+        <ion-card class="grupo">
+          <ion-card-header>
+            <ion-icon [name]="g.icone" [color]="g.cor" aria-hidden="true"></ion-icon>
+            <ion-card-title>{{ g.titulo }} ({{ itens(g).length }})</ion-card-title>
+          </ion-card-header>
+          <p class="dica">{{ g.dica }}</p>
+          <ion-list lines="full">
+            @for (item of itens(g); track $index) {
+              <ion-item button detail="true" (click)="abrir(g, item)">
+                <ion-label>
+                  <h3>{{ item.titulo }}</h3>
+                  <p>{{ item.detalhe }}</p>
+                </ion-label>
+                @if (item.data) {
+                  <ion-note slot="end">{{ item.data | dataBr }}</ion-note>
+                }
+                @if (ehClinico && item.idPaciente) {
+                  <ion-button slot="end" fill="clear" size="small" (click)="$event.stopPropagation(); prontuario(item)" title="Abrir prontuário">
+                    <ion-icon slot="icon-only" name="document-text-outline"></ion-icon>
+                  </ion-button>
+                }
+              </ion-item>
+            }
+          </ion-list>
+        </ion-card>
+      }
+    }
+  </div>
+</ion-content>

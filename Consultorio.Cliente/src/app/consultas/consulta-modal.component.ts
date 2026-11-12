@@ -5,7 +5,7 @@ import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
 import { Cid, Consulta, EvolucaoClinica, Medico, Paciente, SinaisVitais } from '../types/types';
 import { mensagemErro, possuiObrigatoriosPendentes } from '../shared/utils/validadores';
-import { calcularImc, classificarImc, resumirSinaisVitais } from '../shared/utils/formatadores';
+import { calcularImc, classificarImc, hojeInputData, paraDataLocal, paraInputData, resumirSinaisVitais } from '../shared/utils/formatadores';
 
 const CAMPOS_EVOLUCAO = ['observacao', 'subjetivo', 'objetivo', 'avaliacao', 'plano'];
 
@@ -36,6 +36,10 @@ type CampoSinal = { nome: keyof SinaisVitais; rotulo: string; unidade: string; m
     .toggle-dica { display: block; font-size: 12px; color: var(--app-text-muted); }
     .dica-evolucao { margin: 0 4px 12px; font-size: 12px; color: var(--app-text-muted); }
     .dica-evolucao.erro { color: var(--ion-color-danger); }
+    .retorno-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .retorno-chips { display: flex; flex-wrap: wrap; gap: 2px; flex: 1 1 320px; }
+    .retorno-chips ion-chip { margin: 2px; }
+    .retorno-data { flex: 0 1 200px; margin: 0; }
   `],
   standalone: false
 })
@@ -56,6 +60,12 @@ export class ConsultaModalComponent implements OnInit {
   public cid: Cid | null = null;
   public mostrarSoap = false;
   public mostrarSinais = false;
+  /** Data sugerida para o retorno (YYYY-MM-DD); vazio = sem retorno programado. */
+  public retornoEm = '';
+  public readonly opcoesRetorno = [
+    { dias: 7, rotulo: '7 dias' }, { dias: 15, rotulo: '15 dias' }, { dias: 30, rotulo: '30 dias' },
+    { dias: 60, rotulo: '2 meses' }, { dias: 90, rotulo: '3 meses' }, { dias: 180, rotulo: '6 meses' }
+  ];
   private pacienteCarregado: Paciente | null = null;
 
   readonly camposSinais: CampoSinal[] = [
@@ -100,6 +110,7 @@ export class ConsultaModalComponent implements OnInit {
     this.cid = c?.cidCodigo ? { codigo: c.cidCodigo, descricao: c.cidDescricao ?? '' } : null;
     this.mostrarSoap = !!(c?.subjetivo || c?.objetivo || c?.avaliacao || c?.plano);
     this.mostrarSinais = !!sv;
+    this.retornoEm = paraInputData(c?.retornoEm);
 
     this.carregarDados();
   }
@@ -178,13 +189,43 @@ export class ConsultaModalComponent implements OnInit {
     return mensagemErro(controle);
   }
 
+  /** Data de referência do retorno: dia da consulta (edição) ou hoje (nova). */
+  private get diaBase(): Date {
+    return paraDataLocal(this.consulta?.dtCriacao) ?? paraDataLocal(hojeInputData())!;
+  }
+
+  definirRetornoEmDias(dias: number) {
+    const base = this.diaBase;
+    this.retornoEm = paraInputData(new Date(base.getFullYear(), base.getMonth(), base.getDate() + dias));
+    this.form.markAsDirty();
+  }
+
+  definirRetorno(valor: string | null | undefined) {
+    this.retornoEm = valor ?? '';
+    this.form.markAsDirty();
+  }
+
+  get diasAteRetorno(): number | null {
+    const alvo = paraDataLocal(this.retornoEm);
+    if (!alvo) return null;
+    return Math.round((alvo.getTime() - this.diaBase.getTime()) / 86_400_000);
+  }
+
+  get erroRetorno(): string {
+    const dias = this.diasAteRetorno;
+    if (dias === null) return '';
+    if (dias <= 0) return 'O retorno deve ser depois da data da consulta.';
+    if (dias > 366) return 'O retorno deve ser em até um ano.';
+    return '';
+  }
+
   definirCid(cid: Cid | null) {
     this.cid = cid;
     this.form.markAsDirty();
   }
 
   bloquearEnvio(): boolean {
-    return this.salvando || possuiObrigatoriosPendentes(this.form) || this.form.hasError('evolucaoVazia');
+    return this.salvando || possuiObrigatoriosPendentes(this.form) || this.form.hasError('evolucaoVazia') || !!this.erroRetorno;
   }
 
   async fechar() {
@@ -229,7 +270,8 @@ export class ConsultaModalComponent implements OnInit {
       plano: this.texto('plano'),
       cidCodigo: this.cid?.codigo ?? null,
       cidDescricao: this.cid?.descricao ?? null,
-      sinaisVitais: this.valoresSinais()
+      sinaisVitais: this.valoresSinais(),
+      retornoEm: this.retornoEm || null
     };
   }
 

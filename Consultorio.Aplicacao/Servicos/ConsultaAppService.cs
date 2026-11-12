@@ -59,6 +59,7 @@ public class ConsultaAppService(
         var consulta = new Consulta(request.IdPaciente, request.IdMedico, evolucao, request.IdAgenda);
         consulta.DefinirDiagnostico(MapeadorClinico.CriarCid(request.CidCodigo, request.CidDescricao));
         consulta.RegistrarSinaisVitais(MapeadorClinico.CriarSinaisVitais(request.SinaisVitais));
+        consulta.DefinirRetorno(request.RetornoEm);
         var salva = await consultaRepositorio.Adicionar(consulta);
 
         if (request.IdAgenda.HasValue && request.IdAgenda.Value > 0)
@@ -101,6 +102,7 @@ public class ConsultaAppService(
         consulta.AtualizarEvolucao(new EvolucaoClinica(request.Observacao, request.Subjetivo, request.Objetivo, request.Avaliacao, request.Plano));
         consulta.DefinirDiagnostico(MapeadorClinico.CriarCid(request.CidCodigo, request.CidDescricao));
         consulta.RegistrarSinaisVitais(MapeadorClinico.CriarSinaisVitais(request.SinaisVitais));
+        consulta.DefinirRetorno(request.RetornoEm);
 
         var atualizada = await consultaRepositorio.Atualizar(consulta);
         return MapearResponse(atualizada);
@@ -201,7 +203,8 @@ public class ConsultaAppService(
             c.Plano,
             c.CidCodigo,
             c.CidDescricao,
-            MapeadorClinico.MapearSinaisVitais(c.SinaisVitais)
+            MapeadorClinico.MapearSinaisVitais(c.SinaisVitais),
+            c.RetornoEm
         );
     }
 }

@@ -90,6 +90,11 @@
                   <div class="detalhes">
                     @if (a.nomeMedico) { <span>{{ a.nomeMedico }}</span> }
                     @if (a.tipo && a.tipo !== 'Consulta') { <span class="tipo">{{ a.tipo }}</span> }
+                    @if (a.carteirinhaVencida && a.status !== 'Atendido' && a.status !== 'Faltou') {
+                      <span class="carteirinha-vencida" title="Confira a carteirinha antes do atendimento: o atendimento pode ser cobrado como particular">
+                        <ion-icon name="card-outline" aria-hidden="true"></ion-icon> Carteirinha vencida
+                      </span>
+                    }
                   </div>
 
                   @if (a.status === 'Aguardando') {
@@ -152,6 +157,12 @@
                         }
                         <ion-button size="small" color="success" (click)="executar(a, 'concluir')" [disabled]="processando.has(a.id)">
                           <ion-icon slot="start" name="checkmark-outline"></ion-icon> Concluir
+                        </ion-button>
+                      }
+                      @case ('Atendido') {
+                        <ion-button size="small" color="success" fill="outline" (click)="cobrar(a)" [disabled]="processando.has(a.id)"
+                                    title="Receber o pagamento deste atendimento">
+                          <ion-icon slot="start" name="cash-outline"></ion-icon> Receber
                         </ion-button>
                       }
                       @case ('Faltou') {

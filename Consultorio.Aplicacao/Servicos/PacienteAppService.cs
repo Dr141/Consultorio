@@ -12,7 +12,8 @@ namespace Consultorio.Aplicacao.Servicos;
 public class PacienteAppService(
     IPacienteRepositorio pacienteRepositorio,
     IPessoaRepositorio pessoaRepositorio,
-    ICacheService? cacheService = null) : IPacienteAppService
+    ICacheService? cacheService = null,
+    IConvenioRepositorio? convenioRepositorio = null) : IPacienteAppService
 {
     private const string CacheKeyTodos = "pacientes:todos";
 
@@ -191,6 +192,25 @@ public class PacienteAppService(
         return MapearResponse(atualizado);
     }
 
+    public async Task<PacienteResponse> AtualizarConvenioAsync(int id, ConvenioPacienteRequest request)
+    {
+        var paciente = await pacienteRepositorio.ObterDetalhadoPorId(id)
+            ?? throw new DomainException($"Paciente com id {id} não encontrado.");
+
+        if (request.IdConvenio.HasValue)
+        {
+            var convenio = convenioRepositorio is null ? null : await convenioRepositorio.ObterId(request.IdConvenio.Value);
+            DomainException.When(convenio is null, "Convênio não encontrado.");
+            DomainException.When(!convenio!.Ativo && paciente.IdConvenio != convenio.Id, "Convênio inativo não pode ser vinculado a pacientes.");
+        }
+
+        paciente.DefinirConvenio(request.IdConvenio, request.NumeroCarteirinha, request.ValidadeCarteirinha);
+        var atualizado = await pacienteRepositorio.Atualizar(paciente);
+        await LimparCache(id);
+        var recarregado = await pacienteRepositorio.ObterDetalhadoPorId(id) ?? atualizado;
+        return MapearResponse(recarregado);
+    }
+
     private async Task LimparCache(int id)
     {
         if (cacheService is not null)
@@ -215,6 +235,10 @@ public class PacienteAppService(
             p.Pessoa?.Email,
             p.Alergias,
             p.MedicamentosEmUso,
-            p.CondicoesCronicas
+            p.CondicoesCronicas,
+            p.IdConvenio,
+            p.Convenio?.Nome,
+            p.NumeroCarteirinha,
+            p.ValidadeCarteirinha
         );
 }

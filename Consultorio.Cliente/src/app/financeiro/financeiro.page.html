@@ -1,0 +1,270 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Financeiro</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      @if (aba === 'cobrancas') {
+        <ion-button class="btn-novo-desk" (click)="novaCobranca()" title="Lançar cobrança avulsa">
+          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+          <span class="ion-hide-md-down">Nova cobrança</span>
+        </ion-button>
+      }
+      @if (aba === 'convenios' && podeGerir) {
+        <ion-button class="btn-novo-desk" (click)="editarConvenio()" title="Cadastrar convênio">
+          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+          <span class="ion-hide-md-down">Novo convênio</span>
+        </ion-button>
+      }
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [value]="aba" (ionChange)="mudarAba($any($event).detail.value)" aria-label="Seção do financeiro">
+      <ion-segment-button value="cobrancas"><ion-label>Cobranças</ion-label></ion-segment-button>
+      <ion-segment-button value="precos"><ion-label>Tabela de preços</ion-label></ion-segment-button>
+      <ion-segment-button value="convenios"><ion-label>Convênios</ion-label></ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="atualizar($event)">
+    <ion-refresher-content pullingText="Puxe para atualizar" refreshingText="Atualizando..."></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="page-container">
+    @switch (aba) {
+      @case ('cobrancas') {
+        <div class="filtros-financeiro">
+          <div class="periodo-chips" role="group" aria-label="Período">
+            @for (p of [{ v: 'hoje', r: 'Hoje' }, { v: '7', r: '7 dias' }, { v: '30', r: '30 dias' }, { v: 'mes', r: 'Este mês' }]; track p.v) {
+              <ion-chip [outline]="periodo !== p.v" [color]="periodo === p.v ? 'primary' : 'medium'"
+                        [disabled]="status === 'Pendente'" (click)="mudarPeriodo($any(p.v))">{{ p.r }}</ion-chip>
+            }
+          </div>
+          <ion-segment [value]="status" (ionChange)="mudarStatus($any($event).detail.value)" aria-label="Situação" class="segment-status">
+            <ion-segment-button value="todas"><ion-label>Todas</ion-label></ion-segment-button>
+            <ion-segment-button value="Pendente"><ion-label>Em aberto</ion-label></ion-segment-button>
+            <ion-segment-button value="Paga"><ion-label>Pagas</ion-label></ion-segment-button>
+            <ion-segment-button value="Cancelada"><ion-label>Canceladas</ion-label></ion-segment-button>
+            <ion-segment-button value="Estornada"><ion-label>Estornadas</ion-label></ion-segment-button>
+          </ion-segment>
+          <ion-searchbar [value]="termoBusca" (ionInput)="termoBusca = $any($event).detail.value ?? ''; filtrar()" [debounce]="150"
+                         placeholder="Buscar por paciente, descrição ou convênio"></ion-searchbar>
+          @if (status === 'Pendente') {
+            <p class="dica-filtro">Mostrando todas as cobranças em aberto, de qualquer data.</p>
+          }
+        </div>
+
+        <div class="totais-financeiro">
+          <div class="total-item recebido">
+            <span>Recebido</span>
+            <strong>{{ totais.recebido | moeda }}</strong>
+          </div>
+          <div class="total-item aberto">
+            <span>Em aberto</span>
+            <strong>{{ totais.aberto | moeda }}</strong>
+          </div>
+          <div class="total-item vencido">
+            <span>Vencido</span>
+            <strong>{{ totais.vencido | moeda }}</strong>
+          </div>
+        </div>
+
+        @if (carregando && cobrancas.length === 0) {
+          <div class="loading-state" aria-busy="true">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p>Carregando cobranças...</p>
+          </div>
+        } @else if (visiveis.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="wallet-outline"></ion-icon>
+            <h3>Nenhuma cobrança encontrada</h3>
+            <p>As cobranças são geradas ao concluir atendimentos (com valor na tabela de preços) ou lançadas manualmente.</p>
+            <ion-button (click)="novaCobranca()">
+              <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+              Nova cobrança
+            </ion-button>
+          </div>
+        } @else {
+          <ion-grid class="ion-no-padding">
+            <ion-row>
+              @for (c of visiveis; track c.id) {
+                <ion-col size="12" size-md="6" size-xl="4">
+                  <ion-card class="registro-card cobranca-card" [class.cobranca-inativa]="c.status === 'Cancelada' || c.status === 'Estornada'">
+                    <ion-card-header>
+                      <div class="header-row">
+                        <ion-card-title [title]="c.nomePaciente">{{ c.nomePaciente }}</ion-card-title>
+                        <ion-badge [color]="corStatus(c)">{{ rotuloStatus(c) }}</ion-badge>
+                      </div>
+                      <ion-card-subtitle>{{ c.descricao }}</ion-card-subtitle>
+                    </ion-card-header>
+                    <ion-card-content>
+                      <div class="valor-linha">
+                        <span class="valor">{{ c.valorFinal | moeda }}</span>
+                        @if (c.desconto > 0) {
+                          <span class="valor-original">{{ c.valor | moeda }}</span>
+                        }
+                        <ion-chip [color]="c.nomeConvenio ? 'tertiary' : 'medium'" outline="true" class="chip-pagador">
+                          <ion-icon [name]="c.nomeConvenio ? 'business-outline' : 'person-outline'"></ion-icon>
+                          <ion-label>{{ c.nomeConvenio || 'Particular' }}</ion-label>
+                        </ion-chip>
+                      </div>
+                      <p class="detalhe-cobranca">
+                        @if (c.status === 'Paga' || c.status === 'Estornada') {
+                          Pago em {{ c.dtPagamento | dataBr:'dataHora' }} · {{ c.formaPagamentoNome }}
+                        } @else {
+                          Vencimento {{ c.dtVencimento | dataBr }}
+                        }
+                      </p>
+                      @if (c.motivoCancelamento) {
+                        <p class="detalhe-cobranca motivo">{{ c.status === 'Estornada' ? 'Estorno' : 'Cancelamento' }}: {{ c.motivoCancelamento }}</p>
+                      }
+
+                      <div class="card-actions">
+                        @if (c.status === 'Pendente') {
+                          <ion-button color="success" size="small" (click)="receber(c)">
+                            <ion-icon slot="start" name="cash-outline"></ion-icon>
+                            Receber
+                          </ion-button>
+                          <ion-button fill="clear" color="danger" size="small" (click)="cancelar(c)">
+                            <ion-icon slot="start" name="ban-outline"></ion-icon>
+                            Cancelar
+                          </ion-button>
+                        }
+                        @if (c.status === 'Paga') {
+                          <ion-button fill="outline" color="primary" size="small" (click)="recibo(c)">
+                            <ion-icon slot="start" name="receipt-outline"></ion-icon>
+                            Recibo
+                          </ion-button>
+                          @if (podeGerir) {
+                            <ion-button fill="clear" color="danger" size="small" (click)="estornar(c)">
+                              <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+                              Estornar
+                            </ion-button>
+                          }
+                        }
+                      </div>
+                    </ion-card-content>
+                  </ion-card>
+                </ion-col>
+              }
+            </ion-row>
+          </ion-grid>
+        }
+      }
+
+      @case ('precos') {
+        <div class="aviso-precos">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <span>
+            Ao concluir um atendimento, a cobrança é gerada com o valor do convênio do paciente (carteirinha válida)
+            ou, se não houver, com o valor particular. Deixe em branco para não gerar cobrança automática.
+          </span>
+        </div>
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            @for (t of tabelas; track t.idConvenio) {
+              <ion-col size="12" size-md="6" size-xl="4">
+                <ion-card class="registro-card tabela-card">
+                  <ion-card-header>
+                    <ion-card-title>{{ t.nome }}</ion-card-title>
+                    @if (!t.ativo) {
+                      <ion-card-subtitle>Convênio inativo</ion-card-subtitle>
+                    }
+                  </ion-card-header>
+                  <ion-card-content>
+                    @for (tipo of tipos; track tipo.valor) {
+                      <div class="preco-linha">
+                        <span>{{ tipo.nome }}</span>
+                        @if (podeGerir) {
+                          <ion-input type="number" inputmode="decimal" min="0" placeholder="—" [attr.aria-label]="'Valor de ' + tipo.nome + ' (' + t.nome + ')'"
+                                     [value]="preco(tipo.nome, t.idConvenio)?.valor"
+                                     (ionBlur)="salvarPreco(tipo, t.idConvenio, $any($event).target.value)"
+                                     (keyup.enter)="$any($event.target).blur()">
+                            <span slot="start">R$</span>
+                          </ion-input>
+                          @if (salvandoPreco === tipo.valor + '-' + (t.idConvenio ?? 0)) {
+                            <ion-spinner name="dots"></ion-spinner>
+                          }
+                        } @else {
+                          <strong>{{ preco(tipo.nome, t.idConvenio) ? (preco(tipo.nome, t.idConvenio)!.valor | moeda) : '—' }}</strong>
+                        }
+                      </div>
+                    }
+                  </ion-card-content>
+                </ion-card>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
+      }
+
+      @case ('convenios') {
+        <div class="lista-resumo">
+          <span class="lista-total"><strong>{{ conveniosVisiveis.length }}</strong> convênio(s)</span>
+          <ion-chip [outline]="!mostrarConveniosInativos" [color]="mostrarConveniosInativos ? 'primary' : 'medium'"
+                    (click)="mostrarConveniosInativos = !mostrarConveniosInativos" role="switch" [attr.aria-checked]="mostrarConveniosInativos">
+            <ion-icon [name]="mostrarConveniosInativos ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+            <ion-label>{{ mostrarConveniosInativos ? 'Exibindo inativos' : 'Mostrar inativos' }}</ion-label>
+          </ion-chip>
+        </div>
+        @if (conveniosVisiveis.length === 0) {
+          <div class="ion-text-center ion-padding empty-state">
+            <ion-icon name="business-outline"></ion-icon>
+            <h3>Nenhum convênio cadastrado</h3>
+            <p>Cadastre os planos de saúde atendidos para vincular aos pacientes e definir valores.</p>
+            @if (podeGerir) {
+              <ion-button (click)="editarConvenio()">
+                <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                Novo convênio
+              </ion-button>
+            }
+          </div>
+        } @else {
+          <ion-grid class="ion-no-padding">
+            <ion-row>
+              @for (c of conveniosVisiveis; track c.id) {
+                <ion-col size="12" size-md="6" size-xl="4">
+                  <ion-card class="registro-card" [class.registro-inativo]="!c.ativo">
+                    <ion-card-header>
+                      <div class="header-row">
+                        <ion-card-title>{{ c.nome }}</ion-card-title>
+                        @if (!c.ativo) { <ion-badge color="medium">Inativo</ion-badge> }
+                      </div>
+                      @if (c.registroAns) { <ion-card-subtitle>ANS {{ c.registroAns }}</ion-card-subtitle> }
+                    </ion-card-header>
+                    <ion-card-content>
+                      @if (c.telefone) {
+                        <div class="info-row"><ion-icon name="call-outline"></ion-icon><span>{{ c.telefone }}</span></div>
+                      }
+                      @if (c.observacao) {
+                        <p class="observacao-box"><em>{{ c.observacao }}</em></p>
+                      }
+                      @if (podeGerir) {
+                        <div class="card-actions">
+                          @if (c.ativo) {
+                            <ion-button fill="outline" size="small" (click)="editarConvenio(c)">
+                              <ion-icon slot="start" name="create-outline"></ion-icon>
+                              Editar
+                            </ion-button>
+                          }
+                          <ion-button fill="clear" size="small" [color]="c.ativo ? 'danger' : 'success'" (click)="alternarConvenio(c)">
+                            <ion-icon slot="start" [name]="c.ativo ? 'archive-outline' : 'refresh-outline'"></ion-icon>
+                            {{ c.ativo ? 'Inativar' : 'Reativar' }}
+                          </ion-button>
+                        </div>
+                      }
+                    </ion-card-content>
+                  </ion-card>
+                </ion-col>
+              }
+            </ion-row>
+          </ion-grid>
+        }
+      }
+    }
+  </div>
+</ion-content>

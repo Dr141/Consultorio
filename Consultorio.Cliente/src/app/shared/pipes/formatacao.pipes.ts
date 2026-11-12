@@ -77,3 +77,13 @@ export class TamanhoArquivoPipe implements PipeTransform {
     return formatarTamanhoArquivo(valor);
   }
 }
+
+const FORMATO_MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** Valor em reais: 1234.5 → "R$ 1.234,50". */
+@Pipe({ name: 'moeda', standalone: false })
+export class MoedaPipe implements PipeTransform {
+  transform(valor: number | null | undefined): string {
+    return FORMATO_MOEDA.format(Number(valor) || 0);
+  }
+}

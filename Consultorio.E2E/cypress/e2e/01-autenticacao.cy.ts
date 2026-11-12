@@ -44,7 +44,7 @@ describe('01 - Autenticação e Proteção de Rotas', () => {
 
     cy.url({ timeout: 10000 }).should('include', '/home');
     cy.get('.welcome-banner h2').should('be.visible');
-    cy.get('.cardHome').should('have.length', 7);
+    cy.get('.cardHome').should('have.length', 9);
   });
 
   it('Deve encerrar a sessão (Logout) através do menu lateral e retornar ao /login', () => {

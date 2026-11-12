@@ -11,4 +11,7 @@ public interface IAuditoriaRepositorio : IRepositorio<RegistroAuditoria>
         string? recurso = null,
         string? idRecurso = null,
         int limite = 500);
+
+    /// <summary>Data do último registro de cada usuário (e-mail em minúsculas).</summary>
+    Task<Dictionary<string, DateTime>> UltimaAtividadePorUsuario();
 }

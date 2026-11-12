@@ -138,6 +138,20 @@
                     </div>
                   }
 
+                  <div class="info-row">
+                    <ion-icon [name]="p.idConvenio ? 'business-outline' : 'person-outline'" aria-hidden="true"></ion-icon>
+                    @if (p.idConvenio) {
+                      <span>
+                        {{ p.nomeConvenio }} · {{ p.numeroCarteirinha }}
+                        @if (p.validadeCarteirinha) {
+                          <span [class.texto-vencido]="carteirinhaVencida(p)">· válida até {{ p.validadeCarteirinha | dataBr }}</span>
+                        }
+                      </span>
+                    } @else {
+                      <span>Particular</span>
+                    }
+                  </div>
+
                   @if (p.observacao) {
                     <p class="observacao-box"><em>{{ p.observacao }}</em></p>
                   }
@@ -164,6 +178,10 @@
                       }
                     }
                     @if (p.ativo !== false) {
+                      <ion-button fill="outline" color="tertiary" size="small" (click)="editarConvenio(p)" title="Convênio e carteirinha">
+                        <ion-icon slot="start" name="card-outline"></ion-icon>
+                        Convênio
+                      </ion-button>
                       <ion-button fill="outline" color="primary" size="small" (click)="editar(p)" [attr.aria-label]="'Editar ' + p.nome">
                         <ion-icon slot="start" name="create-outline"></ion-icon>
                         Editar

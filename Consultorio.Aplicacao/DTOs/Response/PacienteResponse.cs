@@ -14,5 +14,9 @@ public record PacienteResponse(
     string? Email = null,
     string? Alergias = null,
     string? MedicamentosEmUso = null,
-    string? CondicoesCronicas = null
+    string? CondicoesCronicas = null,
+    int? IdConvenio = null,
+    string? NomeConvenio = null,
+    string? NumeroCarteirinha = null,
+    DateTime? ValidadeCarteirinha = null
 );

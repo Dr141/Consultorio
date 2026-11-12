@@ -8,10 +8,48 @@
       <app-theme-toggle></app-theme-toggle>
     </ion-buttons>
   </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [value]="aba" (ionChange)="mudarAba($any($event).detail.value)" aria-label="Seção da auditoria">
+      <ion-segment-button value="trilha"><ion-label>Trilha de acessos</ion-label></ion-segment-button>
+      <ion-segment-button value="revisao"><ion-label>Revisão de contas</ion-label></ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <div class="page-container">
+    @if (aba === 'revisao') {
+      <div class="aviso-revisao">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>
+          Revise mensalmente quem tem acesso ao sistema. Contas sem uso, sem perfil ou com perfil de administrador
+          aparecem primeiro. Remova perfis ou bloqueie contas em <strong>Gestão de Usuários</strong>.
+        </span>
+      </div>
+      @if (carregandoRevisao) {
+        <ion-progress-bar type="indeterminate"></ion-progress-bar>
+      }
+      <ion-list lines="full" class="lista-revisao">
+        @for (u of acessos; track u.email) {
+          <ion-item>
+            <ion-icon slot="start" [name]="u.bloqueado ? 'lock-closed-outline' : (u.revisarAcesso ? 'alert-circle-outline' : 'checkmark-circle-outline')"
+                      [color]="u.bloqueado ? 'medium' : (u.revisarAcesso ? 'warning' : 'success')"></ion-icon>
+            <ion-label>
+              <h3>{{ u.email }}</h3>
+              <p>
+                {{ u.perfis.length ? u.perfis.join(', ') : 'Sem perfil' }}
+                · {{ u.ultimaAtividade ? 'última atividade em ' + (u.ultimaAtividade | dataBr:'dataHora') : 'nenhuma atividade registrada' }}
+                @if (u.bloqueado) { · bloqueada }
+                @if (!u.emailConfirmado) { · e-mail não confirmado }
+              </p>
+              @if (u.motivoRevisao) {
+                <p class="motivo-revisao">{{ u.motivoRevisao }}</p>
+              }
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    } @else {
     <ion-card class="filtros-card">
       <ion-card-header>
         <ion-card-title>Quem acessou o quê</ion-card-title>
@@ -89,6 +127,7 @@
           </ion-item>
         }
       </ion-list>
+    }
     }
   </div>
 </ion-content>

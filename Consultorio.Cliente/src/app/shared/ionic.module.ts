@@ -20,7 +20,7 @@ import {
   IonTitle, IonToast, IonToolbar
 } from '@ionic/angular';
 import { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
-import { CpfPipe, DataBrPipe, IdadePipe, LinhasPipe, SinaisVitaisPipe, TamanhoArquivoPipe, TelefonePipe } from './pipes/formatacao.pipes';
+import { CpfPipe, DataBrPipe, IdadePipe, LinhasPipe, MoedaPipe, SinaisVitaisPipe, TamanhoArquivoPipe, TelefonePipe } from './pipes/formatacao.pipes';
 import { AlertasClinicosComponent } from './alertas-clinicos/alertas-clinicos.component';
 import { AlertasModalComponent } from './alertas-clinicos/alertas-modal.component';
 import { BuscaCidComponent } from './busca-cid/busca-cid.component';
@@ -29,7 +29,7 @@ import { SelecionarPacienteComponent } from './selecionar-paciente/selecionar-pa
 
 const COMPARTILHADOS = [
   ThemeToggleComponent, CpfPipe, TelefonePipe, DataBrPipe, IdadePipe, MascaraDirective, SelecionarPacienteComponent,
-  SinaisVitaisPipe, LinhasPipe, TamanhoArquivoPipe, AlertasClinicosComponent, AlertasModalComponent, BuscaCidComponent
+  SinaisVitaisPipe, LinhasPipe, TamanhoArquivoPipe, MoedaPipe, AlertasClinicosComponent, AlertasModalComponent, BuscaCidComponent
 ];
 
 const IONIC_COMPONENTS = [

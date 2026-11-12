@@ -21,5 +21,7 @@ public record AgendaResponse(
     DateTime? DtFimAtendimento = null,
     DateTime? LembreteEnviadoEm = null,
     string? TelefonePaciente = null,
-    string? EmailPaciente = null
+    string? EmailPaciente = null,
+    bool TemConvenio = false,
+    bool CarteirinhaVencida = false
 );

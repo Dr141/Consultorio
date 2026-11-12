@@ -4,9 +4,10 @@ import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
 import { RoleService } from '../services/role/role.service';
-import { Agenda, Medico, StatusAgendamento } from '../types/types';
+import { Agenda, Cobranca, Medico, StatusAgendamento } from '../types/types';
 import { hojeInputData, paraDataLocal, paraInputData, rotuloDia } from '../shared/utils/formatadores';
 import { ConsultaModalComponent } from '../consultas/consulta-modal.component';
+import { PagamentoModalComponent } from '../financeiro/pagamento-modal.component';
 
 type AcaoAgenda = 'confirmar' | 'chegada' | 'iniciar' | 'concluir' | 'falta';
 
@@ -217,6 +218,46 @@ export class RecepcaoPage {
         },
         error: (err) => this.feedback.erro(err, 'Não foi possível atualizar o agendamento.')
       });
+  }
+
+  /**
+   * Recebimento do atendimento: usa a cobrança já gerada (automaticamente ao concluir)
+   * ou gera agora pela tabela de preços, e abre o recebimento.
+   */
+  cobrar(a: Agenda) {
+    this.processando.add(a.id);
+    this.api.obterCobrancasPendentes().subscribe({
+      next: (pendentes) => {
+        const existente = pendentes.find(c => c.idAgenda === a.id);
+        if (existente) {
+          this.processando.delete(a.id);
+          this.abrirPagamento(existente);
+          return;
+        }
+        this.api.gerarCobrancaAtendimento(a.id).subscribe({
+          next: (nova) => {
+            this.processando.delete(a.id);
+            this.abrirPagamento(nova);
+          },
+          error: (err) => {
+            this.processando.delete(a.id);
+            this.feedback.erro(err, 'Não foi possível gerar a cobrança deste atendimento.');
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        this.processando.delete(a.id);
+        this.feedback.erro(err, 'Não foi possível consultar as cobranças.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private async abrirPagamento(cobranca: Cobranca) {
+    this.cdr.detectChanges();
+    const modal = await this.modalCtrl.create({ component: PagamentoModalComponent, componentProps: { cobranca } });
+    await modal.present();
   }
 
   async registrarConsulta(a: Agenda) {

@@ -30,3 +30,5 @@ README.md
 !.git/refs/heads/**
 
 **/Consultorio.E2E
+
+backups/

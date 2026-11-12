@@ -161,6 +161,66 @@ Configuração (`appsettings.json` ou variáveis de ambiente do Docker, ver `.en
 
 ---
 
+## 💰 Financeiro, Convênios, Indicadores e Rotinas
+
+- **Convênios:** cadastro das operadoras (nome, registro ANS, contato). Cada paciente pode ter convênio, número e validade da carteirinha; sem convênio = particular. A fila do dia destaca carteirinhas vencidas.
+- **Tabela de preços:** valor por tipo de atendimento (consulta, retorno, exame, procedimento), particular e por convênio.
+- **Cobranças:** geradas automaticamente quando o atendimento é concluído, com o valor do convênio do paciente (carteirinha válida) ou o particular. Também podem ser lançadas à mão.
+  - Recebimento por Pix, dinheiro, cartão, transferência, boleto ou repasse do convênio, com desconto opcional.
+  - Nada é apagado: pendente é cancelada e paga é estornada, sempre com motivo. Estorno e resumo financeiro são da gestão.
+  - Recibo para impressão em `/financeiro/recibo/:id`, com o valor por extenso.
+- **Indicadores** (gestão): atendimentos, taxa de faltas, confirmação, ocupação da agenda, pacientes novos, exames e tempo médio de laudo, recebido / a receber / vencido, ticket médio, recebimentos por forma e por pagador e diagnósticos (CID) mais frequentes. Filtro por período e por médico.
+- **Pendências** (toda a equipe): exames atrasados, laudos prontos não entregues, carteirinhas vencidas ou vencendo, cobranças vencidas, consultas abertas há mais de 24 h e retornos sem horário marcado.
+- **Retorno:** o médico indica a data do retorno na consulta (atalhos de 7 dias a 6 meses).
+- **Revisão de acessos** (administrador, em Auditoria): usuários, perfis e última atividade; contas sem uso, sem perfil ou com perfil de administrador aparecem primeiro.
+
+### Rotinas automáticas da Fase 4
+
+Rodam junto com as da agenda (a cada `Rotinas:IntervaloMinutos`), cada uma isolada das demais:
+
+| Rotina | Quando | O que faz |
+|---|---|---|
+| Cobranças | A cada ciclo | Cria a cobrança dos atendimentos concluídos nos últimos 7 dias que ainda não têm (se houver preço) |
+| Laudo pronto | A cada ciclo | Avisa o paciente que o resultado está disponível, sem o conteúdo do laudo |
+| Lembrete de retorno | A cada ciclo | Alguns dias antes da data de retorno, lembra quem ainda não agendou |
+| Resumo do dia | 1x por dia, a partir de `HoraResumoDiario` | Médicos: quantidade e horários do dia (sem nomes de pacientes) e exames aguardando laudo. Gestão: pendências |
+| Indicadores do mês | 1x por mês | Indicadores do mês anterior para Administrador e Administrativo |
+| Revisão de acessos | 1x por mês | Lista aos administradores as contas que merecem revisão |
+
+As rotinas diárias e mensais registram a execução na tabela `ExecucaoRotina`, então um reinício do servidor não repete o envio. Configuração (seção `Clinica`):
+
+```json
+"Clinica": {
+  "GerarCobrancaAutomatica": true,
+  "PrazoPagamentoConvenioDias": 30,
+  "PrazoExameAtrasadoDias": 7,
+  "PrazoEntregaLaudoDias": 15,
+  "AntecedenciaLembreteRetornoDias": 5,
+  "AvisoValidadeCarteirinhaDias": 30,
+  "HoraResumoDiario": 7,
+  "DiasInatividadeRevisaoAcessos": 90
+}
+```
+
+### Backup e restauração
+
+O serviço `backup` do `docker-compose` faz `pg_dump` diário dos bancos `Consultorio` e `Identity` em `./backups` (configurável por `BACKUP_PASTA`), no horário `BACKUP_HORA_UTC` (padrão 5 = 02:00 em Brasília), mantendo `BACKUP_RETENCAO_DIAS` dias (padrão 14).
+
+```bash
+# Backup imediato
+docker compose exec backup sh /scripts/backup.sh agora
+
+# Restaurar (substitui os dados atuais do banco!)
+docker compose stop app
+docker compose exec -T db pg_restore -U postgres -d Consultorio --clean --if-exists < backups/Consultorio-AAAAMMDD-HHMMSS.dump
+docker compose exec -T db pg_restore -U postgres -d Identity --clean --if-exists < backups/Identity-AAAAMMDD-HHMMSS.dump
+docker compose start app
+```
+
+Os arquivos contêm dados de pacientes: guarde uma cópia fora do servidor (outro disco ou nuvem com criptografia) e teste a restauração periodicamente.
+
+---
+
 ## 🧪 Práticas de TDD e Testes Automatizados
 
 O sistema segue o ciclo de **Test-Driven Development (TDD)**, com cobertura para regras de domínio, orquestração de serviços, cache distribuído e controllers da API.
@@ -291,6 +351,16 @@ O repositório possui automação completa configurada em `.github/workflows/rel
 | | `PATCH` | `/api/documento/{id}/cancelar` | Cancela com motivo (continua no histórico) |
 | | `GET` | `/api/publico/documento/{codigo}` | Verificação pública de autenticidade |
 | **CID-10** | `GET` | `/api/cid?busca=` | Busca de códigos frequentes |
+| **Convênios** | `GET` / `POST` | `/api/convenio` | Lista e cadastra convênios |
+| | `GET` / `PUT` | `/api/convenio/precos` | Tabela de preços (particular e por convênio) |
+| | `PUT` | `/api/paciente/{id}/convenio` | Convênio e carteirinha do paciente |
+| **Financeiro** | `GET` / `POST` | `/api/financeiro/cobrancas` | Lista e lança cobranças |
+| | `POST` | `/api/financeiro/atendimento/{idAgenda}` | Gera a cobrança de um atendimento |
+| | `PATCH` | `/api/financeiro/cobrancas/{id}/pagar` · `/cancelar` · `/estornar` | Recebimento, cancelamento e estorno |
+| | `GET` | `/api/financeiro/cobrancas/{id}/recibo` | Dados do recibo |
+| **Indicadores** | `GET` | `/api/indicadores?inicio=&fim=&idMedico=` | Painel de gestão |
+| | `GET` | `/api/indicadores/pendencias` | Pendências operacionais |
+| **Auditoria** | `GET` | `/api/auditoria/revisao-acessos` | Revisão de contas e perfis |
 | **Autenticação** | `POST` | `/api/usuario/login` | Login com retorno de token JWT |
 | | `POST` | `/api/usuario/registrar` | Registro de novo usuário |
 

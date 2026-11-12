@@ -55,6 +55,11 @@ public class Exame : Entidade
         DtRealizacao = DateTime.UtcNow;
     }
 
+    /// <summary>Quando o paciente foi avisado de que o resultado está disponível.</summary>
+    public DateTime? AvisoLaudoEnviadoEm { get; private set; }
+
+    public void MarcarAvisoLaudoEnviado() => AvisoLaudoEnviadoEm = DateTime.UtcNow;
+
     /// <summary>Resultado entregue ao paciente.</summary>
     public void RegistrarEntrega()
     {

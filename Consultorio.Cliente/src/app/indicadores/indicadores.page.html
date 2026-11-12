@@ -1,0 +1,210 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Voltar"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Indicadores</ion-title>
+    <ion-buttons slot="end">
+      <app-theme-toggle></app-theme-toggle>
+      <ion-button (click)="pendencias()" title="Pendências operacionais">
+        <ion-icon slot="start" name="alert-circle-outline"></ion-icon>
+        <span class="ion-hide-md-down">Pendências</span>
+      </ion-button>
+      <ion-button (click)="imprimir()" title="Imprimir o painel">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="page-container">
+    <ion-card class="filtros-card no-print">
+      <ion-card-content>
+        <div class="atalhos">
+          @for (a of atalhos; track a.valor) {
+            <ion-chip [outline]="atalho !== a.valor" [color]="atalho === a.valor ? 'primary' : 'medium'" (click)="aplicarAtalho(a.valor)">{{ a.rotulo }}</ion-chip>
+          }
+        </div>
+        <ion-grid class="ion-no-padding">
+          <ion-row>
+            <ion-col size="6" size-md="3">
+              <ion-item class="form-item">
+                <ion-input type="date" label="De" labelPlacement="floating" [value]="inicio" (ionChange)="mudarData('inicio', $any($event).detail.value)"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6" size-md="3">
+              <ion-item class="form-item">
+                <ion-input type="date" label="Até" labelPlacement="floating" [value]="fim" (ionChange)="mudarData('fim', $any($event).detail.value)"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="12" size-md="6">
+              <ion-item class="form-item">
+                <ion-select label="Médico" labelPlacement="floating" [value]="idMedico" (ionChange)="mudarMedico($any($event).detail.value)"
+                            cancelText="Cancelar" okText="Confirmar">
+                  <ion-select-option [value]="null">Todos os médicos</ion-select-option>
+                  @for (m of medicos; track m.id) {
+                    <ion-select-option [value]="m.id">{{ m.nome }}</ion-select-option>
+                  }
+                </ion-select>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    @if (carregando && !dados) {
+      <div class="loading-state" aria-busy="true"><ion-spinner name="crescent"></ion-spinner><p>Calculando indicadores...</p></div>
+    } @else if (dados) {
+      @if (carregando) { <ion-progress-bar type="indeterminate" class="no-print"></ion-progress-bar> }
+      <p class="periodo-titulo">Período de {{ dados.inicio | dataBr }} a {{ dados.fim | dataBr }}</p>
+
+      <h3 class="grupo-titulo">Atendimento</h3>
+      <div class="kpis">
+        <div class="kpi">
+          <span class="kpi-rotulo">Atendimentos realizados</span>
+          <strong>{{ dados.atendidos }}</strong>
+          <small>de {{ dados.agendamentos }} agendados</small>
+        </div>
+        <div class="kpi" [class.alerta]="dados.taxaFaltas >= 15">
+          <span class="kpi-rotulo">Faltas</span>
+          <strong>{{ decimal(dados.taxaFaltas) }}%</strong>
+          <small>{{ dados.faltas }} paciente(s)</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">Confirmação</span>
+          <strong>{{ decimal(dados.taxaConfirmacao) }}%</strong>
+          <small>dos agendamentos confirmados</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">Ocupação da agenda</span>
+          <strong>{{ decimal(dados.taxaOcupacao) }}%</strong>
+          <small>{{ dados.horariosLivres }} horário(s) livre(s)</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">Pacientes novos</span>
+          <strong>{{ dados.novosPacientes }}</strong>
+          <small>{{ dados.consultasRegistradas }} consulta(s) registrada(s)</small>
+        </div>
+      </div>
+
+      <h3 class="grupo-titulo">Financeiro</h3>
+      <div class="kpis">
+        <div class="kpi positivo">
+          <span class="kpi-rotulo">Recebido</span>
+          <strong>{{ dados.financeiro.recebido | moeda }}</strong>
+          <small>{{ dados.financeiro.quantidadeRecebida }} pagamento(s)</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">Ticket médio</span>
+          <strong>{{ dados.financeiro.ticketMedio | moeda }}</strong>
+          <small>por pagamento</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">A receber (hoje)</span>
+          <strong>{{ dados.financeiro.aReceber | moeda }}</strong>
+          <small [class.texto-alerta]="dados.financeiro.vencido > 0">{{ dados.financeiro.vencido | moeda }} vencido</small>
+        </div>
+        @if (dados.financeiro.estornado > 0) {
+          <div class="kpi">
+            <span class="kpi-rotulo">Estornado</span>
+            <strong>{{ dados.financeiro.estornado | moeda }}</strong>
+            <small>no período</small>
+          </div>
+        }
+      </div>
+
+      <h3 class="grupo-titulo">Exames</h3>
+      <div class="kpis">
+        <div class="kpi">
+          <span class="kpi-rotulo">Solicitados</span>
+          <strong>{{ dados.examesSolicitados }}</strong>
+          <small>{{ dados.examesLaudados }} com laudo</small>
+        </div>
+        <div class="kpi">
+          <span class="kpi-rotulo">Tempo médio de laudo</span>
+          <strong>{{ dados.tempoMedioLaudoDias !== null && dados.tempoMedioLaudoDias !== undefined ? decimal(dados.tempoMedioLaudoDias) : '—' }}</strong>
+          <small>dia(s) da solicitação ao laudo</small>
+        </div>
+        <button type="button" class="kpi kpi-botao" [class.alerta]="dados.examesAtrasados > 0" (click)="pendencias()">
+          <span class="kpi-rotulo">Atrasados agora</span>
+          <strong>{{ dados.examesAtrasados }}</strong>
+          <small>ver pendências</small>
+        </button>
+      </div>
+
+      <div class="graficos">
+        <section class="grafico">
+          <h4>Atendimentos por médico</h4>
+          @if (dados.porMedico.length === 0) {
+            <p class="vazio">Sem agendamentos no período.</p>
+          }
+          @for (m of dados.porMedico; track m.idMedico) {
+            <div class="barra-linha">
+              <span class="barra-rotulo" [title]="m.nome">{{ m.nome }}</span>
+              <div class="barra-trilho" [attr.aria-label]="m.atendidos + ' atendidos e ' + m.faltas + ' faltas de ' + m.agendados + ' agendados'">
+                <div class="barra atendidos" [style.width.%]="maxMedico ? (m.atendidos / maxMedico) * 100 : 0"></div>
+                <div class="barra faltas" [style.width.%]="maxMedico ? (m.faltas / maxMedico) * 100 : 0"></div>
+              </div>
+              <span class="barra-valor">{{ m.atendidos }}/{{ m.agendados }}</span>
+            </div>
+          }
+          @if (dados.porMedico.length) {
+            <p class="legenda"><span class="ponto atendidos"></span> atendidos <span class="ponto faltas"></span> faltas · total = agendados</p>
+          }
+        </section>
+
+        <section class="grafico">
+          <h4>Recebido por forma de pagamento</h4>
+          @if (dados.financeiro.porForma.length === 0) { <p class="vazio">Nenhum recebimento no período.</p> }
+          @for (i of dados.financeiro.porForma; track i.rotulo) {
+            <div class="barra-linha">
+              <span class="barra-rotulo">{{ i.rotulo }}</span>
+              <div class="barra-trilho"><div class="barra" [style.width.%]="largura(i.valor, dados.financeiro.porForma, 'valor')"></div></div>
+              <span class="barra-valor">{{ i.valor | moeda }}</span>
+            </div>
+          }
+        </section>
+
+        <section class="grafico">
+          <h4>Recebido por pagador</h4>
+          @if (dados.financeiro.porConvenio.length === 0) { <p class="vazio">Nenhum recebimento no período.</p> }
+          @for (i of dados.financeiro.porConvenio; track i.rotulo) {
+            <div class="barra-linha">
+              <span class="barra-rotulo">{{ i.rotulo }}</span>
+              <div class="barra-trilho"><div class="barra" [style.width.%]="largura(i.valor, dados.financeiro.porConvenio, 'valor')"></div></div>
+              <span class="barra-valor">{{ i.valor | moeda }}</span>
+            </div>
+          }
+        </section>
+
+        <section class="grafico">
+          <h4>Tipos de atendimento</h4>
+          @if (dados.porTipoAtendimento.length === 0) { <p class="vazio">Sem agendamentos no período.</p> }
+          @for (i of dados.porTipoAtendimento; track i.rotulo) {
+            <div class="barra-linha">
+              <span class="barra-rotulo">{{ i.rotulo }}</span>
+              <div class="barra-trilho"><div class="barra" [style.width.%]="largura(i.quantidade, dados.porTipoAtendimento, 'quantidade')"></div></div>
+              <span class="barra-valor">{{ i.quantidade }}</span>
+            </div>
+          }
+        </section>
+
+        <section class="grafico grafico-largo">
+          <h4>Diagnósticos mais frequentes (CID-10)</h4>
+          @if (dados.diagnosticosFrequentes.length === 0) {
+            <p class="vazio">Nenhuma consulta com CID registrado no período.</p>
+          }
+          @for (i of dados.diagnosticosFrequentes; track i.rotulo) {
+            <div class="barra-linha">
+              <span class="barra-rotulo" [title]="i.rotulo">{{ i.rotulo }}</span>
+              <div class="barra-trilho"><div class="barra" [style.width.%]="largura(i.quantidade, dados.diagnosticosFrequentes, 'quantidade')"></div></div>
+              <span class="barra-valor">{{ i.quantidade }}</span>
+            </div>
+          }
+        </section>
+      </div>
+    }
+  </div>
+</ion-content>

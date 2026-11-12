@@ -54,6 +54,14 @@ const routes: Routes = [
   {
     path: 'documento',
     loadChildren: () => import('./documentos/documento.module').then(m => m.DocumentoPageModule)
+  },
+  {
+    path: 'financeiro',
+    loadChildren: () => import('./financeiro/financeiro.module').then(m => m.FinanceiroPageModule)
+  },
+  {
+    path: 'indicadores',
+    loadChildren: () => import('./indicadores/indicadores.module').then(m => m.IndicadoresPageModule)
   }
 ];
 

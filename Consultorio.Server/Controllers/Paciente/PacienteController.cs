@@ -119,4 +119,20 @@ public class PacienteController(IPacienteAppService pacienteAppService) : Contro
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPut("{id:int}/convenio")]
+    [EndpointSummary("Definir convênio e carteirinha do paciente (sem convênio = particular)")]
+    [ProducesResponseType(typeof(PacienteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PacienteResponse>> AtualizarConvenio(int id, [FromBody] ConvenioPacienteRequest request)
+    {
+        try
+        {
+            return Ok(await pacienteAppService.AtualizarConvenioAsync(id, request));
+        }
+        catch (DomainException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

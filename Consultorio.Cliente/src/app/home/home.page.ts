@@ -24,6 +24,7 @@ export interface ResumoDia {
 })
 export class HomePage implements OnInit {
   public resumo?: ResumoDia;
+  public pendencias?: number;
   public saudacao = '';
   public hojeExtenso = '';
 
@@ -58,6 +59,10 @@ export class HomePage implements OnInit {
 
   /** Números do dia exibidos no topo do painel. Falhas isoladas não impedem o restante. */
   carregarResumo(): void {
+    this.api.obterPendencias().subscribe({
+      next: (p) => this.pendencias = p.total,
+      error: () => this.pendencias = undefined
+    });
     forkJoin({
       pacientes: this.api.obterPacientes().pipe(catchError(() => of(null))),
       agendas: this.api.obterAgendas().pipe(catchError(() => of(null))),
@@ -120,6 +125,25 @@ export class HomePage implements OnInit {
 
   public ehAdmin(): boolean {
     return this.role.ehAdmin();
+  }
+
+  public ehGestao(): boolean {
+    return this.role.ehGestao();
+  }
+
+  public financeiroNav() {
+    (document.activeElement as HTMLElement)?.blur();
+    this.navCtrl.navigateForward('/financeiro');
+  }
+
+  public indicadoresNav() {
+    (document.activeElement as HTMLElement)?.blur();
+    this.navCtrl.navigateForward('/indicadores');
+  }
+
+  public pendenciasNav() {
+    (document.activeElement as HTMLElement)?.blur();
+    this.navCtrl.navigateForward('/indicadores/pendencias');
   }
 
   public ehClinico(): boolean {

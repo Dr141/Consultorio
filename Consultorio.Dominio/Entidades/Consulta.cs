@@ -93,6 +93,29 @@ public class Consulta : Entidade
         Plano = evolucao.Plano;
     }
 
+    /// <summary>Data sugerida pelo médico para o retorno do paciente.</summary>
+    public DateTime? RetornoEm { get; private set; }
+    public DateTime? LembreteRetornoEnviadoEm { get; private set; }
+
+    public void DefinirRetorno(DateTime? data)
+    {
+        GarantirEditavel();
+        if (data is null)
+        {
+            RetornoEm = null;
+            return;
+        }
+
+        var dia = data.Value.Date;
+        var referencia = DtCriacao.Date;
+        DomainException.When(dia <= referencia, "A data de retorno deve ser posterior à consulta.");
+        DomainException.When(dia > referencia.AddYears(1), "A data de retorno deve ser em até um ano.");
+        if (RetornoEm?.Date != dia) LembreteRetornoEnviadoEm = null;
+        RetornoEm = DateTime.SpecifyKind(dia, DateTimeKind.Utc);
+    }
+
+    public void MarcarLembreteRetornoEnviado() => LembreteRetornoEnviadoEm = DateTime.UtcNow;
+
     private void GarantirEditavel()
     {
         DomainException.When(Status == StatusConsulta.Finalizada, "Consulta finalizada não pode ser editada. Registre um adendo.");

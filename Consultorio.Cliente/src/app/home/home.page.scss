@@ -177,3 +177,32 @@ ion-col {
     color: var(--ion-color-primary);
   }
 }
+
+/* Cartões sem foto (Fase 4): ícone grande sobre fundo em degradê */
+.cardHome .card-img-wrapper.card-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 64px;
+    color: #ffffff;
+    transition: transform 0.3s ease;
+  }
+
+  &.financeiro {
+    background: linear-gradient(135deg, #16a34a, #0d9488);
+  }
+
+  &.indicadores {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+  }
+}
+
+.cardHome:hover .card-img-wrapper.card-icone ion-icon {
+  transform: scale(1.08);
+}
+
+.resumo-dia .resumo-item.resumo-alerta ion-icon {
+  color: var(--ion-color-danger);
+}

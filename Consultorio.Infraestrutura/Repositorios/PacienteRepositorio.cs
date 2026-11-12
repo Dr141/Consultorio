@@ -12,6 +12,7 @@ public class PacienteRepositorio(ConsultorioContexto contexto) : Repositorio<Pac
     {
         return await _contexto.Paciente
             .Include(p => p.Pessoa)
+            .Include(p => p.Convenio)
             .Include(p => p.Consultas)
             .Include(p => p.Exames)
             .Include(p => p.Agendas)
@@ -22,6 +23,7 @@ public class PacienteRepositorio(ConsultorioContexto contexto) : Repositorio<Pac
     {
         return await _contexto.Paciente
             .Include(p => p.Pessoa)
+            .Include(p => p.Convenio)
             .OrderBy(p => p.Pessoa.Nome)
             .AsNoTracking()
             .ToListAsync();

@@ -6,8 +6,9 @@ import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
 import { RoleService } from '../services/role/role.service';
 import { Paciente } from '../types/types';
-import { correspondeBusca } from '../shared/utils/formatadores';
+import { correspondeBusca, hojeInputData, paraInputData } from '../shared/utils/formatadores';
 import { PacienteModalComponent } from './paciente-modal.component';
+import { ConvenioPacienteModalComponent } from './convenio-paciente-modal.component';
 import { AlertasModalComponent } from '../shared/alertas-clinicos/alertas-modal.component';
 import { DocumentoModalComponent } from '../documentos/documento-modal.component';
 
@@ -106,6 +107,20 @@ export class PacientesPage {
       this.feedback.sucesso(paciente ? 'Dados do paciente atualizados.' : 'Paciente cadastrado com sucesso.');
       this.carregarPacientes();
     }
+  }
+
+  async editarConvenio(paciente: Paciente) {
+    const modal = await this.modalCtrl.create({
+      component: ConvenioPacienteModalComponent,
+      componentProps: { paciente }
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss();
+    if (data) this.carregarPacientes();
+  }
+
+  carteirinhaVencida(p: Paciente): boolean {
+    return !!p.idConvenio && !!p.validadeCarteirinha && paraInputData(p.validadeCarteirinha) < hojeInputData();
   }
 
   async editarAlertas(paciente: Paciente) {

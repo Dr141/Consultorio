@@ -27,8 +27,10 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     cy.aguardarCarregamento();
 
     // Valida a folha de ofício gerada (o ofício é longo: cada trecho é rolado até a área visível)
+    // A folha inteira é mais alta que a tela (o centro dela fica fora da área visível), então a visibilidade
+    // é conferida trecho a trecho; para a folha basta existir.
     const visivel = (seletor: string, texto: string) => cy.contains(seletor, texto).scrollIntoView().should('be.visible');
-    cy.get('.oficio-sheet').scrollIntoView().should('be.visible');
+    cy.get('.oficio-sheet').should('exist');
     visivel('.timbre-text h1', 'Consultório de Gestão Clínica');
     visivel('.oficio-meta .oficio-num', 'OF-');
     visivel('.secao-titulo', '1. Identificação do Paciente');
@@ -57,6 +59,7 @@ describe('09 - Prontuário do Paciente em Formato de Ofício', () => {
     cy.contains('ion-button', 'Gerar Prontuário').click();
     cy.aguardarCarregamento();
 
-    cy.get('.oficio-sheet').scrollIntoView().should('be.visible');
+    cy.get('.oficio-sheet').should('exist');
+    cy.contains('.secao-titulo', '1. Identificação do Paciente').scrollIntoView().should('be.visible');
   });
 });

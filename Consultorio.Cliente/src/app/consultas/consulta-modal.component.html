@@ -126,6 +126,32 @@
     <p class="secao-formulario">Diagnóstico (CID-10)</p>
     <app-busca-cid [valor]="cid" (valorChange)="definirCid($event)"></app-busca-cid>
 
+    <p class="secao-formulario">Retorno</p>
+    <div class="retorno-linha">
+      <div class="retorno-chips" role="group" aria-label="Retorno em">
+        @for (o of opcoesRetorno; track o.dias) {
+          <ion-chip [outline]="diasAteRetorno !== o.dias" [color]="diasAteRetorno === o.dias ? 'primary' : 'medium'" (click)="definirRetornoEmDias(o.dias)">
+            {{ o.rotulo }}
+          </ion-chip>
+        }
+        @if (retornoEm) {
+          <ion-chip outline="true" color="danger" (click)="definirRetorno('')">
+            <ion-icon name="close-outline"></ion-icon>
+            <ion-label>Sem retorno</ion-label>
+          </ion-chip>
+        }
+      </div>
+      <ion-item class="form-item retorno-data">
+        <ion-input type="date" label="Retornar em" labelPlacement="floating" [value]="retornoEm"
+                   (ionInput)="definirRetorno($any($event).detail.value)"></ion-input>
+      </ion-item>
+    </div>
+    @if (erroRetorno) {
+      <p class="dica-evolucao erro">{{ erroRetorno }}</p>
+    } @else if (retornoEm) {
+      <p class="dica-evolucao">Se o paciente não agendar, ele recebe um lembrete alguns dias antes e o retorno aparece nas pendências da recepção.</p>
+    }
+
     <ion-item class="form-item" lines="none">
       <ion-toggle [checked]="finalizarAoSalvar" (ionChange)="finalizarAoSalvar = $any($event).detail.checked" justify="space-between">
         <span class="toggle-rotulo">Finalizar ao salvar</span>

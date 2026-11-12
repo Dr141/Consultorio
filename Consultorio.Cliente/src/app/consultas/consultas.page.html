@@ -112,6 +112,12 @@
                 </ion-card-header>
 
                 <ion-card-content>
+                  @if (c.retornoEm) {
+                    <div class="cid-tag retorno-tag">
+                      <ion-icon name="repeat-outline" aria-hidden="true"></ion-icon>
+                      Retorno previsto: {{ c.retornoEm | dataBr }}
+                    </div>
+                  }
                   @if (c.cidCodigo) {
                     <div class="cid-tag" [title]="c.cidDescricao || ''">
                       <ion-icon name="pricetag-outline" aria-hidden="true"></ion-icon>

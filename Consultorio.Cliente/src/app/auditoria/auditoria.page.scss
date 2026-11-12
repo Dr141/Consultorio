@@ -31,3 +31,29 @@
     text-align: center;
   }
 }
+
+.aviso-revisao {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  font-size: 14px;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+    color: var(--ion-color-primary);
+  }
+}
+
+.lista-revisao {
+  border-radius: 12px;
+
+  .motivo-revisao {
+    color: var(--ion-color-warning-shade);
+    font-weight: 600;
+  }
+}

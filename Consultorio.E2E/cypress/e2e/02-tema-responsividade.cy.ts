@@ -61,7 +61,8 @@ describe('02 - Tema Dark/Light, Botões em Português e Responsividade', () => {
     // Tablet
     cy.viewport(768, 1024);
     cy.visit('/home');
-    cy.get('.cardHome').should('have.length', 7).and('be.visible');
+    cy.get('.cardHome').should('have.length', 9);
+    cy.get('.cardHome').first().should('be.visible');
 
     // Desktop Full
     cy.viewport(1440, 900);

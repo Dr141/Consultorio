@@ -17,6 +17,43 @@ public class Paciente : Entidade
     public string? MedicamentosEmUso { get; private set; }
     public string? CondicoesCronicas { get; private set; }
 
+    // Convênio (plano de saúde) do paciente; sem convênio = particular.
+    public int? IdConvenio { get; private set; }
+    public Convenio? Convenio { get; private set; }
+    public string? NumeroCarteirinha { get; private set; }
+    public DateTime? ValidadeCarteirinha { get; private set; }
+
+    public void DefinirConvenio(int? idConvenio, string? numeroCarteirinha, DateTime? validade)
+    {
+        if (idConvenio is null)
+        {
+            IdConvenio = null;
+            Convenio = null;
+            NumeroCarteirinha = null;
+            ValidadeCarteirinha = null;
+            return;
+        }
+
+        DomainException.When(idConvenio <= 0, "Convênio inválido.");
+        var numero = (numeroCarteirinha ?? string.Empty).Trim();
+        DomainException.When(numero.Length < 3 || numero.Length > 30, "Informe o número da carteirinha (3 a 30 caracteres).");
+
+        if (IdConvenio != idConvenio) Convenio = null;
+        IdConvenio = idConvenio;
+        NumeroCarteirinha = numero;
+        ValidadeCarteirinha = validade.HasValue ? DateTime.SpecifyKind(validade.Value.Date, DateTimeKind.Utc) : null;
+    }
+
+    /// <summary>Carteirinha vencida na data informada (sem validade cadastrada = não vence).</summary>
+    public bool CarteirinhaVencida(DateTime hoje) =>
+        IdConvenio.HasValue && ValidadeCarteirinha.HasValue && ValidadeCarteirinha.Value.Date < hoje.Date;
+
+    /// <summary>Carteirinha ainda válida que vence dentro do prazo informado.</summary>
+    public bool CarteirinhaVencendo(DateTime hoje, int dias) =>
+        IdConvenio.HasValue && ValidadeCarteirinha.HasValue
+        && ValidadeCarteirinha.Value.Date >= hoje.Date
+        && ValidadeCarteirinha.Value.Date <= hoje.Date.AddDays(dias);
+
     public void AtualizarAlertas(string? alergias, string? medicamentosEmUso, string? condicoesCronicas)
     {
         Alergias = NormalizarLista(alergias, "Alergias");

@@ -24,7 +24,8 @@ public record ConsultaRequest(
     [StringLength(4000)] string? Plano = null,
     [StringLength(10)] string? CidCodigo = null,
     [StringLength(200)] string? CidDescricao = null,
-    SinaisVitaisDto? SinaisVitais = null
+    SinaisVitaisDto? SinaisVitais = null,
+    DateTime? RetornoEm = null
 );
 
 /// <summary>Atualização da evolução de uma consulta ainda aberta.</summary>
@@ -36,7 +37,8 @@ public record EvolucaoRequest(
     [StringLength(4000)] string? Plano = null,
     [StringLength(10)] string? CidCodigo = null,
     [StringLength(200)] string? CidDescricao = null,
-    SinaisVitaisDto? SinaisVitais = null
+    SinaisVitaisDto? SinaisVitais = null,
+    DateTime? RetornoEm = null
 );
 
 public record SinaisVitaisDto(

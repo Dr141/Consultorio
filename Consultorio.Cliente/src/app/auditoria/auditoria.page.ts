@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ConsultorioApiService } from '../services/api/consultorio-api.service';
 import { FeedbackService } from '../services/feedback/feedback.service';
-import { RegistroAuditoria } from '../types/types';
+import { AcessoUsuario, RegistroAuditoria } from '../types/types';
 import { hojeInputData, paraInputData } from '../shared/utils/formatadores';
 
 /**
@@ -18,7 +18,10 @@ import { hojeInputData, paraInputData } from '../shared/utils/formatadores';
 export class AuditoriaPage {
   public registros: RegistroAuditoria[] = [];
   public carregando = false;
-  public readonly recursos = ['Consulta', 'Exame', 'Paciente', 'Prontuario'];
+  public readonly recursos = ['Consulta', 'Exame', 'Paciente', 'Prontuario', 'Documento', 'Financeiro', 'Convenio'];
+  public aba: 'trilha' | 'revisao' = 'trilha';
+  public acessos: AcessoUsuario[] = [];
+  public carregandoRevisao = false;
 
   public dataInicio = paraInputData(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
   public dataFim = hojeInputData();
@@ -34,6 +37,24 @@ export class AuditoriaPage {
 
   ionViewWillEnter() {
     this.buscar();
+  }
+
+  mudarAba(valor: string | undefined) {
+    this.aba = valor === 'revisao' ? 'revisao' : 'trilha';
+    if (this.aba === 'revisao') this.carregarRevisao();
+  }
+
+  carregarRevisao() {
+    this.carregandoRevisao = true;
+    this.api.obterRevisaoAcessos()
+      .pipe(finalize(() => {
+        this.carregandoRevisao = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: (lista) => this.acessos = lista,
+        error: (err) => this.feedback.erro(err, 'Não foi possível carregar a revisão de acessos.')
+      });
   }
 
   buscar() {

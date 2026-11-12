@@ -30,6 +30,31 @@ public class ConsultaRepositorio(ConsultorioContexto contexto) : Repositorio<Con
             .ToListAsync();
     }
 
+    public async Task<List<Consulta>> ObterComRetornoEntre(DateTime inicio, DateTime fim)
+    {
+        var ini = DateTime.SpecifyKind(inicio.Date, DateTimeKind.Utc);
+        var f = DateTime.SpecifyKind(fim.Date, DateTimeKind.Utc);
+        return await _contexto.Consulta
+            .Include(c => c.Paciente).ThenInclude(p => p.Pessoa)
+            .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
+            .Where(c => c.RetornoEm != null && c.RetornoEm >= ini && c.RetornoEm <= f
+                        && c.Status != Consultorio.Dominio.Enumerados.StatusConsulta.Anulada)
+            .ToListAsync();
+    }
+
+    public async Task<List<Consulta>> ObterPorPeriodo(DateTime inicio, DateTime fim)
+    {
+        // DtCriacao é instante UTC; o filtro usa o dia inteiro com folga de fuso e é refinado no serviço.
+        var ini = DateTime.SpecifyKind(inicio.Date.AddDays(-1), DateTimeKind.Utc);
+        var f = DateTime.SpecifyKind(fim.Date.AddDays(2), DateTimeKind.Utc);
+        return await _contexto.Consulta
+            .Include(c => c.Medico).ThenInclude(m => m.Pessoa)
+            .Include(c => c.Agenda)
+            .Where(c => c.DtCriacao >= ini && c.DtCriacao < f)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task<List<Consulta>> ObterPorPaciente(int idPaciente)
     {
         return await _contexto.Consulta

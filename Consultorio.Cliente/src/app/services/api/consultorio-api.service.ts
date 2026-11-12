@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { CacheService } from '../cache/cache.service';
 import { Observable, catchError, throwError } from 'rxjs';
-import { AlertasClinicos, Agenda, BloqueioAgenda, BloqueioCriado, Cid, Consulta, DocumentoClinico, DocumentoRequest, EvolucaoClinica, ExameAnexo, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
+import { AcessoUsuario, AlertasClinicos, Agenda, Cobranca, Convenio, Indicadores, Pendencias, Recibo, ResumoFinanceiro, TabelaPreco, BloqueioAgenda, BloqueioCriado, Cid, Consulta, DocumentoClinico, DocumentoRequest, EvolucaoClinica, ExameAnexo, Especialidade, Exame, GradeRequest, GradeResultado, Medico, Paciente, Pessoa, ProntuarioRelatorio, RegistroAuditoria } from '../../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -84,6 +84,10 @@ export class ConsultorioApiService {
 
   atualizarAlertasPaciente(id: number, alertas: AlertasClinicos): Observable<Paciente> {
     return this.observable(this.http.put<Paciente>(`/api/paciente/${id}/alertas`, alertas));
+  }
+
+  atualizarConvenioPaciente(id: number, dados: { idConvenio: number | null; numeroCarteirinha: string | null; validadeCarteirinha: string | null }): Observable<Paciente> {
+    return this.observable(this.http.put<Paciente>(`/api/paciente/${id}/convenio`, dados));
   }
 
   removerPaciente(id: number): Observable<void> {
@@ -309,6 +313,87 @@ export class ConsultorioApiService {
 
   cancelarDocumento(id: number, motivo: string): Observable<DocumentoClinico> {
     return this.observable(this.http.patch<DocumentoClinico>(`/api/documento/${id}/cancelar`, { motivo }));
+  }
+
+  // Convênios e tabela de preços
+  obterConvenios(incluirInativos = false): Observable<Convenio[]> {
+    return this.observable(this.http.get<Convenio[]>(`/api/convenio${incluirInativos ? '?incluirInativos=true' : ''}`));
+  }
+
+  salvarConvenio(convenio: { nome: string; registroAns?: string | null; telefone?: string | null; observacao?: string | null }, id?: number): Observable<Convenio> {
+    return this.observable(id
+      ? this.http.put<Convenio>(`/api/convenio/${id}`, convenio)
+      : this.http.post<Convenio>('/api/convenio', convenio));
+  }
+
+  alterarSituacaoConvenio(id: number, acao: 'inativar' | 'reativar'): Observable<Convenio> {
+    return this.observable(this.http.patch<Convenio>(`/api/convenio/${id}/${acao}`, {}));
+  }
+
+  obterPrecos(): Observable<TabelaPreco[]> {
+    return this.observable(this.http.get<TabelaPreco[]>('/api/convenio/precos'));
+  }
+
+  definirPreco(preco: { tipo: number; idConvenio: number | null; valor: number }): Observable<TabelaPreco> {
+    return this.observable(this.http.put<TabelaPreco>('/api/convenio/precos', preco));
+  }
+
+  removerPreco(id: number): Observable<void> {
+    return this.observable(this.http.delete<void>(`/api/convenio/precos/${id}`));
+  }
+
+  // Financeiro
+  obterCobrancas(filtros: { inicio?: string | null; fim?: string | null; status?: string | null; idPaciente?: number | null }): Observable<Cobranca[]> {
+    const params = Object.entries(filtros)
+      .filter(([, v]) => v !== null && v !== undefined && `${v}` !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`);
+    return this.observable(this.http.get<Cobranca[]>(`/api/financeiro/cobrancas${params.length ? '?' + params.join('&') : ''}`));
+  }
+
+  obterCobrancasPendentes(): Observable<Cobranca[]> {
+    return this.observable(this.http.get<Cobranca[]>('/api/financeiro/cobrancas/pendentes'));
+  }
+
+  criarCobranca(cobranca: { idPaciente: number; descricao: string; valor: number; dtVencimento?: string | null; idConvenio?: number | null; idAgenda?: number | null }): Observable<Cobranca> {
+    return this.observable(this.http.post<Cobranca>('/api/financeiro/cobrancas', cobranca));
+  }
+
+  gerarCobrancaAtendimento(idAgenda: number): Observable<Cobranca> {
+    return this.observable(this.http.post<Cobranca>(`/api/financeiro/atendimento/${idAgenda}`, {}));
+  }
+
+  pagarCobranca(id: number, pagamento: { forma: number; desconto?: number | null; dataPagamento?: string | null }): Observable<Cobranca> {
+    return this.observable(this.http.patch<Cobranca>(`/api/financeiro/cobrancas/${id}/pagar`, pagamento));
+  }
+
+  cancelarCobranca(id: number, motivo: string): Observable<Cobranca> {
+    return this.observable(this.http.patch<Cobranca>(`/api/financeiro/cobrancas/${id}/cancelar`, { motivo }));
+  }
+
+  estornarCobranca(id: number, motivo: string): Observable<Cobranca> {
+    return this.observable(this.http.patch<Cobranca>(`/api/financeiro/cobrancas/${id}/estornar`, { motivo }));
+  }
+
+  obterRecibo(id: number): Observable<Recibo> {
+    return this.observable(this.http.get<Recibo>(`/api/financeiro/cobrancas/${id}/recibo`));
+  }
+
+  obterResumoFinanceiro(inicio: string, fim: string): Observable<ResumoFinanceiro> {
+    return this.observable(this.http.get<ResumoFinanceiro>(`/api/financeiro/resumo?inicio=${inicio}&fim=${fim}`));
+  }
+
+  // Indicadores e pendências
+  obterIndicadores(inicio: string, fim: string, idMedico?: number | null): Observable<Indicadores> {
+    const medico = idMedico ? `&idMedico=${idMedico}` : '';
+    return this.observable(this.http.get<Indicadores>(`/api/indicadores?inicio=${inicio}&fim=${fim}${medico}`));
+  }
+
+  obterPendencias(): Observable<Pendencias> {
+    return this.observable(this.http.get<Pendencias>('/api/indicadores/pendencias'));
+  }
+
+  obterRevisaoAcessos(): Observable<AcessoUsuario[]> {
+    return this.observable(this.http.get<AcessoUsuario[]>('/api/auditoria/revisao-acessos'));
   }
 
   // Auditoria (somente administradores)
